@@ -17,10 +17,10 @@ namespace caffe {
 /**
  * TODO(dox) explain cuDNN interface
  */
-template <typename Dtype>
-void CuDNNConvolutionLayer<Dtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  ConvolutionLayer<Dtype>::LayerSetUp(bottom, top);
+template <typename Dtype, typename Mtype>
+void CuDNNConvolutionLayer<Dtype,Mtype>::LayerSetUp(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
+  ConvolutionLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
   // Initialize CUDA streams and cuDNN.
   stream_         = new cudaStream_t[this->group_ * CUDNN_STREAMS_PER_GROUP];
   handle_         = new cudnnHandle_t[this->group_ * CUDNN_STREAMS_PER_GROUP];
@@ -64,10 +64,10 @@ void CuDNNConvolutionLayer<Dtype>::LayerSetUp(
   handles_setup_ = true;
 }
 
-template <typename Dtype>
-void CuDNNConvolutionLayer<Dtype>::Reshape(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  ConvolutionLayer<Dtype>::Reshape(bottom, top);
+template <typename Dtype, typename Mtype>
+void CuDNNConvolutionLayer<Dtype,Mtype>::Reshape(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
+  ConvolutionLayer<Dtype,Mtype>::Reshape(bottom, top);
   bottom_offset_ = (this->channels_ / this->group_)
       * this->height_ * this->width_;
   top_offset_ = (this->num_output_ / this->group_)
@@ -100,8 +100,8 @@ void CuDNNConvolutionLayer<Dtype>::Reshape(
   }
 }
 
-template <typename Dtype>
-CuDNNConvolutionLayer<Dtype>::~CuDNNConvolutionLayer() {
+template <typename Dtype, typename Mtype>
+CuDNNConvolutionLayer<Dtype,Mtype>::~CuDNNConvolutionLayer() {
   // Check that handles have been setup before destroying.
   if (!handles_setup_) { return; }
 

@@ -24,16 +24,18 @@ __global__ void im2col_gpu_kernel(const int n, const Dtype* data_im,
 
 extern cudaDeviceProp CAFFE_TEST_CUDA_PROP;
 
-template <typename Dtype>
-class Im2colKernelTest : public GPUDeviceTest<Dtype> {
+template <typename TypeParam>
+class Im2colKernelTest : public GPUDeviceTest<TypeParam> {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
  protected:
   Im2colKernelTest()
         // big so launches > 1024 threads
-      : blob_bottom_(new Blob<Dtype>(5, 500, 10, 10)),
-        blob_top_(new Blob<Dtype>()),
-        blob_top_cpu_(new Blob<Dtype>()) {
+      : blob_bottom_(new Blob<Dtype,Mtype>(5, 500, 10, 10)),
+        blob_top_(new Blob<Dtype,Mtype>()),
+        blob_top_cpu_(new Blob<Dtype,Mtype>()) {
     FillerParameter filler_param;
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
 
     height_ = blob_bottom_->height();
@@ -52,9 +54,9 @@ class Im2colKernelTest : public GPUDeviceTest<Dtype> {
       delete blob_top_cpu_;
   }
 
-  Blob<Dtype>* const blob_bottom_;
-  Blob<Dtype>* const blob_top_;
-  Blob<Dtype>* const blob_top_cpu_;
+  Blob<Dtype,Mtype>* const blob_bottom_;
+  Blob<Dtype,Mtype>* const blob_top_;
+  Blob<Dtype,Mtype>* const blob_top_cpu_;
   int height_;
   int width_;
   int channels_;
@@ -68,6 +70,8 @@ class Im2colKernelTest : public GPUDeviceTest<Dtype> {
 TYPED_TEST_CASE(Im2colKernelTest, TestDtypes);
 
 TYPED_TEST(Im2colKernelTest, TestGPU) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   // Reshape the blobs to correct size for im2col output
   this->blob_top_->Reshape(this->blob_bottom_->num(),
           this->channels_ * this->kernel_size_ * this->kernel_size_,
@@ -79,9 +83,9 @@ TYPED_TEST(Im2colKernelTest, TestGPU) {
           this->height_col_,
           this->width_col_);
 
-  const TypeParam* bottom_data = this->blob_bottom_->gpu_data();
-  TypeParam* top_data = this->blob_top_->mutable_gpu_data();
-  TypeParam* cpu_data = this->blob_top_cpu_->mutable_cpu_data();
+  const Dtype* bottom_data = this->blob_bottom_->gpu_data();
+  Dtype* top_data = this->blob_top_->mutable_gpu_data();
+  Dtype* cpu_data = this->blob_top_cpu_->mutable_cpu_data();
 
   // CPU Version
   for (int n = 0; n < this->blob_bottom_->num(); ++n) {
@@ -101,7 +105,7 @@ TYPED_TEST(Im2colKernelTest, TestGPU) {
     for (int n = 0; n < this->blob_bottom_->num(); ++n) {
       int grid_dim = default_grid_dim/grid_div;
       // NOLINT_NEXT_LINE(whitespace/operators)
-      im2col_gpu_kernel<TypeParam><<<grid_dim, CAFFE_CUDA_NUM_THREADS>>>(
+      im2col_gpu_kernel<Dtype><<<grid_dim, CAFFE_CUDA_NUM_THREADS>>>(
         num_kernels, bottom_data + this->blob_bottom_->offset(n),
         this->height_, this->width_, this->kernel_size_, this->kernel_size_,
         this->pad_, this->pad_, this->stride_, this->stride_,
@@ -112,8 +116,8 @@ TYPED_TEST(Im2colKernelTest, TestGPU) {
 
     // Compare results against CPU version
     for (int i = 0; i < this->blob_top_->count(); ++i) {
-      TypeParam cpuval = cpu_data[i];
-      TypeParam gpuval = this->blob_top_->cpu_data()[i];
+      Mtype cpuval = Get<Mtype>(cpu_data[i]);
+      Mtype gpuval = Get<Mtype>(this->blob_top_->cpu_data()[i]);
       EXPECT_EQ(cpuval, gpuval);
       if (cpuval != gpuval) {
         break;

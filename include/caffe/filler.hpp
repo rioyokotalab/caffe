@@ -16,24 +16,24 @@
 namespace caffe {
 
 /// @brief Fills a Blob with constant or randomly-generated data.
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 class Filler {
  public:
   explicit Filler(const FillerParameter& param) : filler_param_(param) {}
   virtual ~Filler() {}
-  virtual void Fill(Blob<Dtype>* blob) = 0;
+  virtual void Fill(Blob<Dtype,Mtype>* blob) = 0;
  protected:
   FillerParameter filler_param_;
 };  // class Filler
 
 
 /// @brief Fills a Blob with constant values @f$ x = 0 @f$.
-template <typename Dtype>
-class ConstantFiller : public Filler<Dtype> {
+template <typename Dtype, typename Mtype>
+class ConstantFiller : public Filler<Dtype,Mtype> {
  public:
   explicit ConstantFiller(const FillerParameter& param)
-      : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<Dtype>* blob) {
+      : Filler<Dtype,Mtype>(param) {}
+  virtual void Fill(Blob<Dtype,Mtype>* blob) {
     Dtype* data = blob->mutable_cpu_data();
     const int count = blob->count();
     const Dtype value = this->filler_param_.value();
@@ -47,14 +47,14 @@ class ConstantFiller : public Filler<Dtype> {
 };
 
 /// @brief Fills a Blob with uniformly distributed values @f$ x\sim U(a, b) @f$.
-template <typename Dtype>
-class UniformFiller : public Filler<Dtype> {
+template <typename Dtype, typename Mtype>
+class UniformFiller : public Filler<Dtype,Mtype> {
  public:
   explicit UniformFiller(const FillerParameter& param)
-      : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<Dtype>* blob) {
+      : Filler<Dtype,Mtype>(param) {}
+  virtual void Fill(Blob<Dtype,Mtype>* blob) {
     CHECK(blob->count());
-    caffe_rng_uniform<Dtype>(blob->count(), Dtype(this->filler_param_.min()),
+    caffe_rng_uniform<Dtype,Mtype>(blob->count(), Dtype(this->filler_param_.min()),
         Dtype(this->filler_param_.max()), blob->mutable_cpu_data());
     CHECK_EQ(this->filler_param_.sparse(), -1)
          << "Sparsity not supported by this Filler.";
@@ -62,15 +62,15 @@ class UniformFiller : public Filler<Dtype> {
 };
 
 /// @brief Fills a Blob with Gaussian-distributed values @f$ x = a @f$.
-template <typename Dtype>
-class GaussianFiller : public Filler<Dtype> {
+template <typename Dtype, typename Mtype>
+class GaussianFiller : public Filler<Dtype,Mtype> {
  public:
   explicit GaussianFiller(const FillerParameter& param)
-      : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<Dtype>* blob) {
+      : Filler<Dtype,Mtype>(param) {}
+  virtual void Fill(Blob<Dtype,Mtype>* blob) {
     Dtype* data = blob->mutable_cpu_data();
     CHECK(blob->count());
-    caffe_rng_gaussian<Dtype>(blob->count(), Dtype(this->filler_param_.mean()),
+    caffe_rng_gaussian<Dtype,Mtype>(blob->count(), Dtype(this->filler_param_.mean()),
         Dtype(this->filler_param_.std()), blob->mutable_cpu_data());
     int sparse = this->filler_param_.sparse();
     CHECK_GE(sparse, -1);
@@ -84,7 +84,7 @@ class GaussianFiller : public Filler<Dtype> {
       Dtype non_zero_probability = Dtype(sparse) / Dtype(num_outputs);
       rand_vec_.reset(new SyncedMemory(blob->count() * sizeof(int)));
       int* mask = reinterpret_cast<int*>(rand_vec_->mutable_cpu_data());
-      caffe_rng_bernoulli(blob->count(), non_zero_probability, mask);
+      caffe_rng_bernoulli<Dtype,Mtype>(blob->count(), non_zero_probability, mask);
       for (int i = 0; i < blob->count(); ++i) {
         data[i] *= mask[i];
       }
@@ -98,15 +98,15 @@ class GaussianFiller : public Filler<Dtype> {
 /** @brief Fills a Blob with values @f$ x \in [0, 1] @f$
  *         such that @f$ \forall i \sum_j x_{ij} = 1 @f$.
  */
-template <typename Dtype>
-class PositiveUnitballFiller : public Filler<Dtype> {
+template <typename Dtype, typename Mtype>
+class PositiveUnitballFiller : public Filler<Dtype,Mtype> {
  public:
   explicit PositiveUnitballFiller(const FillerParameter& param)
-      : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<Dtype>* blob) {
+      : Filler<Dtype,Mtype>(param) {}
+  virtual void Fill(Blob<Dtype,Mtype>* blob) {
     Dtype* data = blob->mutable_cpu_data();
     DCHECK(blob->count());
-    caffe_rng_uniform<Dtype>(blob->count(), 0, 1, blob->mutable_cpu_data());
+    caffe_rng_uniform<Dtype,Mtype>(blob->count(), 0, 1, blob->mutable_cpu_data());
     // We expect the filler to not be called very frequently, so we will
     // just use a simple implementation
     int dim = blob->count() / blob->num();
@@ -140,16 +140,16 @@ class PositiveUnitballFiller : public Filler<Dtype> {
  *
  * TODO(dox): make notation in above comment consistent with rest & use LaTeX.
  */
-template <typename Dtype>
-class XavierFiller : public Filler<Dtype> {
+template <typename Dtype, typename Mtype>
+class XavierFiller : public Filler<Dtype,Mtype> {
  public:
   explicit XavierFiller(const FillerParameter& param)
-      : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<Dtype>* blob) {
+      : Filler<Dtype,Mtype>(param) {}
+  virtual void Fill(Blob<Dtype,Mtype>* blob) {
     CHECK(blob->count());
     int fan_in = blob->count() / blob->num();
     Dtype scale = sqrt(Dtype(3) / fan_in);
-    caffe_rng_uniform<Dtype>(blob->count(), -scale, scale,
+    caffe_rng_uniform<Dtype,Mtype>(blob->count(), -scale, scale,
         blob->mutable_cpu_data());
     CHECK_EQ(this->filler_param_.sparse(), -1)
          << "Sparsity not supported by this Filler.";
@@ -163,23 +163,23 @@ class XavierFiller : public Filler<Dtype> {
  * Ideally this would be replaced by a factory pattern, but we will leave it
  * this way for now.
  */
-template <typename Dtype>
-Filler<Dtype>* GetFiller(const FillerParameter& param) {
+template <typename Dtype, typename Mtype>
+Filler<Dtype,Mtype>* GetFiller(const FillerParameter& param) {
   const std::string& type = param.type();
   if (type == "constant") {
-    return new ConstantFiller<Dtype>(param);
+    return new ConstantFiller<Dtype,Mtype>(param);
   } else if (type == "gaussian") {
-    return new GaussianFiller<Dtype>(param);
+    return new GaussianFiller<Dtype,Mtype>(param);
   } else if (type == "positive_unitball") {
-    return new PositiveUnitballFiller<Dtype>(param);
+    return new PositiveUnitballFiller<Dtype,Mtype>(param);
   } else if (type == "uniform") {
-    return new UniformFiller<Dtype>(param);
+    return new UniformFiller<Dtype,Mtype>(param);
   } else if (type == "xavier") {
-    return new XavierFiller<Dtype>(param);
+    return new XavierFiller<Dtype,Mtype>(param);
   } else {
     CHECK(false) << "Unknown filler name: " << param.type();
   }
-  return (Filler<Dtype>*)(NULL);
+  return (Filler<Dtype,Mtype>*)(NULL);
 }
 
 }  // namespace caffe

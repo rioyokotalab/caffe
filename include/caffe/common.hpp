@@ -18,6 +18,8 @@
 
 #include "caffe/util/device_alternate.hpp"
 
+#include <cuda_fp16.h>
+
 // gflags 2.1 issue: namespace google was changed to gflags without warning.
 // Luckily we will be able to use GFLAGS_GFLAGS_H_ to detect if it is version
 // 2.1. If yes, we will add a temporary solution to redirect the namespace.
@@ -36,26 +38,34 @@ private:\
 // Instantiate a class with float and double specifications.
 #define INSTANTIATE_CLASS(classname) \
   char gInstantiationGuard##classname; \
-  template class classname<float>; \
-  template class classname<double>
+  template class classname<float, float>; \
+  template class classname<double, double>; \
+  template class classname<half,float>
 
 #define INSTANTIATE_LAYER_GPU_FORWARD(classname) \
-  template void classname<float>::Forward_gpu( \
-      const std::vector<Blob<float>*>& bottom, \
-      const std::vector<Blob<float>*>& top); \
-  template void classname<double>::Forward_gpu( \
-      const std::vector<Blob<double>*>& bottom, \
-      const std::vector<Blob<double>*>& top);
+  template void classname<float, float>::Forward_gpu( \
+      const std::vector<Blob<float, float>*>& bottom, \
+      const std::vector<Blob<float, float>*>& top); \
+  template void classname<double, double>::Forward_gpu( \
+      const std::vector<Blob<double, double>*>& bottom, \
+      const std::vector<Blob<double, double>*>& top); \
+  template void classname<half,float>::Forward_gpu( \
+      const std::vector<Blob<half,float>*>& bottom, \
+      const std::vector<Blob<half,float>*>& top);
 
 #define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
-  template void classname<float>::Backward_gpu( \
-      const std::vector<Blob<float>*>& top, \
+  template void classname<float, float>::Backward_gpu( \
+      const std::vector<Blob<float, float>*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<float>*>& bottom); \
-  template void classname<double>::Backward_gpu( \
-      const std::vector<Blob<double>*>& top, \
+      const std::vector<Blob<float, float>*>& bottom); \
+  template void classname<double, double>::Backward_gpu( \
+      const std::vector<Blob<double, double>*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<double>*>& bottom)
+      const std::vector<Blob<double, double>*>& bottom); \
+  template void classname<half,float>::Backward_gpu( \
+      const std::vector<Blob<half,float>*>& top, \
+      const std::vector<bool>& propagate_down, \
+      const std::vector<Blob<half,float>*>& bottom)
 
 #define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
   INSTANTIATE_LAYER_GPU_FORWARD(classname); \

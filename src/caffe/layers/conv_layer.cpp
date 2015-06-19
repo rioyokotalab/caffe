@@ -8,17 +8,17 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void ConvolutionLayer<Dtype>::compute_output_shape() {
+template <typename Dtype, typename Mtype>
+void ConvolutionLayer<Dtype,Mtype>::compute_output_shape() {
   this->height_out_ = (this->height_ + 2 * this->pad_h_ - this->kernel_h_)
       / this->stride_h_ + 1;
   this->width_out_ = (this->width_ + 2 * this->pad_w_ - this->kernel_w_)
       / this->stride_w_ + 1;
 }
 
-template <typename Dtype>
-void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void ConvolutionLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   const Dtype* weight = this->blobs_[0]->cpu_data();
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
@@ -34,9 +34,9 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
-template <typename Dtype>
-void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void ConvolutionLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   const Dtype* weight = this->blobs_[0]->cpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
   if (this->param_propagate_down_[0]) {

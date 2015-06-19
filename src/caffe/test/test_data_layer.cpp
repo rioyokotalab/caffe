@@ -21,12 +21,13 @@ using boost::scoped_ptr;
 template <typename TypeParam>
 class DataLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
  protected:
   DataLayerTest()
       : backend_(DataParameter_DB_LEVELDB),
-        blob_top_data_(new Blob<Dtype>()),
-        blob_top_label_(new Blob<Dtype>()),
+        blob_top_data_(new Blob<Dtype,Mtype>()),
+        blob_top_label_(new Blob<Dtype,Mtype>()),
         seed_(1701) {}
   virtual void SetUp() {
     filename_.reset(new string());
@@ -67,7 +68,7 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
   }
 
   void TestRead() {
-    const Dtype scale = 3;
+    const Mtype scale = 3;
     LayerParameter param;
     param.set_phase(TRAIN);
     DataParameter* data_param = param.mutable_data_param();
@@ -79,7 +80,7 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
         param.mutable_transform_param();
     transform_param->set_scale(scale);
 
-    DataLayer<Dtype> layer(param);
+    DataLayer<Dtype,Mtype> layer(param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     EXPECT_EQ(blob_top_data_->num(), 5);
     EXPECT_EQ(blob_top_data_->channels(), 2);
@@ -93,11 +94,11 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
     for (int iter = 0; iter < 100; ++iter) {
       layer.Forward(blob_bottom_vec_, blob_top_vec_);
       for (int i = 0; i < 5; ++i) {
-        EXPECT_EQ(i, blob_top_label_->cpu_data()[i]);
+        EXPECT_EQ(i, Get<int>(blob_top_label_->cpu_data()[i]));
       }
       for (int i = 0; i < 5; ++i) {
         for (int j = 0; j < 24; ++j) {
-          EXPECT_EQ(scale * i, blob_top_data_->cpu_data()[i * 24 + j])
+          EXPECT_EQ(scale * i, Get<Mtype>(blob_top_data_->cpu_data()[i * 24 + j]))
               << "debug: iter " << iter << " i " << i << " j " << j;
         }
       }
@@ -139,7 +140,7 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
     data_param->set_source(filename_->c_str());
     data_param->set_backend(backend);
 
-    DataLayer<Dtype> layer(param);
+    DataLayer<Dtype,Mtype> layer(param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     EXPECT_EQ(blob_top_data_->num(), 1);
     EXPECT_EQ(blob_top_data_->channels(), 2);
@@ -160,7 +161,7 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
         for (int h = 0; h < height; ++h) {
           for (int w = 0; w < width; ++w) {
             const int idx = (c * height + h) * width + w;
-            EXPECT_EQ(idx, static_cast<int>(blob_top_data_->cpu_data()[idx]))
+            EXPECT_EQ(idx, Get<int>(blob_top_data_->cpu_data()[idx]))
                 << "debug: iter " << iter << " c " << c
                 << " h " << h << " w " << w;
           }
@@ -170,7 +171,7 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
   }
 
   void TestReadCrop(Phase phase) {
-    const Dtype scale = 3;
+    const Mtype scale = 3;
     LayerParameter param;
     param.set_phase(phase);
     Caffe::set_random_seed(1701);
@@ -185,7 +186,7 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
     transform_param->set_scale(scale);
     transform_param->set_crop_size(1);
 
-    DataLayer<Dtype> layer(param);
+    DataLayer<Dtype,Mtype> layer(param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     EXPECT_EQ(blob_top_data_->num(), 5);
     EXPECT_EQ(blob_top_data_->channels(), 2);
@@ -199,17 +200,17 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
     for (int iter = 0; iter < 2; ++iter) {
       layer.Forward(blob_bottom_vec_, blob_top_vec_);
       for (int i = 0; i < 5; ++i) {
-        EXPECT_EQ(i, blob_top_label_->cpu_data()[i]);
+        EXPECT_EQ(i, Get<int>(blob_top_label_->cpu_data()[i]));
       }
       int num_with_center_value = 0;
       for (int i = 0; i < 5; ++i) {
         for (int j = 0; j < 2; ++j) {
-          const Dtype center_value = scale * (j ? 17 : 5);
+          const Mtype center_value = scale * (j ? 17 : 5);
           num_with_center_value +=
-              (center_value == blob_top_data_->cpu_data()[i * 2 + j]);
+              (center_value == Get<Mtype>(blob_top_data_->cpu_data()[i * 2 + j]));
           // At TEST time, check that we always get center value.
           if (phase == caffe::TEST) {
-            EXPECT_EQ(center_value, this->blob_top_data_->cpu_data()[i * 2 + j])
+            EXPECT_EQ(center_value, Get<Mtype>(this->blob_top_data_->cpu_data()[i * 2 + j]))
                 << "debug: iter " << iter << " i " << i << " j " << j;
           }
         }
@@ -240,12 +241,12 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
     Caffe::set_random_seed(seed_);
     vector<vector<Dtype> > crop_sequence;
     {
-      DataLayer<Dtype> layer1(param);
+      DataLayer<Dtype,Mtype> layer1(param);
       layer1.SetUp(blob_bottom_vec_, blob_top_vec_);
       for (int iter = 0; iter < 2; ++iter) {
         layer1.Forward(blob_bottom_vec_, blob_top_vec_);
         for (int i = 0; i < 5; ++i) {
-          EXPECT_EQ(i, blob_top_label_->cpu_data()[i]);
+          EXPECT_EQ(i, Get<int>(blob_top_label_->cpu_data()[i]));
         }
         vector<Dtype> iter_crop_sequence;
         for (int i = 0; i < 5; ++i) {
@@ -261,17 +262,17 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
     // Get crop sequence after reseeding Caffe with 1701.
     // Check that the sequence is the same as the original.
     Caffe::set_random_seed(seed_);
-    DataLayer<Dtype> layer2(param);
+    DataLayer<Dtype,Mtype> layer2(param);
     layer2.SetUp(blob_bottom_vec_, blob_top_vec_);
     for (int iter = 0; iter < 2; ++iter) {
       layer2.Forward(blob_bottom_vec_, blob_top_vec_);
       for (int i = 0; i < 5; ++i) {
-        EXPECT_EQ(i, blob_top_label_->cpu_data()[i]);
+        EXPECT_EQ(i, Get<int>(blob_top_label_->cpu_data()[i]));
       }
       for (int i = 0; i < 5; ++i) {
         for (int j = 0; j < 2; ++j) {
-          EXPECT_EQ(crop_sequence[iter][i * 2 + j],
-                    blob_top_data_->cpu_data()[i * 2 + j])
+          EXPECT_EQ(Get<Mtype>(crop_sequence[iter][i * 2 + j]),
+                    Get<Mtype>(blob_top_data_->cpu_data()[i * 2 + j]))
               << "debug: iter " << iter << " i " << i << " j " << j;
         }
       }
@@ -296,12 +297,12 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
     srand(seed_);
     vector<vector<Dtype> > crop_sequence;
     {
-      DataLayer<Dtype> layer1(param);
+      DataLayer<Dtype,Mtype> layer1(param);
       layer1.SetUp(blob_bottom_vec_, blob_top_vec_);
       for (int iter = 0; iter < 2; ++iter) {
         layer1.Forward(blob_bottom_vec_, blob_top_vec_);
         for (int i = 0; i < 5; ++i) {
-          EXPECT_EQ(i, blob_top_label_->cpu_data()[i]);
+          EXPECT_EQ(i, Get<int>(blob_top_label_->cpu_data()[i]));
         }
         vector<Dtype> iter_crop_sequence;
         for (int i = 0; i < 5; ++i) {
@@ -317,18 +318,18 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
     // Get crop sequence continuing from previous Caffe RNG state; reseed
     // srand with 1701. Check that the sequence differs from the original.
     srand(seed_);
-    DataLayer<Dtype> layer2(param);
+    DataLayer<Dtype,Mtype> layer2(param);
     layer2.SetUp(blob_bottom_vec_, blob_top_vec_);
     for (int iter = 0; iter < 2; ++iter) {
       layer2.Forward(blob_bottom_vec_, blob_top_vec_);
       for (int i = 0; i < 5; ++i) {
-        EXPECT_EQ(i, blob_top_label_->cpu_data()[i]);
+        EXPECT_EQ(i, Get<int>(blob_top_label_->cpu_data()[i]));
       }
       int num_sequence_matches = 0;
       for (int i = 0; i < 5; ++i) {
         for (int j = 0; j < 2; ++j) {
-          num_sequence_matches += (crop_sequence[iter][i * 2 + j] ==
-                                   blob_top_data_->cpu_data()[i * 2 + j]);
+          num_sequence_matches += (Get<Mtype>(crop_sequence[iter][i * 2 + j]) ==
+                                   Get<Mtype>(blob_top_data_->cpu_data()[i * 2 + j]));
         }
       }
       EXPECT_LT(num_sequence_matches, 10);
@@ -339,10 +340,10 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
 
   DataParameter_DB backend_;
   shared_ptr<string> filename_;
-  Blob<Dtype>* const blob_top_data_;
-  Blob<Dtype>* const blob_top_label_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const blob_top_data_;
+  Blob<Dtype,Mtype>* const blob_top_label_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
   int seed_;
 };
 

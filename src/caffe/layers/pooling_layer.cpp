@@ -13,9 +13,9 @@ namespace caffe {
 using std::min;
 using std::max;
 
-template <typename Dtype>
-void PoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void PoolingLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   PoolingParameter pool_param = this->layer_param_.pooling_param();
   if (pool_param.global_pooling()) {
     CHECK(!(pool_param.has_kernel_size() ||
@@ -78,9 +78,9 @@ void PoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
-template <typename Dtype>
-void PoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void PoolingLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   CHECK_EQ(4, bottom[0]->num_axes()) << "Input must have 4 axes, "
       << "corresponding to (num, channels, height, width)";
   channels_ = bottom[0]->channels();
@@ -127,9 +127,9 @@ void PoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 
 // TODO(Yangqing): Is there a faster way to do pooling in the channel-first
 // case?
-template <typename Dtype>
-void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void PoolingLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
   const int top_count = top[0]->count();
@@ -144,12 +144,12 @@ void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     // Initialize
     if (use_top_mask) {
       top_mask = top[1]->mutable_cpu_data();
-      caffe_set(top_count, Dtype(-1), top_mask);
+      caffe_set<Dtype,Mtype>(top_count, Mtype(-1), top_mask);
     } else {
       mask = max_idx_.mutable_cpu_data();
-      caffe_set(top_count, -1, mask);
+      caffe_set<int,int>(top_count, -1, mask);
     }
-    caffe_set(top_count, Dtype(-FLT_MAX), top_data);
+    caffe_set<Dtype,Mtype>(top_count, Mtype(-FLT_MAX), top_data);
     // The main loop
     for (int n = 0; n < bottom[0]->num(); ++n) {
       for (int c = 0; c < channels_; ++c) {
@@ -165,10 +165,10 @@ void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             for (int h = hstart; h < hend; ++h) {
               for (int w = wstart; w < wend; ++w) {
                 const int index = h * width_ + w;
-                if (bottom_data[index] > top_data[pool_index]) {
+                if (Get<Mtype>(bottom_data[index]) > Get<Mtype>(top_data[pool_index])) {
                   top_data[pool_index] = bottom_data[index];
                   if (use_top_mask) {
-                    top_mask[pool_index] = static_cast<Dtype>(index);
+                    top_mask[pool_index] = Get<Dtype>(index);
                   } else {
                     mask[pool_index] = index;
                   }
@@ -206,13 +206,14 @@ void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             wstart = max(wstart, 0);
             hend = min(hend, height_);
             wend = min(wend, width_);
+            Mtype data_sum = Mtype(0);
             for (int h = hstart; h < hend; ++h) {
               for (int w = wstart; w < wend; ++w) {
-                top_data[ph * pooled_width_ + pw] +=
-                    bottom_data[h * width_ + w];
+                data_sum +=
+                    Get<Mtype>(bottom_data[h * width_ + w]);
               }
             }
-            top_data[ph * pooled_width_ + pw] /= pool_size;
+            top_data[ph * pooled_width_ + pw] = Get<Dtype>(data_sum / pool_size);
           }
         }
         // compute offset
@@ -229,9 +230,9 @@ void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
-template <typename Dtype>
-void PoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void PoolingLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   if (!propagate_down[0]) {
     return;
   }
@@ -239,7 +240,7 @@ void PoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
   // Different pooling methods. We explicitly do the switch outside the for
   // loop to save time, although this results in more codes.
-  caffe_set(bottom[0]->count(), Dtype(0), bottom_diff);
+  caffe_set<Dtype,Mtype>(bottom[0]->count(), Dtype(0), bottom_diff);
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;  // suppress warnings about uninitialized variables
@@ -259,7 +260,7 @@ void PoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             const int index = ph * pooled_width_ + pw;
             const int bottom_index =
                 use_top_mask ? top_mask[index] : mask[index];
-            bottom_diff[bottom_index] += top_diff[index];
+            bottom_diff[bottom_index] = Get<Dtype>( Get<Mtype>(top_diff[index]) + Get<Mtype>(bottom_diff[bottom_index]) );
           }
         }
         bottom_diff += bottom[0]->offset(0, 1);
@@ -289,8 +290,8 @@ void PoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             wend = min(wend, width_);
             for (int h = hstart; h < hend; ++h) {
               for (int w = wstart; w < wend; ++w) {
-                bottom_diff[h * width_ + w] +=
-                  top_diff[ph * pooled_width_ + pw] / pool_size;
+                bottom_diff[h * width_ + w] =
+                  Get<Dtype>( Get<Mtype>(top_diff[ph * pooled_width_ + pw]) / pool_size + Get<Mtype>(bottom_diff[h * width_ + w]) );
               }
             }
           }

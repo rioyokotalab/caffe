@@ -10,8 +10,8 @@
 
 namespace caffe {
 
-template<typename Dtype>
-DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
+template<typename Dtype, typename Mtype>
+DataTransformer<Dtype,Mtype>::DataTransformer(const TransformationParameter& param,
     Phase phase)
     : param_(param), phase_(phase) {
   // check if we want to use mean_file
@@ -36,8 +36,8 @@ DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
   }
 }
 
-template<typename Dtype>
-void DataTransformer<Dtype>::Transform(const Datum& datum,
+template<typename Dtype, typename Mtype>
+void DataTransformer<Dtype,Mtype>::Transform(const Datum& datum,
                                        Dtype* transformed_data) {
   const string& data = datum.data();
   const int datum_channels = datum.channels();
@@ -124,9 +124,9 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   }
 }
 
-template<typename Dtype>
-void DataTransformer<Dtype>::Transform(const Datum& datum,
-                                       Blob<Dtype>* transformed_blob) {
+template<typename Dtype, typename Mtype>
+void DataTransformer<Dtype,Mtype>::Transform(const Datum& datum,
+                                       Blob<Dtype,Mtype>* transformed_blob) {
   const int datum_channels = datum.channels();
   const int datum_height = datum.height();
   const int datum_width = datum.width();
@@ -155,9 +155,9 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   Transform(datum, transformed_data);
 }
 
-template<typename Dtype>
-void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
-                                       Blob<Dtype>* transformed_blob) {
+template<typename Dtype, typename Mtype>
+void DataTransformer<Dtype,Mtype>::Transform(const vector<Datum> & datum_vector,
+                                       Blob<Dtype,Mtype>* transformed_blob) {
   const int datum_num = datum_vector.size();
   const int num = transformed_blob->num();
   const int channels = transformed_blob->channels();
@@ -167,7 +167,7 @@ void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
   CHECK_GT(datum_num, 0) << "There is no datum to add";
   CHECK_LE(datum_num, num) <<
     "The size of datum_vector must be no greater than transformed_blob->num()";
-  Blob<Dtype> uni_blob(1, channels, height, width);
+  Blob<Dtype,Mtype> uni_blob(1, channels, height, width);
   for (int item_id = 0; item_id < datum_num; ++item_id) {
     int offset = transformed_blob->offset(item_id);
     uni_blob.set_cpu_data(transformed_blob->mutable_cpu_data() + offset);
@@ -175,9 +175,9 @@ void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
   }
 }
 
-template<typename Dtype>
-void DataTransformer<Dtype>::Transform(const vector<cv::Mat> & mat_vector,
-                                       Blob<Dtype>* transformed_blob) {
+template<typename Dtype, typename Mtype>
+void DataTransformer<Dtype,Mtype>::Transform(const vector<cv::Mat> & mat_vector,
+                                       Blob<Dtype,Mtype>* transformed_blob) {
   const int mat_num = mat_vector.size();
   const int num = transformed_blob->num();
   const int channels = transformed_blob->channels();
@@ -187,7 +187,7 @@ void DataTransformer<Dtype>::Transform(const vector<cv::Mat> & mat_vector,
   CHECK_GT(mat_num, 0) << "There is no MAT to add";
   CHECK_EQ(mat_num, num) <<
     "The size of mat_vector must be equals to transformed_blob->num()";
-  Blob<Dtype> uni_blob(1, channels, height, width);
+  Blob<Dtype,Mtype> uni_blob(1, channels, height, width);
   for (int item_id = 0; item_id < mat_num; ++item_id) {
     int offset = transformed_blob->offset(item_id);
     uni_blob.set_cpu_data(transformed_blob->mutable_cpu_data() + offset);
@@ -195,9 +195,9 @@ void DataTransformer<Dtype>::Transform(const vector<cv::Mat> & mat_vector,
   }
 }
 
-template<typename Dtype>
-void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
-                                       Blob<Dtype>* transformed_blob) {
+template<typename Dtype, typename Mtype>
+void DataTransformer<Dtype,Mtype>::Transform(const cv::Mat& cv_img,
+                                       Blob<Dtype,Mtype>* transformed_blob) {
   const int img_channels = cv_img.channels();
   const int img_height = cv_img.rows;
   const int img_width = cv_img.cols;
@@ -296,9 +296,9 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   }
 }
 
-template<typename Dtype>
-void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
-                                       Blob<Dtype>* transformed_blob) {
+template<typename Dtype, typename Mtype>
+void DataTransformer<Dtype,Mtype>::Transform(Blob<Dtype,Mtype>* input_blob,
+                                       Blob<Dtype,Mtype>* transformed_blob) {
   const int input_num = input_blob->num();
   const int input_channels = input_blob->channels();
   const int input_height = input_blob->height();
@@ -346,7 +346,7 @@ void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
     CHECK_EQ(input_width, data_mean_.width());
     for (int n = 0; n < input_num; ++n) {
       int offset = input_blob->offset(n);
-      caffe_sub(data_mean_.count(), input_data + offset,
+      caffe_sub<Dtype,Mtype>(data_mean_.count(), input_data + offset,
             data_mean_.cpu_data(), input_data + offset);
     }
   }
@@ -397,8 +397,8 @@ void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
   }
 }
 
-template <typename Dtype>
-void DataTransformer<Dtype>::InitRand() {
+template <typename Dtype, typename Mtype>
+void DataTransformer<Dtype,Mtype>::InitRand() {
   const bool needs_rand = param_.mirror() ||
       (phase_ == TRAIN && param_.crop_size());
   if (needs_rand) {
@@ -409,8 +409,8 @@ void DataTransformer<Dtype>::InitRand() {
   }
 }
 
-template <typename Dtype>
-int DataTransformer<Dtype>::Rand(int n) {
+template <typename Dtype, typename Mtype>
+int DataTransformer<Dtype,Mtype>::Rand(int n) {
   CHECK(rng_);
   CHECK_GT(n, 0);
   caffe::rng_t* rng =

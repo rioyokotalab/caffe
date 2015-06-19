@@ -21,10 +21,12 @@ TYPED_TEST_CASE(LayerFactoryTest, TestDtypesAndDevices);
 
 TYPED_TEST(LayerFactoryTest, TestCreateLayer) {
   typedef typename TypeParam::Dtype Dtype;
-  typename LayerRegistry<Dtype>::CreatorRegistry& registry =
-      LayerRegistry<Dtype>::Registry();
-  shared_ptr<Layer<Dtype> > layer;
-  for (typename LayerRegistry<Dtype>::CreatorRegistry::iterator iter =
+  typedef typename TypeParam::Mtype Mtype;
+
+  typename LayerRegistry<Dtype,Mtype>::CreatorRegistry& registry =
+      LayerRegistry<Dtype,Mtype>::Registry();
+  shared_ptr<Layer<Dtype,Mtype> > layer;
+  for (typename LayerRegistry<Dtype,Mtype>::CreatorRegistry::iterator iter =
        registry.begin(); iter != registry.end(); ++iter) {
     // Special case: PythonLayer is checked by pytest
     if (iter->first == "Python") { continue; }
@@ -39,7 +41,7 @@ TYPED_TEST(LayerFactoryTest, TestCreateLayer) {
       layer_param.mutable_data_param()->set_source(tmp);
     }
     layer_param.set_type(iter->first);
-    layer = LayerRegistry<Dtype>::CreateLayer(layer_param);
+    layer = LayerRegistry<Dtype,Mtype>::CreateLayer(layer_param);
     EXPECT_EQ(iter->first, layer->type());
   }
 }

@@ -7,9 +7,9 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void SliceLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void SliceLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   const SliceParameter& slice_param = this->layer_param_.slice_param();
   CHECK(!(slice_param.has_axis() && slice_param.has_slice_dim()))
       << "Either axis or slice_dim should be specified; not both.";
@@ -19,9 +19,9 @@ void SliceLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       std::back_inserter(slice_point_));
 }
 
-template <typename Dtype>
-void SliceLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void SliceLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   const int num_axes = bottom[0]->num_axes();
   const SliceParameter& slice_param = this->layer_param_.slice_param();
   if (slice_param.has_slice_dim()) {
@@ -69,9 +69,9 @@ void SliceLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   CHECK_EQ(count, bottom[0]->count());
 }
 
-template <typename Dtype>
-void SliceLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void SliceLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   int offset_slice_axis = 0;
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const int bottom_slice_axis = bottom[0]->shape(slice_axis_);
@@ -82,16 +82,16 @@ void SliceLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const int top_offset = n * top_slice_axis * slice_size_;
       const int bottom_offset =
           (n * bottom_slice_axis + offset_slice_axis) * slice_size_;
-      caffe_copy(top_slice_axis * slice_size_,
+      caffe_copy<Dtype,Mtype>(top_slice_axis * slice_size_,
           bottom_data + bottom_offset, top_data + top_offset);
     }
     offset_slice_axis += top_slice_axis;
   }
 }
 
-template <typename Dtype>
-void SliceLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void SliceLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   if (!propagate_down[0]) { return; }
   int offset_slice_axis = 0;
   Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
@@ -103,7 +103,7 @@ void SliceLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       const int top_offset = n * top_slice_axis * slice_size_;
       const int bottom_offset =
           (n * bottom_slice_axis + offset_slice_axis) * slice_size_;
-      caffe_copy(top_slice_axis * slice_size_,
+      caffe_copy<Dtype,Mtype>(top_slice_axis * slice_size_,
           top_diff + top_offset, bottom_diff + bottom_offset);
     }
     offset_slice_axis += top_slice_axis;

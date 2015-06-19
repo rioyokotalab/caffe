@@ -7,8 +7,8 @@
  *
  * There are two ways to register a layer. Assuming that we have a layer like:
  *
- *   template <typename Dtype>
- *   class MyAwesomeLayer : public Layer<Dtype> {
+ *   template <typename Dtype, typename Mtype>
+ *   class MyAwesomeLayer : public Layer<Dtype,Mtype> {
  *     // your implementations
  *   };
  *
@@ -23,8 +23,8 @@
  * Or, if the layer is going to be created by another creator function, in the
  * format of:
  *
- *    template <typename Dtype>
- *    Layer<Dtype*> GetMyAwesomeLayer(const LayerParameter& param) {
+ *    template <typename Dtype, typename Mtype>
+ *    Layer<Dtype,Mtype*> GetMyAwesomeLayer(const LayerParameter& param) {
  *      // your implementation
  *    }
  *
@@ -47,13 +47,13 @@
 
 namespace caffe {
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 class Layer;
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 class LayerRegistry {
  public:
-  typedef shared_ptr<Layer<Dtype> > (*Creator)(const LayerParameter&);
+  typedef shared_ptr<Layer<Dtype,Mtype> > (*Creator)(const LayerParameter&);
   typedef std::map<string, Creator> CreatorRegistry;
 
   static CreatorRegistry& Registry() {
@@ -70,7 +70,7 @@ class LayerRegistry {
   }
 
   // Get a layer using a LayerParameter.
-  static shared_ptr<Layer<Dtype> > CreateLayer(const LayerParameter& param) {
+  static shared_ptr<Layer<Dtype,Mtype> > CreateLayer(const LayerParameter& param) {
     if (Caffe::root_solver()) {
       LOG(INFO) << "Creating layer " << param.name();
     }
@@ -101,26 +101,26 @@ class LayerRegistry {
 };
 
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 class LayerRegisterer {
  public:
   LayerRegisterer(const string& type,
-                  shared_ptr<Layer<Dtype> > (*creator)(const LayerParameter&)) {
+                  shared_ptr<Layer<Dtype,Mtype> > (*creator)(const LayerParameter&)) {
     // LOG(INFO) << "Registering layer type: " << type;
-    LayerRegistry<Dtype>::AddCreator(type, creator);
+    LayerRegistry<Dtype,Mtype>::AddCreator(type, creator);
   }
 };
 
 
 #define REGISTER_LAYER_CREATOR(type, creator)                                  \
-  static LayerRegisterer<float> g_creator_f_##type(#type, creator<float>);     \
-  static LayerRegisterer<double> g_creator_d_##type(#type, creator<double>)    \
+  static LayerRegisterer<float,float> g_creator_f_##type(#type, creator<float,float>);     \
+  static LayerRegisterer<double,double> g_creator_d_##type(#type, creator<double,double>)    \
 
 #define REGISTER_LAYER_CLASS(type)                                             \
-  template <typename Dtype>                                                    \
-  shared_ptr<Layer<Dtype> > Creator_##type##Layer(const LayerParameter& param) \
+  template <typename Dtype, typename Mtype>                                                    \
+  shared_ptr<Layer<Dtype,Mtype> > Creator_##type##Layer(const LayerParameter& param) \
   {                                                                            \
-    return shared_ptr<Layer<Dtype> >(new type##Layer<Dtype>(param));           \
+    return shared_ptr<Layer<Dtype,Mtype> >(new type##Layer<Dtype,Mtype>(param));           \
   }                                                                            \
   REGISTER_LAYER_CREATOR(type, Creator_##type##Layer)
 

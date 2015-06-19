@@ -8,15 +8,15 @@
 
 namespace caffe {
 
-template <typename Dtype>
-BaseDataLayer<Dtype>::BaseDataLayer(const LayerParameter& param)
-    : Layer<Dtype>(param),
+template <typename Dtype, typename Mtype>
+BaseDataLayer<Dtype,Mtype>::BaseDataLayer(const LayerParameter& param)
+    : Layer<Dtype,Mtype>(param),
       transform_param_(param.transform_param()) {
 }
 
-template <typename Dtype>
-void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void BaseDataLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   if (top.size() == 1) {
     output_labels_ = false;
   } else {
@@ -25,24 +25,24 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   // The subclasses should setup the size of bottom and top
   DataLayerSetUp(bottom, top);
   data_transformer_.reset(
-      new DataTransformer<Dtype>(transform_param_, this->phase_));
+      new DataTransformer<Dtype,Mtype>(transform_param_, this->phase_));
   data_transformer_->InitRand();
 }
 
-template <typename Dtype>
-BasePrefetchingDataLayer<Dtype>::BasePrefetchingDataLayer(
+template <typename Dtype, typename Mtype>
+BasePrefetchingDataLayer<Dtype,Mtype>::BasePrefetchingDataLayer(
     const LayerParameter& param)
-    : BaseDataLayer<Dtype>(param),
+    : BaseDataLayer<Dtype,Mtype>(param),
       prefetch_free_(), prefetch_full_() {
   for (int i = 0; i < PREFETCH_COUNT; ++i) {
     prefetch_free_.push(&prefetch_[i]);
   }
 }
 
-template <typename Dtype>
-void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  BaseDataLayer<Dtype>::LayerSetUp(bottom, top);
+template <typename Dtype, typename Mtype>
+void BasePrefetchingDataLayer<Dtype,Mtype>::LayerSetUp(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
+  BaseDataLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
 
   // Before starting the prefetch thread, we make cpu_data and gpu_data
   // calls so that the prefetch thread does not accidentally make simultaneous
@@ -71,8 +71,8 @@ void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
   DLOG(INFO) << "Prefetch initialized.";
 }
 
-template <typename Dtype>
-void BasePrefetchingDataLayer<Dtype>::InternalThreadEntry() {
+template <typename Dtype, typename Mtype>
+void BasePrefetchingDataLayer<Dtype,Mtype>::InternalThreadEntry() {
 #ifndef CPU_ONLY
   cudaStream_t stream;
   if (Caffe::mode() == Caffe::GPU) {
@@ -82,7 +82,7 @@ void BasePrefetchingDataLayer<Dtype>::InternalThreadEntry() {
 
   try {
     while (!must_stop()) {
-      Batch<Dtype>* batch = prefetch_free_.pop();
+      Batch<Dtype,Mtype>* batch = prefetch_free_.pop();
       load_batch(batch);
 #ifndef CPU_ONLY
       if (Caffe::mode() == Caffe::GPU) {
@@ -97,19 +97,19 @@ void BasePrefetchingDataLayer<Dtype>::InternalThreadEntry() {
   }
 }
 
-template <typename Dtype>
-void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  Batch<Dtype>* batch = prefetch_full_.pop("Data layer prefetch queue empty");
+template <typename Dtype, typename Mtype>
+void BasePrefetchingDataLayer<Dtype,Mtype>::Forward_cpu(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
+  Batch<Dtype,Mtype>* batch = prefetch_full_.pop("Data layer prefetch queue empty");
   // Reshape to loaded data.
   top[0]->Reshape(batch->data_.num(), batch->data_.channels(),
       batch->data_.height(), batch->data_.width());
   // Copy the data
-  caffe_copy(batch->data_.count(), batch->data_.cpu_data(),
+  caffe_copy<Dtype,Mtype>(batch->data_.count(), batch->data_.cpu_data(),
              top[0]->mutable_cpu_data());
   DLOG(INFO) << "Prefetch copied";
   if (this->output_labels_) {
-    caffe_copy(batch->label_.count(), batch->label_.cpu_data(),
+    caffe_copy<Dtype,Mtype>(batch->label_.count(), batch->label_.cpu_data(),
         top[1]->mutable_cpu_data());
   }
 

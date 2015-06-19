@@ -8,9 +8,9 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void ArgMaxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void ArgMaxLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   out_max_val_ = this->layer_param_.argmax_param().out_max_val();
   top_k_ = this->layer_param_.argmax_param().top_k();
   CHECK_GE(top_k_, 1) << " top k must not be less than 1.";
@@ -18,9 +18,9 @@ void ArgMaxLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       << "top_k must be less than or equal to the number of classes.";
 }
 
-template <typename Dtype>
-void ArgMaxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void ArgMaxLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   if (out_max_val_) {
     // Produces max_ind and max_val
     top[0]->Reshape(bottom[0]->num(), 2, top_k_, 1);
@@ -30,9 +30,9 @@ void ArgMaxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
-template <typename Dtype>
-void ArgMaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void ArgMaxLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+    const vector<Blob<Dtype,Mtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
   int num = bottom[0]->num();

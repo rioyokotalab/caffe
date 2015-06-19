@@ -6,9 +6,9 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void SilenceLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void SilenceLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   for (int i = 0; i < bottom.size(); ++i) {
     if (propagate_down[i]) {
       caffe_set(bottom[i]->count(), Dtype(0),

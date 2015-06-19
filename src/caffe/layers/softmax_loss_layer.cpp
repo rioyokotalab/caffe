@@ -9,13 +9,13 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void SoftmaxWithLossLayer<Dtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  LossLayer<Dtype>::LayerSetUp(bottom, top);
+template <typename Dtype, typename Mtype>
+void SoftmaxWithLossLayer<Dtype,Mtype>::LayerSetUp(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
+  LossLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
   LayerParameter softmax_param(this->layer_param_);
   softmax_param.set_type("Softmax");
-  softmax_layer_ = LayerRegistry<Dtype>::CreateLayer(softmax_param);
+  softmax_layer_ = LayerRegistry<Dtype,Mtype>::CreateLayer(softmax_param);
   softmax_bottom_vec_.clear();
   softmax_bottom_vec_.push_back(bottom[0]);
   softmax_top_vec_.clear();
@@ -30,10 +30,10 @@ void SoftmaxWithLossLayer<Dtype>::LayerSetUp(
   normalize_ = this->layer_param_.loss_param().normalize();
 }
 
-template <typename Dtype>
-void SoftmaxWithLossLayer<Dtype>::Reshape(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  LossLayer<Dtype>::Reshape(bottom, top);
+template <typename Dtype, typename Mtype>
+void SoftmaxWithLossLayer<Dtype,Mtype>::Reshape(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
+  LossLayer<Dtype,Mtype>::Reshape(bottom, top);
   softmax_layer_->Reshape(softmax_bottom_vec_, softmax_top_vec_);
   softmax_axis_ =
       bottom[0]->CanonicalAxisIndex(this->layer_param_.softmax_param().axis());
@@ -50,9 +50,9 @@ void SoftmaxWithLossLayer<Dtype>::Reshape(
   }
 }
 
-template <typename Dtype>
-void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void SoftmaxWithLossLayer<Dtype,Mtype>::Forward_cpu(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
   // The forward pass computes the softmax prob values.
   softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
   const Dtype* prob_data = prob_.cpu_data();
@@ -83,9 +83,9 @@ void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
   }
 }
 
-template <typename Dtype>
-void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void SoftmaxWithLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+    const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
@@ -93,7 +93,7 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   if (propagate_down[0]) {
     Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
     const Dtype* prob_data = prob_.cpu_data();
-    caffe_copy(prob_.count(), prob_data, bottom_diff);
+    caffe_copy<Dtype,Mtype>(prob_.count(), prob_data, bottom_diff);
     const Dtype* label = bottom[1]->cpu_data();
     int dim = prob_.count() / outer_num_;
     int count = 0;
@@ -113,9 +113,9 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     // Scale gradient
     const Dtype loss_weight = top[0]->cpu_diff()[0];
     if (normalize_) {
-      caffe_scal(prob_.count(), loss_weight / count, bottom_diff);
+      caffe_scal<Dtype,Mtype>(prob_.count(), loss_weight / count, bottom_diff);
     } else {
-      caffe_scal(prob_.count(), loss_weight / outer_num_, bottom_diff);
+      caffe_scal<Dtype,Mtype>(prob_.count(), loss_weight / outer_num_, bottom_diff);
     }
   }
 }

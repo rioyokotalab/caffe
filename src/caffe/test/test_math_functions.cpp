@@ -18,11 +18,12 @@ namespace caffe {
 template <typename TypeParam>
 class MathFunctionsTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
  protected:
   MathFunctionsTest()
-      : blob_bottom_(new Blob<Dtype>()),
-        blob_top_(new Blob<Dtype>()) {
+      : blob_bottom_(new Blob<Dtype,Mtype>()),
+        blob_top_(new Blob<Dtype,Mtype>()) {
   }
 
   virtual void SetUp() {
@@ -31,7 +32,7 @@ class MathFunctionsTest : public MultiDeviceTest<TypeParam> {
     this->blob_top_->Reshape(11, 17, 19, 23);
     // fill the values
     FillerParameter filler_param;
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
     filler.Fill(this->blob_top_);
   }
@@ -47,9 +48,9 @@ class MathFunctionsTest : public MultiDeviceTest<TypeParam> {
     uint64_t val;
     for (int i = 0; i < n; ++i) {
       if (sizeof(Dtype) == 8) {
-        val = static_cast<uint64_t>(x[i]) ^ static_cast<uint64_t>(y[i]);
+        val = static_cast<uint64_t>(Get<Mtype>(x[i])) ^ static_cast<uint64_t>(Get<Mtype>(y[i]));
       } else if (sizeof(Dtype) == 4) {
-        val = static_cast<uint32_t>(x[i]) ^ static_cast<uint32_t>(y[i]);
+        val = static_cast<uint32_t>(Get<Mtype>(x[i])) ^ static_cast<uint32_t>(Get<Mtype>(y[i]));
       } else {
         LOG(FATAL) << "Unrecognized Dtype size: " << sizeof(Dtype);
       }
@@ -62,13 +63,13 @@ class MathFunctionsTest : public MultiDeviceTest<TypeParam> {
     return dist;
   }
 
-  Blob<Dtype>* const blob_bottom_;
-  Blob<Dtype>* const blob_top_;
+  Blob<Dtype,Mtype>* const blob_bottom_;
+  Blob<Dtype,Mtype>* const blob_top_;
 };
 
-template <typename Dtype>
+template <typename TypeParam>
 class CPUMathFunctionsTest
-  : public MathFunctionsTest<CPUDevice<Dtype> > {
+  : public MathFunctionsTest<CPUDevice<TypeParam> > {
 };
 
 TYPED_TEST_CASE(CPUMathFunctionsTest, TestDtypes);
@@ -79,164 +80,193 @@ TYPED_TEST(CPUMathFunctionsTest, TestNothing) {
 }
 
 TYPED_TEST(CPUMathFunctionsTest, TestHammingDistance) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
-  const TypeParam* y = this->blob_top_->cpu_data();
+  const Dtype* x = this->blob_bottom_->cpu_data();
+  const Dtype* y = this->blob_top_->cpu_data();
+  int cpu_distance = caffe_cpu_hamming_distance<Dtype,Mtype>(n, x, y);
   EXPECT_EQ(this->ReferenceHammingDistance(n, x, y),
-            caffe_cpu_hamming_distance<TypeParam>(n, x, y));
+            cpu_distance);
 }
 
 TYPED_TEST(CPUMathFunctionsTest, TestAsum) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
-  TypeParam std_asum = 0;
+  const Dtype* x = this->blob_bottom_->cpu_data();
+  Mtype std_asum = 0;
   for (int i = 0; i < n; ++i) {
-    std_asum += std::fabs(x[i]);
+    std_asum += std::fabs(Get<Mtype>(x[i]));
   }
-  TypeParam cpu_asum = caffe_cpu_asum<TypeParam>(n, x);
+  Mtype cpu_asum = caffe_cpu_asum<Dtype,Mtype>(n, x);
   EXPECT_LT((cpu_asum - std_asum) / std_asum, 1e-2);
 }
 
 TYPED_TEST(CPUMathFunctionsTest, TestSign) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
-  caffe_cpu_sign<TypeParam>(n, x, this->blob_bottom_->mutable_cpu_diff());
-  const TypeParam* signs = this->blob_bottom_->cpu_diff();
+  const Dtype* x = this->blob_bottom_->cpu_data();
+  caffe_cpu_sign<Dtype,Mtype>(n, x, this->blob_bottom_->mutable_cpu_diff());
+  const Dtype* signs = this->blob_bottom_->cpu_diff();
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(signs[i], x[i] > 0 ? 1 : (x[i] < 0 ? -1 : 0));
+    EXPECT_EQ(Get<Mtype>(signs[i]), Get<Mtype>(Get<Mtype>(x[i]) > 0 ? 1 : (Get<Mtype>(x[i]) < 0 ? -1 : 0)));
   }
 }
 
 TYPED_TEST(CPUMathFunctionsTest, TestSgnbit) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
-  caffe_cpu_sgnbit<TypeParam>(n, x, this->blob_bottom_->mutable_cpu_diff());
-  const TypeParam* signbits = this->blob_bottom_->cpu_diff();
+  const Dtype* x = this->blob_bottom_->cpu_data();
+  caffe_cpu_sgnbit<Dtype,Mtype>(n, x, this->blob_bottom_->mutable_cpu_diff());
+  const Dtype* signbits = this->blob_bottom_->cpu_diff();
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(signbits[i], x[i] < 0 ? 1 : 0);
+    EXPECT_EQ(Get<Mtype>(signbits[i]), Get<Mtype>( Get<Mtype>(x[i]) < 0 ? 1 : 0) );
   }
 }
 
 TYPED_TEST(CPUMathFunctionsTest, TestFabs) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
-  caffe_abs<TypeParam>(n, x, this->blob_bottom_->mutable_cpu_diff());
-  const TypeParam* abs_val = this->blob_bottom_->cpu_diff();
+  const Dtype* x = this->blob_bottom_->cpu_data();
+  caffe_abs<Dtype,Mtype>(n, x, this->blob_bottom_->mutable_cpu_diff());
+  const Dtype* abs_val = this->blob_bottom_->cpu_diff();
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(abs_val[i], x[i] > 0 ? x[i] : -x[i]);
+    EXPECT_EQ(Get<Mtype>(abs_val[i]), Get<Mtype>( Get<Mtype>(x[i]) > 0 ? x[i] : -x[i]) );
   }
 }
 
 TYPED_TEST(CPUMathFunctionsTest, TestScale) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  TypeParam alpha = this->blob_bottom_->cpu_diff()[caffe_rng_rand() %
-                                                   this->blob_bottom_->count()];
-  caffe_cpu_scale<TypeParam>(n, alpha, this->blob_bottom_->cpu_data(),
+  Mtype alpha = Get<Mtype>(this->blob_bottom_->cpu_diff()[caffe_rng_rand() %
+                                                   this->blob_bottom_->count()]);
+  caffe_cpu_scale<Dtype,Mtype>(n, alpha, this->blob_bottom_->cpu_data(),
                              this->blob_bottom_->mutable_cpu_diff());
-  const TypeParam* scaled = this->blob_bottom_->cpu_diff();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
+  const Dtype* scaled = this->blob_bottom_->cpu_diff();
+  const Dtype* x = this->blob_bottom_->cpu_data();
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(scaled[i], x[i] * alpha);
+    EXPECT_EQ(Get<Mtype>(scaled[i]), Get<Mtype>(x[i]) * alpha);
   }
 }
 
 TYPED_TEST(CPUMathFunctionsTest, TestCopy) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   const int n = this->blob_bottom_->count();
-  const TypeParam* bottom_data = this->blob_bottom_->cpu_data();
-  TypeParam* top_data = this->blob_top_->mutable_cpu_data();
-  caffe_copy(n, bottom_data, top_data);
+  const Dtype* bottom_data = this->blob_bottom_->cpu_data();
+  Dtype* top_data = this->blob_top_->mutable_cpu_data();
+  caffe_copy<Dtype,Mtype>(n, bottom_data, top_data);
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(bottom_data[i], top_data[i]);
+    EXPECT_EQ(Get<Mtype>(bottom_data[i]), Get<Mtype>(top_data[i]));
   }
 }
 
 #ifndef CPU_ONLY
 
-template <typename Dtype>
-class GPUMathFunctionsTest : public MathFunctionsTest<GPUDevice<Dtype> > {
+template <typename TypeParam>
+class GPUMathFunctionsTest : public MathFunctionsTest<GPUDevice<TypeParam> > {
 };
 
 TYPED_TEST_CASE(GPUMathFunctionsTest, TestDtypes);
 
 // TODO: Fix caffe_gpu_hamming_distance and re-enable this test.
 TYPED_TEST(GPUMathFunctionsTest, DISABLED_TestHammingDistance) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
-  const TypeParam* y = this->blob_top_->cpu_data();
+  const Dtype* x = this->blob_bottom_->cpu_data();
+  const Dtype* y = this->blob_top_->cpu_data();
   int reference_distance = this->ReferenceHammingDistance(n, x, y);
   x = this->blob_bottom_->gpu_data();
   y = this->blob_top_->gpu_data();
-  int computed_distance = caffe_gpu_hamming_distance<TypeParam>(n, x, y);
+  int computed_distance = caffe_gpu_hamming_distance<Dtype,Mtype>(n, x, y);
   EXPECT_EQ(reference_distance, computed_distance);
 }
 
 TYPED_TEST(GPUMathFunctionsTest, TestAsum) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
-  TypeParam std_asum = 0;
+  const Dtype* x = this->blob_bottom_->cpu_data();
+  Mtype std_asum = 0;
   for (int i = 0; i < n; ++i) {
-    std_asum += std::fabs(x[i]);
+    std_asum += std::fabs(Get<Mtype>(x[i]));
   }
-  TypeParam gpu_asum;
-  caffe_gpu_asum<TypeParam>(n, this->blob_bottom_->gpu_data(), &gpu_asum);
+  Mtype gpu_asum;
+  caffe_gpu_asum<Dtype,Mtype>(n, this->blob_bottom_->gpu_data(), &gpu_asum);
   EXPECT_LT((gpu_asum - std_asum) / std_asum, 1e-2);
 }
 
 TYPED_TEST(GPUMathFunctionsTest, TestSign) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  caffe_gpu_sign<TypeParam>(n, this->blob_bottom_->gpu_data(),
+  caffe_gpu_sign<Dtype,Mtype>(n, this->blob_bottom_->gpu_data(),
                             this->blob_bottom_->mutable_gpu_diff());
-  const TypeParam* signs = this->blob_bottom_->cpu_diff();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
+  const Dtype* signs = this->blob_bottom_->cpu_diff();
+  const Dtype* x = this->blob_bottom_->cpu_data();
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(signs[i], x[i] > 0 ? 1 : (x[i] < 0 ? -1 : 0));
+    EXPECT_EQ(Get<Mtype>(signs[i]), Get<Mtype>( Get<Mtype>(x[i]) > 0 ? 1 : (Get<Mtype>(x[i]) < 0 ? -1 : 0)) );
   }
 }
 
 TYPED_TEST(GPUMathFunctionsTest, TestSgnbit) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  caffe_gpu_sgnbit<TypeParam>(n, this->blob_bottom_->gpu_data(),
+  caffe_gpu_sgnbit<Dtype,Mtype>(n, this->blob_bottom_->gpu_data(),
                             this->blob_bottom_->mutable_gpu_diff());
-  const TypeParam* signbits = this->blob_bottom_->cpu_diff();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
+  const Dtype* signbits = this->blob_bottom_->cpu_diff();
+  const Dtype* x = this->blob_bottom_->cpu_data();
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(signbits[i], x[i] < 0 ? 1 : 0);
+    EXPECT_EQ(Get<Mtype>(signbits[i]), Get<Mtype>(x[i]) < 0 ? 1 : 0);
   }
 }
 
 TYPED_TEST(GPUMathFunctionsTest, TestFabs) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  caffe_gpu_abs<TypeParam>(n, this->blob_bottom_->gpu_data(),
+  caffe_gpu_abs<Dtype,Mtype>(n, this->blob_bottom_->gpu_data(),
                             this->blob_bottom_->mutable_gpu_diff());
-  const TypeParam* abs_val = this->blob_bottom_->cpu_diff();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
+  const Dtype* abs_val = this->blob_bottom_->cpu_diff();
+  const Dtype* x = this->blob_bottom_->cpu_data();
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(abs_val[i], x[i] > 0 ? x[i] : -x[i]);
+    EXPECT_EQ(Get<Mtype>(abs_val[i]), Get<Mtype>( Get<Mtype>(x[i]) > 0 ? Get<Mtype>(x[i]) : -Get<Mtype>(x[i])) );
   }
 }
 
 TYPED_TEST(GPUMathFunctionsTest, TestScale) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
-  TypeParam alpha = this->blob_bottom_->cpu_diff()[caffe_rng_rand() %
-                                                   this->blob_bottom_->count()];
-  caffe_gpu_scale<TypeParam>(n, alpha, this->blob_bottom_->gpu_data(),
+  Mtype alpha = Get<Mtype>(this->blob_bottom_->cpu_diff()[caffe_rng_rand() %
+                                                   this->blob_bottom_->count()]);
+  caffe_gpu_scale<Dtype,Mtype>(n, alpha, this->blob_bottom_->gpu_data(),
                              this->blob_bottom_->mutable_gpu_diff());
-  const TypeParam* scaled = this->blob_bottom_->cpu_diff();
-  const TypeParam* x = this->blob_bottom_->cpu_data();
+  const Dtype* scaled = this->blob_bottom_->cpu_diff();
+  const Dtype* x = this->blob_bottom_->cpu_data();
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(scaled[i], x[i] * alpha);
+    EXPECT_EQ(Get<Mtype>(scaled[i]), Get<Mtype>(x[i]) * alpha);
   }
 }
 
 TYPED_TEST(GPUMathFunctionsTest, TestCopy) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   const int n = this->blob_bottom_->count();
-  const TypeParam* bottom_data = this->blob_bottom_->gpu_data();
-  TypeParam* top_data = this->blob_top_->mutable_gpu_data();
-  caffe_copy(n, bottom_data, top_data);
+  const Dtype* bottom_data = this->blob_bottom_->gpu_data();
+  Dtype* top_data = this->blob_top_->mutable_gpu_data();
+  caffe_copy<Dtype,Mtype>(n, bottom_data, top_data);
   bottom_data = this->blob_bottom_->cpu_data();
   top_data = this->blob_top_->mutable_cpu_data();
   for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(bottom_data[i], top_data[i]);
+    EXPECT_EQ(Get<Mtype>(bottom_data[i]), Get<Mtype>(top_data[i]));
   }
 }
 

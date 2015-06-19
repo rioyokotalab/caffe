@@ -15,7 +15,7 @@ namespace caffe {
  * Requires implementation of ComputeUpdateValue to compute a parameter update
  * given the current state of the Net parameters.
  */
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 class Solver {
  public:
   explicit Solver(const SolverParameter& param);
@@ -34,8 +34,8 @@ class Solver {
   void Restore(const char* resume_file);
   virtual ~Solver() {}
   inline const SolverParameter& param() const { return param_; }
-  inline shared_ptr<Net<Dtype> > net() { return net_; }
-  inline const vector<shared_ptr<Net<Dtype> > >& test_nets() {
+  inline shared_ptr<Net<Dtype,Mtype> > net() { return net_; }
+  inline const vector<shared_ptr<Net<Dtype,Mtype> > >& test_nets() {
     return test_nets_;
   }
   int iter() { return iter_; }
@@ -46,7 +46,7 @@ class Solver {
     virtual void on_start(Timer* timer, ostringstream* timing) = 0;
     virtual void on_gradients_ready(Timer* timer, ostringstream* timing) = 0;
 
-    template <typename T>
+    template <typename T, typename M>
     friend class Solver;
   };
   const vector<Callback*>& callbacks() const { return callbacks_; }
@@ -76,8 +76,8 @@ class Solver {
   SolverParameter param_;
   int iter_;
   int current_step_;
-  shared_ptr<Net<Dtype> > net_;
-  vector<shared_ptr<Net<Dtype> > > test_nets_;
+  shared_ptr<Net<Dtype,Mtype> > net_;
+  vector<shared_ptr<Net<Dtype,Mtype> > > test_nets_;
   vector<Callback*> callbacks_;
 
   Timer iteration_timer_;
@@ -91,22 +91,22 @@ class Solver {
  * @brief Optimizes the parameters of a Net using
  *        stochastic gradient descent (SGD) with momentum.
  */
-template <typename Dtype>
-class SGDSolver : public Solver<Dtype> {
+template <typename Dtype, typename Mtype>
+class SGDSolver : public Solver<Dtype,Mtype> {
  public:
   explicit SGDSolver(const SolverParameter& param)
-      : Solver<Dtype>(param) { PreSolve(); }
+      : Solver<Dtype,Mtype>(param) { PreSolve(); }
   explicit SGDSolver(const string& param_file)
-      : Solver<Dtype>(param_file) { PreSolve(); }
+      : Solver<Dtype,Mtype>(param_file) { PreSolve(); }
 
-  const vector<shared_ptr<Blob<Dtype> > >& history() { return history_; }
+  const vector<shared_ptr<Blob<Dtype,Mtype> > >& history() { return history_; }
 
  protected:
   void PreSolve();
-  Dtype GetLearningRate();
+  Mtype GetLearningRate();
   virtual void Iteration();
   virtual void Regularize(int param_id);
-  virtual void ComputeUpdateValue(int param_id, Dtype rate);
+  virtual void ComputeUpdateValue(int param_id, Mtype rate);
   virtual void ClipGradients();
   virtual void SnapshotSolverState(SolverState * state);
   virtual void RestoreSolverState(const SolverState& state);
@@ -114,38 +114,38 @@ class SGDSolver : public Solver<Dtype> {
   // update maintains update related data and is not needed in snapshots.
   // temp maintains other information that might be needed in computation
   //   of gradients/updates and is not needed in snapshots
-  vector<shared_ptr<Blob<Dtype> > > history_, update_, temp_;
+  vector<shared_ptr<Blob<Dtype,Mtype> > > history_, update_, temp_;
 
-  using Solver<Dtype>::iteration_timer_;
-  using Solver<Dtype>::iterations_last_;
+  using Solver<Dtype,Mtype>::iteration_timer_;
+  using Solver<Dtype,Mtype>::iterations_last_;
 
   DISABLE_COPY_AND_ASSIGN(SGDSolver);
 };
 
-template <typename Dtype>
-class NesterovSolver : public SGDSolver<Dtype> {
+template <typename Dtype, typename Mtype>
+class NesterovSolver : public SGDSolver<Dtype,Mtype> {
  public:
   explicit NesterovSolver(const SolverParameter& param)
-      : SGDSolver<Dtype>(param) {}
+      : SGDSolver<Dtype,Mtype>(param) {}
   explicit NesterovSolver(const string& param_file)
-      : SGDSolver<Dtype>(param_file) {}
+      : SGDSolver<Dtype,Mtype>(param_file) {}
 
  protected:
-  virtual void ComputeUpdateValue(int param_id, Dtype rate);
+  virtual void ComputeUpdateValue(int param_id, Mtype rate);
 
   DISABLE_COPY_AND_ASSIGN(NesterovSolver);
 };
 
-template <typename Dtype>
-class AdaGradSolver : public SGDSolver<Dtype> {
+template <typename Dtype, typename Mtype>
+class AdaGradSolver : public SGDSolver<Dtype,Mtype> {
  public:
   explicit AdaGradSolver(const SolverParameter& param)
-      : SGDSolver<Dtype>(param) { constructor_sanity_check(); }
+      : SGDSolver<Dtype,Mtype>(param) { constructor_sanity_check(); }
   explicit AdaGradSolver(const string& param_file)
-      : SGDSolver<Dtype>(param_file) { constructor_sanity_check(); }
+      : SGDSolver<Dtype,Mtype>(param_file) { constructor_sanity_check(); }
 
  protected:
-  virtual void ComputeUpdateValue(int param_id, Dtype rate);
+  virtual void ComputeUpdateValue(int param_id, Mtype rate);
   void constructor_sanity_check() {
     CHECK_EQ(0, this->param_.momentum())
         << "Momentum cannot be used with AdaGrad.";
@@ -154,21 +154,21 @@ class AdaGradSolver : public SGDSolver<Dtype> {
   DISABLE_COPY_AND_ASSIGN(AdaGradSolver);
 };
 
-template <typename Dtype>
-Solver<Dtype>* GetSolver(const SolverParameter& param) {
+template <typename Dtype, typename Mtype>
+Solver<Dtype,Mtype>* GetSolver(const SolverParameter& param) {
   SolverParameter_SolverType type = param.solver_type();
 
   switch (type) {
   case SolverParameter_SolverType_SGD:
-      return new SGDSolver<Dtype>(param);
+      return new SGDSolver<Dtype,Mtype>(param);
   case SolverParameter_SolverType_NESTEROV:
-      return new NesterovSolver<Dtype>(param);
+      return new NesterovSolver<Dtype,Mtype>(param);
   case SolverParameter_SolverType_ADAGRAD:
-      return new AdaGradSolver<Dtype>(param);
+      return new AdaGradSolver<Dtype,Mtype>(param);
   default:
       LOG(FATAL) << "Unknown SolverType: " << type;
   }
-  return (Solver<Dtype>*) NULL;
+  return (Solver<Dtype,Mtype>*) NULL;
 }
 
 }  // namespace caffe

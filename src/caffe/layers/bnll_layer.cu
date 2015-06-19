@@ -8,47 +8,48 @@ namespace caffe {
 
 const float kBNLL_THRESHOLD = 50.;
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void BNLLForward(const int n, const Dtype* in, Dtype* out) {
   CUDA_KERNEL_LOOP(index, n) {
-    out[index] = in[index] > 0 ?
-        in[index] + log(1. + exp(-in[index])) :
-        log(1. + exp(in[index]));
+    Mtype in_index = Get<Mtype>(in[index]);
+    out[index] = Get<Dtype>( in_index > 0 ?
+        in_index + log(1. + exp(-in_index)) :
+        log(1. + exp(in_index)) );
   }
 }
 
-template <typename Dtype>
-void BNLLLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void BNLLLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+    const vector<Blob<Dtype,Mtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
   // NOLINT_NEXT_LINE(whitespace/operators)
-  BNLLForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+  BNLLForward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
       count, bottom_data, top_data);
   CUDA_POST_KERNEL_CHECK;
 }
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void BNLLBackward(const int n, const Dtype* in_diff,
     const Dtype* in_data, Dtype* out_diff) {
   CUDA_KERNEL_LOOP(index, n) {
-    Dtype expval = exp(min(in_data[index], Dtype(kBNLL_THRESHOLD)));
-    out_diff[index] = in_diff[index] * expval / (expval + 1.);
+    Mtype expval = exp(min(Get<Mtype>(in_data[index]), Mtype(kBNLL_THRESHOLD)));
+    out_diff[index] = Get<Dtype>( Get<Mtype>(in_diff[index]) * expval / (expval + 1.) );
   }
 }
 
-template <typename Dtype>
-void BNLLLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
+template <typename Dtype, typename Mtype>
+void BNLLLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<Blob<Dtype,Mtype>*>& bottom) {
   if (propagate_down[0]) {
     const Dtype* bottom_data = bottom[0]->gpu_data();
     const Dtype* top_diff = top[0]->gpu_diff();
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
     const int count = bottom[0]->count();
     // NOLINT_NEXT_LINE(whitespace/operators)
-    BNLLBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+    BNLLBackward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, bottom_data, bottom_diff);
     CUDA_POST_KERNEL_CHECK;
   }

@@ -20,7 +20,7 @@ namespace caffe {
  *
  * TODO(dox): more thorough description.
  */
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 class Net {
  public:
   explicit Net(const NetParameter& param);
@@ -35,7 +35,7 @@ class Net {
    *
    * You can get the input blobs using input_blobs().
    */
-  const vector<Blob<Dtype>*>& ForwardPrefilled(Dtype* loss = NULL);
+  const vector<Blob<Dtype,Mtype>*>& ForwardPrefilled(Dtype* loss = NULL);
 
   /**
    * The From and To variants of Forward and Backward operate on the
@@ -49,7 +49,7 @@ class Net {
   Dtype ForwardFrom(int start);
   Dtype ForwardTo(int end);
   /// @brief Run forward using a set of bottom blobs, and return the result.
-  const vector<Blob<Dtype>*>& Forward(const vector<Blob<Dtype>* > & bottom,
+  const vector<Blob<Dtype,Mtype>*>& Forward(const vector<Blob<Dtype,Mtype>* > & bottom,
       Dtype* loss = NULL);
   /**
    * @brief Run forward using a serialized BlobProtoVector and return the
@@ -75,7 +75,7 @@ class Net {
    */
   void Reshape();
 
-  Dtype ForwardBackward(const vector<Blob<Dtype>* > & bottom) {
+  Dtype ForwardBackward(const vector<Blob<Dtype,Mtype>* > & bottom) {
     Dtype loss;
     Forward(bottom, &loss);
     Backward();
@@ -108,11 +108,11 @@ class Net {
   /// @brief returns the blob names
   inline const vector<string>& blob_names() const { return blob_names_; }
   /// @brief returns the blobs
-  inline const vector<shared_ptr<Blob<Dtype> > >& blobs() const {
+  inline const vector<shared_ptr<Blob<Dtype,Mtype> > >& blobs() const {
     return blobs_;
   }
   /// @brief returns the layers
-  inline const vector<shared_ptr<Layer<Dtype> > >& layers() const {
+  inline const vector<shared_ptr<Layer<Dtype,Mtype> > >& layers() const {
     return layers_;
   }
   /// @brief returns the phase: TRAIN or TEST
@@ -121,14 +121,14 @@ class Net {
    * @brief returns the bottom vecs for each layer -- usually you won't
    *        need this unless you do per-layer checks such as gradients.
    */
-  inline const vector<vector<Blob<Dtype>*> >& bottom_vecs() const {
+  inline const vector<vector<Blob<Dtype,Mtype>*> >& bottom_vecs() const {
     return bottom_vecs_;
   }
   /**
    * @brief returns the top vecs for each layer -- usually you won't
    *        need this unless you do per-layer checks such as gradients.
    */
-  inline const vector<vector<Blob<Dtype>*> >& top_vecs() const {
+  inline const vector<vector<Blob<Dtype,Mtype>*> >& top_vecs() const {
     return top_vecs_;
   }
   inline const vector<vector<bool> >& bottom_need_backward() const {
@@ -141,7 +141,7 @@ class Net {
     return layer_need_backward_;
   }
   /// @brief returns the parameters
-  inline const vector<shared_ptr<Blob<Dtype> > >& params() const {
+  inline const vector<shared_ptr<Blob<Dtype,Mtype> > >& params() const {
     return params_;
   }
   /// @brief returns the parameter learning rate multipliers
@@ -156,10 +156,10 @@ class Net {
   /// @brief Input and output blob numbers
   inline int num_inputs() const { return net_input_blobs_.size(); }
   inline int num_outputs() const { return net_output_blobs_.size(); }
-  inline const vector<Blob<Dtype>*>& input_blobs() const {
+  inline const vector<Blob<Dtype,Mtype>*>& input_blobs() const {
     return net_input_blobs_;
   }
-  inline const vector<Blob<Dtype>*>& output_blobs() const {
+  inline const vector<Blob<Dtype,Mtype>*>& output_blobs() const {
     return net_output_blobs_;
   }
   inline const vector<int>& input_blob_indices() const {
@@ -169,9 +169,9 @@ class Net {
     return net_output_blob_indices_;
   }
   bool has_blob(const string& blob_name) const;
-  const shared_ptr<Blob<Dtype> > blob_by_name(const string& blob_name) const;
+  const shared_ptr<Blob<Dtype,Mtype> > blob_by_name(const string& blob_name) const;
   bool has_layer(const string& layer_name) const;
-  const shared_ptr<Layer<Dtype> > layer_by_name(const string& layer_name) const;
+  const shared_ptr<Layer<Dtype,Mtype> > layer_by_name(const string& layer_name) const;
 
   void set_debug_info(const bool value) { debug_info_ = value; }
 
@@ -217,23 +217,23 @@ class Net {
   /// @brief The phase: TRAIN or TEST
   Phase phase_;
   /// @brief Individual layers in the net
-  vector<shared_ptr<Layer<Dtype> > > layers_;
+  vector<shared_ptr<Layer<Dtype,Mtype> > > layers_;
   vector<string> layer_names_;
   map<string, int> layer_names_index_;
   vector<bool> layer_need_backward_;
   /// @brief the blobs storing intermediate results between the layer.
-  vector<shared_ptr<Blob<Dtype> > > blobs_;
+  vector<shared_ptr<Blob<Dtype,Mtype> > > blobs_;
   vector<string> blob_names_;
   map<string, int> blob_names_index_;
   vector<bool> blob_need_backward_;
   /// bottom_vecs stores the vectors containing the input for each layer.
   /// They don't actually host the blobs (blobs_ does), so we simply store
   /// pointers.
-  vector<vector<Blob<Dtype>*> > bottom_vecs_;
+  vector<vector<Blob<Dtype,Mtype>*> > bottom_vecs_;
   vector<vector<int> > bottom_id_vecs_;
   vector<vector<bool> > bottom_need_backward_;
   /// top_vecs stores the vectors containing the output for each layer
-  vector<vector<Blob<Dtype>*> > top_vecs_;
+  vector<vector<Blob<Dtype,Mtype>*> > top_vecs_;
   vector<vector<int> > top_id_vecs_;
   /// Vector of weight in the loss (or objective) function of each net blob,
   /// indexed by blob_id.
@@ -246,10 +246,10 @@ class Net {
   /// blob indices for the input and the output of the net
   vector<int> net_input_blob_indices_;
   vector<int> net_output_blob_indices_;
-  vector<Blob<Dtype>*> net_input_blobs_;
-  vector<Blob<Dtype>*> net_output_blobs_;
+  vector<Blob<Dtype,Mtype>*> net_input_blobs_;
+  vector<Blob<Dtype,Mtype>*> net_output_blobs_;
   /// The parameters in the network.
-  vector<shared_ptr<Blob<Dtype> > > params_;
+  vector<shared_ptr<Blob<Dtype,Mtype> > > params_;
   /// the learning rate multipliers
   vector<float> params_lr_;
   /// the weight decay multipliers

@@ -16,18 +16,19 @@ namespace caffe {
 template <typename TypeParam>
 class SliceLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
  protected:
   SliceLayerTest()
-      : blob_bottom_(new Blob<Dtype>(6, 12, 2, 3)),
-        blob_top_0_(new Blob<Dtype>()),
-        blob_top_1_(new Blob<Dtype>()),
-        blob_top_2_(new Blob<Dtype>()) {}
+      : blob_bottom_(new Blob<Dtype,Mtype>(6, 12, 2, 3)),
+        blob_top_0_(new Blob<Dtype,Mtype>()),
+        blob_top_1_(new Blob<Dtype,Mtype>()),
+        blob_top_2_(new Blob<Dtype,Mtype>()) {}
   virtual void SetUp() {
     // fill the values
     Caffe::set_random_seed(1701);
     FillerParameter filler_param;
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
     blob_top_vec_0_.push_back(blob_top_0_);
     blob_top_vec_0_.push_back(blob_top_1_);
@@ -40,7 +41,7 @@ class SliceLayerTest : public MultiDeviceTest<TypeParam> {
   virtual void ReduceBottomBlobSize() {
     blob_bottom_->Reshape(4, 5, 2, 2);
     FillerParameter filler_param;
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
   }
 
@@ -49,21 +50,22 @@ class SliceLayerTest : public MultiDeviceTest<TypeParam> {
     delete blob_top_2_; delete blob_bottom_;
   }
 
-  Blob<Dtype>* const blob_bottom_;
-  Blob<Dtype>* const blob_top_0_;
-  Blob<Dtype>* const blob_top_1_;
-  Blob<Dtype>* const blob_top_2_;
-  vector<Blob<Dtype>*> blob_top_vec_0_, blob_top_vec_1_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
+  Blob<Dtype,Mtype>* const blob_bottom_;
+  Blob<Dtype,Mtype>* const blob_top_0_;
+  Blob<Dtype,Mtype>* const blob_top_1_;
+  Blob<Dtype,Mtype>* const blob_top_2_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_0_, blob_top_vec_1_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
 };
 
 TYPED_TEST_CASE(SliceLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(SliceLayerTest, TestSetupNum) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_slice_param()->set_axis(0);
-  SliceLayer<Dtype> layer(layer_param);
+  SliceLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_1_);
   EXPECT_EQ(this->blob_bottom_->num(), 3 * this->blob_top_0_->num());
   EXPECT_EQ(this->blob_top_0_->num(), this->blob_top_1_->num());
@@ -75,9 +77,10 @@ TYPED_TEST(SliceLayerTest, TestSetupNum) {
 
 TYPED_TEST(SliceLayerTest, TestSetupChannels) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_slice_param()->add_slice_point(3);
-  SliceLayer<Dtype> layer(layer_param);
+  SliceLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_0_);
   EXPECT_EQ(this->blob_top_0_->num(), this->blob_bottom_->num());
   EXPECT_EQ(this->blob_top_0_->channels(), 3);
@@ -90,9 +93,10 @@ TYPED_TEST(SliceLayerTest, TestSetupChannels) {
 
 TYPED_TEST(SliceLayerTest, TestSliceAcrossNum) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_slice_param()->set_axis(0);
-  SliceLayer<Dtype> layer(layer_param);
+  SliceLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_0_);
   const int top_num = this->blob_bottom_->num() / 2;
   ASSERT_EQ(top_num, this->blob_top_0_->num());
@@ -102,16 +106,16 @@ TYPED_TEST(SliceLayerTest, TestSliceAcrossNum) {
     for (int c = 0; c < this->blob_top_0_->channels(); ++c) {
       for (int h = 0; h < this->blob_bottom_->height(); ++h) {
         for (int w = 0; w < this->blob_bottom_->width(); ++w) {
-          EXPECT_EQ(this->blob_bottom_->data_at(n, c, h, w),
-                    this->blob_top_0_->data_at(n, c, h, w));
+          EXPECT_EQ(Get<Mtype>(this->blob_bottom_->data_at(n, c, h, w)),
+                    Get<Mtype>(this->blob_top_0_->data_at(n, c, h, w)));
         }
       }
     }
     for (int c = 0; c < this->blob_top_1_->channels(); ++c) {
       for (int h = 0; h < this->blob_bottom_->height(); ++h) {
         for (int w = 0; w < this->blob_bottom_->width(); ++w) {
-          EXPECT_EQ(this->blob_bottom_->data_at(n + 3, c, h, w),
-                    this->blob_top_1_->data_at(n, c, h, w));
+          EXPECT_EQ(Get<Mtype>(this->blob_bottom_->data_at(n + 3, c, h, w)),
+                    Get<Mtype>(this->blob_top_1_->data_at(n, c, h, w)));
         }
       }
     }
@@ -120,13 +124,14 @@ TYPED_TEST(SliceLayerTest, TestSliceAcrossNum) {
 
 TYPED_TEST(SliceLayerTest, TestSliceAcrossChannels) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   // Slice at 2, 8: should produce output blobs with #channels 2, 6, 4.
   const int kSlicePoint0 = 2;
   const int kSlicePoint1 = 8;
   layer_param.mutable_slice_param()->add_slice_point(kSlicePoint0);
   layer_param.mutable_slice_param()->add_slice_point(kSlicePoint1);
-  SliceLayer<Dtype> layer(layer_param);
+  SliceLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_1_);
   ASSERT_EQ(kSlicePoint0, this->blob_top_0_->channels());
   ASSERT_EQ(kSlicePoint1 - kSlicePoint0, this->blob_top_1_->channels());
@@ -137,24 +142,24 @@ TYPED_TEST(SliceLayerTest, TestSliceAcrossChannels) {
     for (int c = 0; c < this->blob_top_0_->channels(); ++c) {
       for (int h = 0; h < this->blob_bottom_->height(); ++h) {
         for (int w = 0; w < this->blob_bottom_->width(); ++w) {
-          EXPECT_EQ(this->blob_bottom_->data_at(n, c, h, w),
-              this->blob_top_0_->data_at(n, c, h, w));
+          EXPECT_EQ(Get<Mtype>(this->blob_bottom_->data_at(n, c, h, w)),
+              Get<Mtype>(this->blob_top_0_->data_at(n, c, h, w)));
         }
       }
     }
     for (int c = 0; c < this->blob_top_1_->channels(); ++c) {
       for (int h = 0; h < this->blob_bottom_->height(); ++h) {
         for (int w = 0; w < this->blob_bottom_->width(); ++w) {
-          EXPECT_EQ(this->blob_bottom_->data_at(n, c + kSlicePoint0, h, w),
-              this->blob_top_1_->data_at(n, c, h, w));
+          EXPECT_EQ(Get<Mtype>(this->blob_bottom_->data_at(n, c + kSlicePoint0, h, w)),
+              Get<Mtype>(this->blob_top_1_->data_at(n, c, h, w)));
         }
       }
     }
     for (int c = 0; c < this->blob_top_2_->channels(); ++c) {
       for (int h = 0; h < this->blob_bottom_->height(); ++h) {
         for (int w = 0; w < this->blob_bottom_->width(); ++w) {
-          EXPECT_EQ(this->blob_bottom_->data_at(n, c + kSlicePoint1, h, w),
-              this->blob_top_2_->data_at(n, c, h, w));
+          EXPECT_EQ(Get<Mtype>(this->blob_bottom_->data_at(n, c + kSlicePoint1, h, w)),
+              Get<Mtype>(this->blob_top_2_->data_at(n, c, h, w)));
         }
       }
     }
@@ -163,25 +168,27 @@ TYPED_TEST(SliceLayerTest, TestSliceAcrossChannels) {
 
 TYPED_TEST(SliceLayerTest, TestGradientAcrossNum) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   // Gradient checks are slow; reduce blob size.
   this->ReduceBottomBlobSize();
   LayerParameter layer_param;
   layer_param.mutable_slice_param()->set_axis(0);
-  SliceLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-3);
+  SliceLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
     this->blob_top_vec_0_);
 }
 
 TYPED_TEST(SliceLayerTest, TestGradientAcrossChannels) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   // Gradient checks are slow; reduce blob size.
   this->ReduceBottomBlobSize();
   LayerParameter layer_param;
   const int kSlicePoint = 4;
   layer_param.mutable_slice_param()->add_slice_point(kSlicePoint);
-  SliceLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-3);
+  SliceLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
     this->blob_top_vec_0_);
 }

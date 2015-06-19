@@ -8,7 +8,7 @@
 
 namespace caffe {
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
@@ -26,18 +26,18 @@ __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
     int wend = min(wstart + kernel_w, width);
     hstart = max(hstart, 0);
     wstart = max(wstart, 0);
-    Dtype maxval = -FLT_MAX;
+    Mtype maxval = -FLT_MAX;
     int maxidx = -1;
     bottom_data += (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        if (bottom_data[h * width + w] > maxval) {
+        if (Get<Mtype>(bottom_data[h * width + w]) > maxval) {
           maxidx = h * width + w;
-          maxval = bottom_data[maxidx];
+          maxval = Get<Mtype>(bottom_data[maxidx]);
         }
       }
     }
-    top_data[index] = maxval;
+    top_data[index] = Get<Dtype>(maxval);
     if (mask) {
       mask[index] = maxidx;
     } else {
@@ -46,7 +46,7 @@ __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
   }
 }
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void AvePoolForward(const int nthreads, const Dtype* bottom_data,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
@@ -66,18 +66,18 @@ __global__ void AvePoolForward(const int nthreads, const Dtype* bottom_data,
     wstart = max(wstart, 0);
     hend = min(hend, height);
     wend = min(wend, width);
-    Dtype aveval = 0;
+    Mtype aveval = 0;
     bottom_data += (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        aveval += bottom_data[h * width + w];
+        aveval += Get<Mtype>(bottom_data[h * width + w]);
       }
     }
-    top_data[index] = aveval / pool_size;
+    top_data[index] = Get<Dtype>( aveval / pool_size );
   }
 }
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void StoPoolForwardTrain(const int nthreads,
     const Dtype* bottom_data,
     const int num, const int channels, const int height,
@@ -93,20 +93,20 @@ __global__ void StoPoolForwardTrain(const int nthreads,
     int hend = min(hstart + kernel_h, height);
     int wstart = pw * stride_w;
     int wend = min(wstart + kernel_w, width);
-    Dtype cumsum = 0.;
+    Mtype cumsum = 0.;
     bottom_data += (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += bottom_data[h * width + w];
+        cumsum += Get<Mtype>(bottom_data[h * width + w]);
       }
     }
-    float thres = rand_idx[index] * cumsum;
+    Mtype thres = rand_idx[index] * cumsum;
     // Second pass: get value, and set index.
     cumsum = 0;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += bottom_data[h * width + w];
+        cumsum += Get<Mtype>(bottom_data[h * width + w]);
         if (cumsum >= thres) {
           rand_idx[index] = ((n * channels + c) * height + h) * width + w;
           top_data[index] = bottom_data[h * width + w];
@@ -118,7 +118,7 @@ __global__ void StoPoolForwardTrain(const int nthreads,
 }
 
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void StoPoolForwardTest(const int nthreads,
     const Dtype* bottom_data,
     const int num, const int channels, const int height,
@@ -135,24 +135,24 @@ __global__ void StoPoolForwardTest(const int nthreads,
     int wstart = pw * stride_w;
     int wend = min(wstart + kernel_w, width);
     // We set cumsum to be 0 to avoid divide-by-zero problems
-    Dtype cumsum = FLT_MIN;
-    Dtype cumvalues = 0.;
+    Mtype cumsum = FLT_MIN;
+    Mtype cumvalues = 0.;
     bottom_data += (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += bottom_data[h * width + w];
-        cumvalues += bottom_data[h * width + w] * bottom_data[h * width + w];
+        cumsum += Get<Mtype>(bottom_data[h * width + w]);
+        cumvalues += Get<Mtype>(bottom_data[h * width + w]) * Get<Mtype>(bottom_data[h * width + w]);
       }
     }
-    top_data[index] = cumvalues / cumsum;
+    top_data[index] = Get<Dtype>( cumvalues / cumsum );
   }
 }
 
 
-template <typename Dtype>
-void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void PoolingLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   int count = top[0]->count();
@@ -168,7 +168,7 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       mask = max_idx_.mutable_gpu_data();
     }
     // NOLINT_NEXT_LINE(whitespace/operators)
-    MaxPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+    MaxPoolForward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, bottom[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data,
@@ -176,7 +176,7 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
-    AvePoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+    AvePoolForward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, bottom[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data);
@@ -184,10 +184,10 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   case PoolingParameter_PoolMethod_STOCHASTIC:
     if (this->phase_ == TRAIN) {
       // We need to create the random index as well.
-      caffe_gpu_rng_uniform(count, Dtype(0), Dtype(1),
+      caffe_gpu_rng_uniform<Dtype,Mtype>(count, Dtype(0), Dtype(1),
                             rand_idx_.mutable_gpu_data());
       // NOLINT_NEXT_LINE(whitespace/operators)
-      StoPoolForwardTrain<Dtype><<<CAFFE_GET_BLOCKS(count),
+      StoPoolForwardTrain<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count),
                                    CAFFE_CUDA_NUM_THREADS>>>(
           count, bottom_data, bottom[0]->num(), channels_,
           height_, width_, pooled_height_, pooled_width_, kernel_h_,
@@ -195,7 +195,7 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
           rand_idx_.mutable_gpu_data(), top_data);
     } else {
       // NOLINT_NEXT_LINE(whitespace/operators)
-      StoPoolForwardTest<Dtype><<<CAFFE_GET_BLOCKS(count),
+      StoPoolForwardTest<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count),
                                   CAFFE_CUDA_NUM_THREADS>>>(
           count, bottom_data, bottom[0]->num(), channels_,
           height_, width_, pooled_height_, pooled_width_, kernel_h_,
@@ -209,7 +209,7 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void MaxPoolBackward(const int nthreads, const Dtype* top_diff,
     const int* mask, const Dtype* top_mask, const int num, const int channels,
     const int height, const int width, const int pooled_height,
@@ -229,7 +229,7 @@ __global__ void MaxPoolBackward(const int nthreads, const Dtype* top_diff,
     int pwstart =
         (w + pad_w < kernel_w) ? 0 : (w + pad_w - kernel_w) / stride_w + 1;
     int pwend = min((w + pad_w) / stride_w + 1, pooled_width);
-    Dtype gradient = 0;
+    Mtype gradient = 0;
     int offset = (n * channels + c) * pooled_height * pooled_width;
     top_diff += offset;
     if (mask) {
@@ -237,7 +237,7 @@ __global__ void MaxPoolBackward(const int nthreads, const Dtype* top_diff,
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
           if (mask[ph * pooled_width + pw] == h * width + w) {
-            gradient += top_diff[ph * pooled_width + pw];
+            gradient += Get<Mtype>(top_diff[ph * pooled_width + pw]);
           }
         }
       }
@@ -246,16 +246,16 @@ __global__ void MaxPoolBackward(const int nthreads, const Dtype* top_diff,
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
           if (top_mask[ph * pooled_width + pw] == h * width + w) {
-            gradient += top_diff[ph * pooled_width + pw];
+            gradient += Get<Mtype>(top_diff[ph * pooled_width + pw]);
           }
         }
       }
     }
-    bottom_diff[index] = gradient;
+    bottom_diff[index] = Get<Dtype>(gradient);
   }
 }
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void AvePoolBackward(const int nthreads, const Dtype* top_diff,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
@@ -273,7 +273,7 @@ __global__ void AvePoolBackward(const int nthreads, const Dtype* top_diff,
     int phend = min(h / stride_h + 1, pooled_height);
     int pwstart = (w < kernel_w) ? 0 : (w - kernel_w) / stride_w + 1;
     int pwend = min(w / stride_w + 1, pooled_width);
-    Dtype gradient = 0;
+    Mtype gradient = 0;
     top_diff += (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
@@ -283,15 +283,15 @@ __global__ void AvePoolBackward(const int nthreads, const Dtype* top_diff,
         int hend = min(hstart + kernel_h, height + pad_h);
         int wend = min(wstart + kernel_w, width + pad_w);
         int pool_size = (hend - hstart) * (wend - wstart);
-        gradient += top_diff[ph * pooled_width + pw] / pool_size;
+        gradient += Get<Mtype>(top_diff[ph * pooled_width + pw]) / pool_size;
       }
     }
-    bottom_diff[index] = gradient;
+    bottom_diff[index] = Get<Dtype>(gradient);
   }
 }
 
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void StoPoolBackward(const int nthreads,
     const Dtype* rand_idx, const Dtype* top_diff,
     const int num, const int channels, const int height,
@@ -309,30 +309,30 @@ __global__ void StoPoolBackward(const int nthreads,
     int phend = min(h / stride_h + 1, pooled_height);
     int pwstart = (w < kernel_w) ? 0 : (w - kernel_w) / stride_w + 1;
     int pwend = min(w / stride_w + 1, pooled_width);
-    Dtype gradient = 0;
+    Mtype gradient = 0;
     rand_idx += (n * channels + c) * pooled_height * pooled_width;
     top_diff += (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
-        gradient += top_diff[ph * pooled_width + pw] *
+        gradient += Get<Mtype>(top_diff[ph * pooled_width + pw]) *
             (index == static_cast<int>(rand_idx[ph * pooled_width + pw]));
       }
     }
-    bottom_diff[index] = gradient;
+    bottom_diff[index] = Get<Dtype>(gradient);
   }
 }
 
 
-template <typename Dtype>
-void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void PoolingLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   if (!propagate_down[0]) {
     return;
   }
   const Dtype* top_diff = top[0]->gpu_diff();
   Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
   const int count = bottom[0]->count();
-  caffe_gpu_set(count, Dtype(0.), bottom_diff);
+  caffe_gpu_set<Dtype,Mtype>(count, Mtype(0.), bottom_diff);
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;
@@ -345,7 +345,7 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       mask = max_idx_.gpu_data();
     }
     // NOLINT_NEXT_LINE(whitespace/operators)
-    MaxPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+    MaxPoolBackward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, mask, top_mask, top[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_,
         kernel_h_, kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_,
@@ -353,14 +353,14 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
-    AvePoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+    AvePoolBackward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, top[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, bottom_diff);
     break;
   case PoolingParameter_PoolMethod_STOCHASTIC:
     // NOLINT_NEXT_LINE(whitespace/operators)
-    StoPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+    StoPoolBackward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, rand_idx_.gpu_data(), top_diff,
         top[0]->num(), channels_, height_, width_, pooled_height_,
         pooled_width_, kernel_h_, kernel_w_, stride_h_, stride_w_,

@@ -8,17 +8,17 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void DeconvolutionLayer<Dtype>::compute_output_shape() {
+template <typename Dtype, typename Mtype>
+void DeconvolutionLayer<Dtype,Mtype>::compute_output_shape() {
   this->height_out_ = this->stride_h_ * (this->height_ - 1) + this->kernel_h_
       - 2 * this->pad_h_;
   this->width_out_ = this->stride_w_ * (this->width_ - 1) + this->kernel_w_
       - 2 * this->pad_w_;
 }
 
-template <typename Dtype>
-void DeconvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void DeconvolutionLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   const Dtype* weight = this->blobs_[0]->cpu_data();
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
@@ -34,16 +34,16 @@ void DeconvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
-template <typename Dtype>
-void DeconvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void DeconvolutionLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   const Dtype* weight = this->blobs_[0]->cpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
   if (this->param_propagate_down_[0]) {
-    caffe_set(this->blobs_[0]->count(), Dtype(0), weight_diff);
+    caffe_set<Dtype,Mtype>(this->blobs_[0]->count(), Mtype(0), weight_diff);
   }
   if (this->bias_term_ && this->param_propagate_down_[1]) {
-    caffe_set(this->blobs_[1]->count(), Dtype(0),
+    caffe_set<Dtype,Mtype>(this->blobs_[1]->count(), Mtype(0),
         this->blobs_[1]->mutable_cpu_diff());
   }
   for (int i = 0; i < top.size(); ++i) {

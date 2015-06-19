@@ -229,10 +229,10 @@ void CVMatToDatum(const cv::Mat& cv_img, Datum* datum) {
 }
 
 // Verifies format of data stored in HDF5 file and reshapes blob accordingly.
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 void hdf5_load_nd_dataset_helper(
     hid_t file_id, const char* dataset_name_, int min_dim, int max_dim,
-    Blob<Dtype>* blob) {
+    Blob<Dtype,Mtype>* blob) {
   // Verify that the dataset exists.
   CHECK(H5LTfind_dataset(file_id, dataset_name_))
       << "Failed to find HDF5 dataset " << dataset_name_;
@@ -261,7 +261,7 @@ void hdf5_load_nd_dataset_helper(
 
 template <>
 void hdf5_load_nd_dataset<float>(hid_t file_id, const char* dataset_name_,
-        int min_dim, int max_dim, Blob<float>* blob) {
+        int min_dim, int max_dim, Blob<float,float>* blob) {
   hdf5_load_nd_dataset_helper(file_id, dataset_name_, min_dim, max_dim, blob);
   herr_t status = H5LTread_dataset_float(
     file_id, dataset_name_, blob->mutable_cpu_data());
@@ -270,7 +270,7 @@ void hdf5_load_nd_dataset<float>(hid_t file_id, const char* dataset_name_,
 
 template <>
 void hdf5_load_nd_dataset<double>(hid_t file_id, const char* dataset_name_,
-        int min_dim, int max_dim, Blob<double>* blob) {
+        int min_dim, int max_dim, Blob<double,double>* blob) {
   hdf5_load_nd_dataset_helper(file_id, dataset_name_, min_dim, max_dim, blob);
   herr_t status = H5LTread_dataset_double(
     file_id, dataset_name_, blob->mutable_cpu_data());
@@ -279,7 +279,7 @@ void hdf5_load_nd_dataset<double>(hid_t file_id, const char* dataset_name_,
 
 template <>
 void hdf5_save_nd_dataset<float>(
-    const hid_t file_id, const string& dataset_name, const Blob<float>& blob) {
+    const hid_t file_id, const string& dataset_name, const Blob<float,float>& blob) {
   hsize_t dims[HDF5_NUM_DIMS];
   dims[0] = blob.num();
   dims[1] = blob.channels();
@@ -292,7 +292,7 @@ void hdf5_save_nd_dataset<float>(
 
 template <>
 void hdf5_save_nd_dataset<double>(
-    const hid_t file_id, const string& dataset_name, const Blob<double>& blob) {
+    const hid_t file_id, const string& dataset_name, const Blob<double,double>& blob) {
   hsize_t dims[HDF5_NUM_DIMS];
   dims[0] = blob.num();
   dims[1] = blob.channels();

@@ -18,18 +18,19 @@ namespace caffe {
 template <typename TypeParam>
 class DeconvolutionLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
  protected:
   DeconvolutionLayerTest()
-      : blob_bottom_(new Blob<Dtype>(2, 3, 6, 4)),
-        blob_bottom_2_(new Blob<Dtype>(2, 3, 6, 4)),
-        blob_top_(new Blob<Dtype>()),
-        blob_top_2_(new Blob<Dtype>()) {}
+      : blob_bottom_(new Blob<Dtype,Mtype>(2, 3, 6, 4)),
+        blob_bottom_2_(new Blob<Dtype,Mtype>(2, 3, 6, 4)),
+        blob_top_(new Blob<Dtype,Mtype>()),
+        blob_top_2_(new Blob<Dtype,Mtype>()) {}
   virtual void SetUp() {
     // fill the values
     FillerParameter filler_param;
     filler_param.set_value(1.);
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
     filler.Fill(this->blob_bottom_2_);
     blob_bottom_vec_.push_back(blob_bottom_);
@@ -43,18 +44,19 @@ class DeconvolutionLayerTest : public MultiDeviceTest<TypeParam> {
     delete blob_top_2_;
   }
 
-  Blob<Dtype>* const blob_bottom_;
-  Blob<Dtype>* const blob_bottom_2_;
-  Blob<Dtype>* const blob_top_;
-  Blob<Dtype>* const blob_top_2_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const blob_bottom_;
+  Blob<Dtype,Mtype>* const blob_bottom_2_;
+  Blob<Dtype,Mtype>* const blob_top_;
+  Blob<Dtype,Mtype>* const blob_top_2_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
 };
 
 TYPED_TEST_CASE(DeconvolutionLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(DeconvolutionLayerTest, TestSetup) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   ConvolutionParameter* convolution_param =
       layer_param.mutable_convolution_param();
@@ -63,8 +65,8 @@ TYPED_TEST(DeconvolutionLayerTest, TestSetup) {
   convolution_param->set_num_output(4);
   this->blob_bottom_vec_.push_back(this->blob_bottom_2_);
   this->blob_top_vec_.push_back(this->blob_top_2_);
-  shared_ptr<Layer<Dtype> > layer(
-      new DeconvolutionLayer<Dtype>(layer_param));
+  shared_ptr<Layer<Dtype,Mtype> > layer(
+      new DeconvolutionLayer<Dtype,Mtype>(layer_param));
   layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), 2);
   EXPECT_EQ(this->blob_top_->channels(), 4);
@@ -77,7 +79,7 @@ TYPED_TEST(DeconvolutionLayerTest, TestSetup) {
   // setting group should not change the shape
   convolution_param->set_num_output(3);
   convolution_param->set_group(3);
-  layer.reset(new DeconvolutionLayer<Dtype>(layer_param));
+  layer.reset(new DeconvolutionLayer<Dtype,Mtype>(layer_param));
   layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), 2);
   EXPECT_EQ(this->blob_top_->channels(), 3);
@@ -91,6 +93,7 @@ TYPED_TEST(DeconvolutionLayerTest, TestSetup) {
 
 TYPED_TEST(DeconvolutionLayerTest, TestSimpleDeconvolution) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   this->blob_bottom_vec_.push_back(this->blob_bottom_2_);
   this->blob_top_vec_.push_back(this->blob_top_2_);
   LayerParameter layer_param;
@@ -103,13 +106,13 @@ TYPED_TEST(DeconvolutionLayerTest, TestSimpleDeconvolution) {
   convolution_param->mutable_weight_filler()->set_value(1);
   convolution_param->mutable_bias_filler()->set_type("constant");
   convolution_param->mutable_bias_filler()->set_value(0.1);
-  shared_ptr<Layer<Dtype> > layer(
-      new DeconvolutionLayer<Dtype>(layer_param));
+  shared_ptr<Layer<Dtype,Mtype> > layer(
+      new DeconvolutionLayer<Dtype,Mtype>(layer_param));
   layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   // constant-fill the bottom blobs
   FillerParameter filler_param;
   filler_param.set_value(1.);
-  ConstantFiller<Dtype> filler(filler_param);
+  ConstantFiller<Dtype,Mtype> filler(filler_param);
   filler.Fill(this->blob_bottom_);
   filler.Fill(this->blob_bottom_2_);
   layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -119,7 +122,7 @@ TYPED_TEST(DeconvolutionLayerTest, TestSimpleDeconvolution) {
     for (int c = 0; c < this->blob_top_->channels(); ++c) {
       for (int h = 0; h < this->blob_top_->height(); ++h) {
         for (int w = 0; w < this->blob_top_->width(); ++w) {
-          Dtype expected = 3.1;
+          Mtype expected = 3.1;
           bool h_overlap = h % 2 == 0 && h > 0
             && h < this->blob_top_->height() - 1;
           bool w_overlap = w % 2 == 0 && w > 0
@@ -129,7 +132,7 @@ TYPED_TEST(DeconvolutionLayerTest, TestSimpleDeconvolution) {
           } else if (h_overlap || w_overlap) {
             expected += 3;
           }
-          EXPECT_NEAR(top_data[this->blob_top_->offset(n, c, h, w)],
+          EXPECT_NEAR(Get<Mtype>(top_data[this->blob_top_->offset(n, c, h, w)]),
               expected, 1e-4);
         }
       }
@@ -139,6 +142,7 @@ TYPED_TEST(DeconvolutionLayerTest, TestSimpleDeconvolution) {
 
 TYPED_TEST(DeconvolutionLayerTest, TestGradient) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   ConvolutionParameter* convolution_param =
       layer_param.mutable_convolution_param();
@@ -149,8 +153,8 @@ TYPED_TEST(DeconvolutionLayerTest, TestGradient) {
   convolution_param->set_num_output(1);
   convolution_param->mutable_weight_filler()->set_type("gaussian");
   convolution_param->mutable_bias_filler()->set_type("gaussian");
-  DeconvolutionLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-3);
+  DeconvolutionLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

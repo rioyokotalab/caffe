@@ -19,10 +19,10 @@ namespace caffe {
 // Represents a net parameters. Once a net is created, its parameter buffers can
 // be replaced by ones from Params, to allow parallelization. Params ensures
 // parameters are allocated in one consecutive array.
-template<typename Dtype>
+template<typename Dtype, typename Mtype>
 class Params {
  public:
-  explicit Params(shared_ptr<Solver<Dtype> > root_solver);
+  explicit Params(shared_ptr<Solver<Dtype,Mtype> > root_solver);
   virtual ~Params() {
   }
 
@@ -45,18 +45,18 @@ DISABLE_COPY_AND_ASSIGN(Params);
 };
 
 // Params stored in GPU memory.
-template<typename Dtype>
-class GPUParams : public Params<Dtype> {
+template<typename Dtype, typename Mtype>
+class GPUParams : public Params<Dtype,Mtype> {
  public:
-  GPUParams(shared_ptr<Solver<Dtype> > root_solver, int device);
+  GPUParams(shared_ptr<Solver<Dtype,Mtype> > root_solver, int device);
   virtual ~GPUParams();
 
-  void configure(Solver<Dtype>* solver) const;
+  void configure(Solver<Dtype,Mtype>* solver) const;
 
  protected:
-  using Params<Dtype>::size_;
-  using Params<Dtype>::data_;
-  using Params<Dtype>::diff_;
+  using Params<Dtype,Mtype>::size_;
+  using Params<Dtype,Mtype>::data_;
+  using Params<Dtype,Mtype>::diff_;
 };
 
 class DevicePair {
@@ -81,19 +81,19 @@ class DevicePair {
 };
 
 // Synchronous data parallelism using map-reduce between local GPUs.
-template<typename Dtype>
-class P2PSync : public GPUParams<Dtype>, public Solver<Dtype>::Callback,
+template<typename Dtype, typename Mtype>
+class P2PSync : public GPUParams<Dtype,Mtype>, public Solver<Dtype,Mtype>::Callback,
     public InternalThread {
  public:
-  explicit P2PSync(shared_ptr<Solver<Dtype> > root_solver,
-                   P2PSync<Dtype>* parent, const SolverParameter& param);
+  explicit P2PSync(shared_ptr<Solver<Dtype,Mtype> > root_solver,
+                   P2PSync<Dtype,Mtype>* parent, const SolverParameter& param);
   virtual ~P2PSync();
 
-  inline const shared_ptr<Solver<Dtype> >& solver() const {
+  inline const shared_ptr<Solver<Dtype,Mtype> >& solver() const {
     return solver_;
   }
 
-  static void run(shared_ptr<Solver<Dtype> > root, const vector<int>& gpus);
+  static void run(shared_ptr<Solver<Dtype,Mtype> > root, const vector<int>& gpus);
 
   // Divide the batch size by the number of solvers
   static void divide_batch_size(NetParameter* net);
@@ -104,16 +104,16 @@ class P2PSync : public GPUParams<Dtype>, public Solver<Dtype>::Callback,
 
   void InternalThreadEntry();
 
-  P2PSync<Dtype>* parent_;
-  vector<P2PSync<Dtype>*> children_;
-  BlockingQueue<P2PSync<Dtype>*> queue_;
+  P2PSync<Dtype,Mtype>* parent_;
+  vector<P2PSync<Dtype,Mtype>*> children_;
+  BlockingQueue<P2PSync<Dtype,Mtype>*> queue_;
   const int initial_iter_;
   Dtype* parent_grads_;
-  shared_ptr<Solver<Dtype> > solver_;
+  shared_ptr<Solver<Dtype,Mtype> > solver_;
 
-  using Params<Dtype>::size_;
-  using Params<Dtype>::data_;
-  using Params<Dtype>::diff_;
+  using Params<Dtype,Mtype>::size_;
+  using Params<Dtype,Mtype>::data_;
+  using Params<Dtype,Mtype>::diff_;
 };
 
 }  // namespace caffe

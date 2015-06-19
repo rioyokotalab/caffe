@@ -7,12 +7,12 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void CuDNNReLULayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void CuDNNReLULayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+    const vector<Blob<Dtype,Mtype>*>& top) {
   // Fallback to standard Caffe for leaky ReLU.
-  if (ReLULayer<Dtype>::layer_param_.relu_param().negative_slope() != 0) {
-    return ReLULayer<Dtype>::Forward_gpu(bottom, top);
+  if (ReLULayer<Dtype,Mtype>::layer_param_.relu_param().negative_slope() != 0) {
+    return ReLULayer<Dtype,Mtype>::Forward_gpu(bottom, top);
   }
 
   const Dtype* bottom_data = bottom[0]->gpu_data();
@@ -25,17 +25,17 @@ void CuDNNReLULayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         this->top_desc_, top_data));
 }
 
-template <typename Dtype>
-void CuDNNReLULayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
+template <typename Dtype, typename Mtype>
+void CuDNNReLULayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<Blob<Dtype,Mtype>*>& bottom) {
   if (!propagate_down[0]) {
     return;
   }
 
   // Fallback to standard Caffe for leaky ReLU.
-  if (ReLULayer<Dtype>::layer_param_.relu_param().negative_slope() != 0) {
-    return ReLULayer<Dtype>::Backward_gpu(top, propagate_down, bottom);
+  if (ReLULayer<Dtype,Mtype>::layer_param_.relu_param().negative_slope() != 0) {
+    return ReLULayer<Dtype,Mtype>::Backward_gpu(top, propagate_down, bottom);
   }
 
   const Dtype* top_data = top[0]->gpu_data();
