@@ -26,6 +26,7 @@ shared_ptr<Layer<Dtype,Mtype> > GetConvolutionLayer(
     return shared_ptr<Layer<Dtype,Mtype> >(new ConvolutionLayer<Dtype,Mtype>(param));
 #ifdef USE_CUDNN
   } else if (engine == ConvolutionParameter_Engine_CUDNN) {
+    printf("layer factory HERE\n");
     return shared_ptr<Layer<Dtype,Mtype> >(new CuDNNConvolutionLayer<Dtype,Mtype>(param));
 #endif
   } else {

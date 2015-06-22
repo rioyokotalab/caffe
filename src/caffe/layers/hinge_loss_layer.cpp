@@ -22,7 +22,7 @@ void HingeLossLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& 
 
   caffe_copy<Dtype,Mtype>(count, bottom_data, bottom_diff);
   for (int i = 0; i < num; ++i) {
-    bottom_diff[i * dim + static_cast<int>(label[i])] = Get<Dtype>( Get<Dtype>(bottom_diff[i * dim + static_cast<int>(label[i])]) * -1 );
+    bottom_diff[i * dim + Get<int>(label[i])] = Get<Dtype>( Get<Mtype>(bottom_diff[i * dim + Get<int>(label[i])]) * -1 );
   }
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < dim; ++j) {
@@ -58,7 +58,7 @@ void HingeLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>&
     int dim = count / num;
 
     for (int i = 0; i < num; ++i) {
-      bottom_diff[i * dim + static_cast<int>(label[i])] = Get<Dtype>( Get<Mtype>(bottom_diff[i * dim + static_cast<int>(label[i])]) * -1);
+      bottom_diff[i * dim + Get<int>(label[i])] = Get<Dtype>( Get<Mtype>(bottom_diff[i * dim + Get<int>(label[i])]) * -1);
     }
 
     const Mtype loss_weight = Get<Mtype>(top[0]->cpu_diff()[0]);

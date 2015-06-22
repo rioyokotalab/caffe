@@ -278,6 +278,21 @@ void hdf5_load_nd_dataset<double>(hid_t file_id, const char* dataset_name_,
 }
 
 template <>
+void hdf5_load_nd_dataset<half>(hid_t file_id, const char* dataset_name_,
+        int min_dim, int max_dim, Blob<half,float>* blob) {
+  hdf5_load_nd_dataset_helper<half,float>(file_id, dataset_name_, min_dim, max_dim, blob);
+  // allocate temp memory
+  std::vector<float> temp_data(blob->count());
+  herr_t status = H5LTread_dataset_float(
+    // file_id, dataset_name_, blob->mutable_cpu_data());
+    file_id, dataset_name_, &temp_data[0]);
+  CHECK_GE(status, 0) << "Failed to read float dataset " << dataset_name_;
+  for (int i=0; i<blob->count(); i++) {
+    blob->mutable_cpu_data()[i] = Get<half>(temp_data[i]);
+  }
+}
+
+template <>
 void hdf5_save_nd_dataset<float>(
     const hid_t file_id, const string& dataset_name, const Blob<float,float>& blob) {
   hsize_t dims[HDF5_NUM_DIMS];
@@ -302,5 +317,26 @@ void hdf5_save_nd_dataset<double>(
       file_id, dataset_name.c_str(), HDF5_NUM_DIMS, dims, blob.cpu_data());
   CHECK_GE(status, 0) << "Failed to make double dataset " << dataset_name;
 }
+
+template <>
+void hdf5_save_nd_dataset<half>(
+    const hid_t file_id, const string& dataset_name, const Blob<half,float>& blob) {
+  hsize_t dims[HDF5_NUM_DIMS];
+  dims[0] = blob.num();
+  dims[1] = blob.channels();
+  dims[2] = blob.height();
+  dims[3] = blob.width();
+
+  std::vector<float> temp_data(blob.count());
+  for (int i=0; i<blob.count(); i++) {
+    temp_data[i] = Get<float>(blob.cpu_data()[i]);
+  }
+
+  herr_t status = H5LTmake_dataset_float(
+      // file_id, dataset_name.c_str(), HDF5_NUM_DIMS, dims, blob.cpu_data());
+      file_id, dataset_name.c_str(), HDF5_NUM_DIMS, dims, &temp_data[0]);
+  CHECK_GE(status, 0) << "Failed to make float dataset " << dataset_name;
+}
+
 
 }  // namespace caffe

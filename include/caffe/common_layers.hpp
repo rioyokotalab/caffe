@@ -295,7 +295,7 @@ class MVNLayer : public Layer<Dtype,Mtype> {
 
   /// sum_multiplier is used to carry out sum using BLAS
   Blob<Dtype,Mtype> sum_multiplier_;
-  Dtype eps_;
+  Mtype eps_;
 };
 
 /*

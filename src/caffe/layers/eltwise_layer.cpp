@@ -19,10 +19,10 @@ void EltwiseLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bot
       "Eltwise layer only takes coefficients for summation.";
   op_ = this->layer_param_.eltwise_param().operation();
   // Blob-wise coefficients for the elementwise operation.
-  coeffs_ = vector<Dtype>(bottom.size(), 1);
+  coeffs_ = vector<Dtype>(bottom.size(), Get<Dtype>(1));
   if (this->layer_param().eltwise_param().coeff_size()) {
     for (int i = 0; i < bottom.size(); ++i) {
-      coeffs_[i] = this->layer_param().eltwise_param().coeff(i);
+      coeffs_[i] = Get<Dtype>(this->layer_param().eltwise_param().coeff(i));
     }
   }
   stable_prod_grad_ = this->layer_param_.eltwise_param().stable_prod_grad();
@@ -61,7 +61,7 @@ void EltwiseLayer<Dtype,Mtype>::Forward_cpu(
     caffe_set<Dtype,Mtype>(count, Mtype(0), top_data);
     // TODO(shelhamer) does BLAS optimize to sum for coeff = 1?
     for (int i = 0; i < bottom.size(); ++i) {
-      caffe_axpy(count, coeffs_[i], bottom[i]->cpu_data(), top_data);
+      caffe_axpy(count, Get<Mtype>(coeffs_[i]), bottom[i]->cpu_data(), top_data);
     }
     break;
   case EltwiseParameter_EltwiseOp_MAX:
@@ -73,7 +73,7 @@ void EltwiseLayer<Dtype,Mtype>::Forward_cpu(
     bottom_data_a = bottom[0]->cpu_data();
     bottom_data_b = bottom[1]->cpu_data();
     for (int idx = 0; idx < count; ++idx) {
-      if (bottom_data_a[idx] > bottom_data_b[idx]) {
+      if (Get<Mtype>(bottom_data_a[idx]) > Get<Mtype>(bottom_data_b[idx])) {
         top_data[idx] = bottom_data_a[idx];  // maxval
         mask[idx] = 0;  // maxid
       } else {
@@ -85,7 +85,7 @@ void EltwiseLayer<Dtype,Mtype>::Forward_cpu(
     for (int blob_idx = 2; blob_idx < bottom.size(); ++blob_idx) {
       bottom_data_b = bottom[blob_idx]->cpu_data();
       for (int idx = 0; idx < count; ++idx) {
-        if (bottom_data_b[idx] > top_data[idx]) {
+        if (Get<Mtype>(bottom_data_b[idx]) > Get<Mtype>(top_data[idx])) {
           top_data[idx] = bottom_data_b[idx];  // maxval
           mask[idx] = blob_idx;  // maxid
         }
@@ -128,20 +128,20 @@ void EltwiseLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& t
         caffe_mul<Dtype,Mtype>(count, bottom_diff, top_diff, bottom_diff);
         break;
       case EltwiseParameter_EltwiseOp_SUM:
-        if (coeffs_[i] == Dtype(1)) {
+        if (Get<Mtype>(coeffs_[i]) == Mtype(1)) {
           caffe_copy<Dtype,Mtype>(count, top_diff, bottom_diff);
         } else {
-          caffe_cpu_scale<Dtype,Mtype>(count, coeffs_[i], top_diff, bottom_diff);
+          caffe_cpu_scale<Dtype,Mtype>(count, Get<Mtype>(coeffs_[i]), top_diff, bottom_diff);
         }
         break;
       case EltwiseParameter_EltwiseOp_MAX:
         mask = max_idx_.cpu_data();
         for (int index = 0; index < count; ++index) {
-          Dtype gradient = 0;
+          Mtype gradient = 0;
           if (mask[index] == i) {
-            gradient += top_diff[index];
+            gradient += Get<Mtype>(top_diff[index]);
           }
-          bottom_diff[index] = gradient;
+          bottom_diff[index] = Get<Dtype>(gradient);
         }
         break;
       default:

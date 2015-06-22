@@ -59,24 +59,24 @@ void SoftmaxWithLossLayer<Dtype,Mtype>::Forward_cpu(
   const Dtype* label = bottom[1]->cpu_data();
   int dim = prob_.count() / outer_num_;
   int count = 0;
-  Dtype loss = 0;
+  Mtype loss = 0;
   for (int i = 0; i < outer_num_; ++i) {
     for (int j = 0; j < inner_num_; j++) {
-      const int label_value = static_cast<int>(label[i * inner_num_ + j]);
+      const int label_value = static_cast<int>(Get<Mtype>(label[i * inner_num_ + j]));
       if (has_ignore_label_ && label_value == ignore_label_) {
         continue;
       }
       DCHECK_GE(label_value, 0);
       DCHECK_LT(label_value, prob_.shape(softmax_axis_));
-      loss -= log(std::max(prob_data[i * dim + label_value * inner_num_ + j],
-                           Dtype(FLT_MIN)));
+      loss -= log(std::max(Get<Mtype>(prob_data[i * dim + label_value * inner_num_ + j]),
+                           Mtype(FLT_MIN)));
       ++count;
     }
   }
   if (normalize_) {
-    top[0]->mutable_cpu_data()[0] = loss / count;
+    top[0]->mutable_cpu_data()[0] = Get<Dtype>(loss / count);
   } else {
-    top[0]->mutable_cpu_data()[0] = loss / outer_num_;
+    top[0]->mutable_cpu_data()[0] = Get<Dtype>(loss / outer_num_);
   }
   if (top.size() == 2) {
     top[1]->ShareData(prob_);
@@ -99,19 +99,19 @@ void SoftmaxWithLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mty
     int count = 0;
     for (int i = 0; i < outer_num_; ++i) {
       for (int j = 0; j < inner_num_; ++j) {
-        const int label_value = static_cast<int>(label[i * inner_num_ + j]);
+        const int label_value = static_cast<int>(Get<Mtype>(label[i * inner_num_ + j]));
         if (has_ignore_label_ && label_value == ignore_label_) {
           for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
-            bottom_diff[i * dim + c * inner_num_ + j] = 0;
+            bottom_diff[i * dim + c * inner_num_ + j] = Get<Dtype>(0);
           }
         } else {
-          bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;
+          bottom_diff[i * dim + label_value * inner_num_ + j] = Get<Dtype>( Get<Mtype>(bottom_diff[i * dim + label_value * inner_num_ + j]) - 1 );
           ++count;
         }
       }
     }
     // Scale gradient
-    const Dtype loss_weight = top[0]->cpu_diff()[0];
+    const Mtype loss_weight = Get<Mtype>(top[0]->cpu_diff()[0]);
     if (normalize_) {
       caffe_scal<Dtype,Mtype>(prob_.count(), loss_weight / count, bottom_diff);
     } else {

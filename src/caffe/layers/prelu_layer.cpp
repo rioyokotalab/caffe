@@ -124,8 +124,11 @@ void PReLULayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top
     Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
     for (int i = 0; i < count; ++i) {
       int c = (i / dim) % channels / div_factor;
-      bottom_diff[i] = top_diff[i] * ((bottom_data[i] > 0)
-          + slope_data[c] * (bottom_data[i] <= 0));
+      Mtype top_diff_i = Get<Mtype>(top_diff[i]);
+      Mtype bottom_data_i = Get<Mtype>(bottom_data[i]);
+      Mtype slope_data_c = Get<Mtype>(slope_data[c]);
+      bottom_diff[i] = Get<Dtype>( top_diff_i * ((bottom_data_i > 0)
+          + slope_data_c * (bottom_data_i <= 0)) );
     }
   }
 }

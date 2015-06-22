@@ -11,21 +11,21 @@ template <typename Dtype, typename Mtype>
 void ExpLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
       const vector<Blob<Dtype,Mtype>*>& top) {
   NeuronLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
-  const Dtype base = this->layer_param_.exp_param().base();
-  if (base != Dtype(-1)) {
+  const Mtype base = this->layer_param_.exp_param().base();
+  if (base != Mtype(-1)) {
     CHECK_GT(base, 0) << "base must be strictly positive.";
   }
   // If base == -1, interpret the base as e and set log_base = 1 exactly.
   // Otherwise, calculate its log explicitly.
-  const Dtype log_base = (base == Dtype(-1)) ? Dtype(1) : log(base);
+  const Mtype log_base = (base == Mtype(-1)) ? Mtype(1) : log(base);
   CHECK(!isnan(log_base))
       << "NaN result: log(base) = log(" << base << ") = " << log_base;
   CHECK(!isinf(log_base))
       << "Inf result: log(base) = log(" << base << ") = " << log_base;
-  const Dtype input_scale = this->layer_param_.exp_param().scale();
-  const Dtype input_shift = this->layer_param_.exp_param().shift();
+  const Mtype input_scale = this->layer_param_.exp_param().scale();
+  const Mtype input_shift = this->layer_param_.exp_param().shift();
   inner_scale_ = log_base * input_scale;
-  outer_scale_ = (input_shift == Dtype(0)) ? Dtype(1) : pow(base, input_shift);
+  outer_scale_ = (input_shift == Mtype(0)) ? Mtype(1) : pow(base, input_shift);
 }
 
 template <typename Dtype, typename Mtype>
@@ -34,13 +34,13 @@ void ExpLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom
   const int count = bottom[0]->count();
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
-  if (inner_scale_ == Dtype(1)) {
+  if (inner_scale_ == Mtype(1)) {
     caffe_exp<Dtype,Mtype>(count, bottom_data, top_data);
   } else {
     caffe_cpu_scale<Dtype,Mtype>(count, inner_scale_, bottom_data, top_data);
     caffe_exp<Dtype,Mtype>(count, top_data, top_data);
   }
-  if (outer_scale_ != Dtype(1)) {
+  if (outer_scale_ != Mtype(1)) {
     caffe_scal<Dtype,Mtype>(count, outer_scale_, top_data);
   }
 }
@@ -54,7 +54,7 @@ void ExpLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
   const Dtype* top_diff = top[0]->cpu_diff();
   Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
   caffe_mul<Dtype,Mtype>(count, top_data, top_diff, bottom_diff);
-  if (inner_scale_ != Dtype(1)) {
+  if (inner_scale_ != Mtype(1)) {
     caffe_scal<Dtype,Mtype>(count, inner_scale_, bottom_diff);
   }
 }

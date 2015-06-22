@@ -190,7 +190,7 @@ void PoolingLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bo
     break;
   case PoolingParameter_PoolMethod_AVE:
     for (int i = 0; i < top_count; ++i) {
-      top_data[i] = 0;
+      top_data[i] = Get<Dtype>(0);
     }
     // The main loop
     for (int n = 0; n < bottom[0]->num(); ++n) {
@@ -240,7 +240,7 @@ void PoolingLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& t
   Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
   // Different pooling methods. We explicitly do the switch outside the for
   // loop to save time, although this results in more codes.
-  caffe_set<Dtype,Mtype>(bottom[0]->count(), Dtype(0), bottom_diff);
+  caffe_set<Dtype,Mtype>(bottom[0]->count(), Mtype(0), bottom_diff);
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;  // suppress warnings about uninitialized variables
@@ -259,7 +259,7 @@ void PoolingLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& t
           for (int pw = 0; pw < pooled_width_; ++pw) {
             const int index = ph * pooled_width_ + pw;
             const int bottom_index =
-                use_top_mask ? top_mask[index] : mask[index];
+                use_top_mask ? Get<int>(top_mask[index]) : Get<int>(mask[index]);
             bottom_diff[bottom_index] = Get<Dtype>( Get<Mtype>(top_diff[index]) + Get<Mtype>(bottom_diff[bottom_index]) );
           }
         }

@@ -457,12 +457,12 @@ void Blob<Dtype, Mtype>::FromProto(const BlobProto& proto, bool reshape) {
   // copy data
   Dtype* data_vec = mutable_cpu_data();
   for (int i = 0; i < count_; ++i) {
-    data_vec[i] = proto.data(i);
+    data_vec[i] = Get<Dtype>(proto.data(i));
   }
   if (proto.diff_size() > 0) {
     Dtype* diff_vec = mutable_cpu_diff();
     for (int i = 0; i < count_; ++i) {
-      diff_vec[i] = proto.diff(i);
+      diff_vec[i] = Get<Dtype>(proto.diff(i));
     }
   }
 }
@@ -477,12 +477,12 @@ void Blob<Dtype,Mtype>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_diff();
   const Dtype* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
-    proto->add_data(data_vec[i]);
+    proto->add_data(Get<Mtype>(data_vec[i]));
   }
   if (write_diff) {
     const Dtype* diff_vec = cpu_diff();
     for (int i = 0; i < count_; ++i) {
-      proto->add_diff(diff_vec[i]);
+      proto->add_diff(Get<Mtype>(diff_vec[i]));
     }
   }
 }

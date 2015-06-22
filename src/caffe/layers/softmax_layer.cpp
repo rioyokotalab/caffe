@@ -40,8 +40,8 @@ void SoftmaxLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bo
     caffe_copy<Dtype,Mtype>(inner_num_, bottom_data + i * dim, scale_data);
     for (int j = 0; j < channels; j++) {
       for (int k = 0; k < inner_num_; k++) {
-        scale_data[k] = std::max(scale_data[k],
-            bottom_data[i * dim + j * inner_num_ + k]);
+        scale_data[k] = Get<Dtype>( std::max(Get<Mtype>(scale_data[k]),
+            Get<Mtype>(bottom_data[i * dim + j * inner_num_ + k])) );
       }
     }
     // subtraction
@@ -74,9 +74,9 @@ void SoftmaxLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& t
   for (int i = 0; i < outer_num_; ++i) {
     // compute dot(top_diff, top_data) and subtract them from the bottom diff
     for (int k = 0; k < inner_num_; ++k) {
-      scale_data[k] = caffe_cpu_strided_dot<Dtype,Mtype>(channels,
+      scale_data[k] = Get<Dtype>( caffe_cpu_strided_dot<Dtype,Mtype>(channels,
           bottom_diff + i * dim + k, inner_num_,
-          top_data + i * dim + k, inner_num_);
+          top_data + i * dim + k, inner_num_) );
     }
     // subtraction
     caffe_cpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, channels, inner_num_, 1,

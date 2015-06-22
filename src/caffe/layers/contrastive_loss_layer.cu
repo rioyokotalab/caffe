@@ -36,7 +36,7 @@ void ContrastiveLossLayer<Dtype,Mtype>::Forward_gpu(
       this->layer_param_.contrastive_loss_param().legacy_version();
   Mtype loss(0.0);
   for (int i = 0; i < bottom[0]->num(); ++i) {
-    if (static_cast<int>(bottom[2]->cpu_data()[i])) {  // similar pairs
+    if (Get<int>(bottom[2]->cpu_data()[i])) {  // similar pairs
       loss += Get<Mtype>(dist_sq_.cpu_data()[i]);
     } else {  // dissimilar pairs
       if (legacy_version) {
@@ -54,12 +54,12 @@ void ContrastiveLossLayer<Dtype,Mtype>::Forward_gpu(
 
 template <typename Dtype, typename Mtype>
 __global__ void CLLBackward(const int count, const int channels,
-    const Dtype margin, const bool legacy_version, const Mtype alpha,
+    const Mtype margin, const bool legacy_version, const Mtype alpha,
     const Dtype* y, const Dtype* diff, const Dtype* dist_sq,
     Dtype *bottom_diff) {
   CUDA_KERNEL_LOOP(i, count) {
     int n = i / channels;  // the num index, to access y and dist_sq
-    if (static_cast<int>(y[n])) {  // similar pairs
+    if (Get<int>(y[n])) {  // similar pairs
       bottom_diff[i] = Get<Dtype>( alpha * Get<Mtype>(diff[i]) );
     } else {  // dissimilar pairs
       Mtype mdist(0.0);
@@ -88,12 +88,12 @@ void ContrastiveLossLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mty
     if (propagate_down[i]) {
       const int count = bottom[0]->count();
       const int channels = bottom[0]->channels();
-      Dtype margin = this->layer_param_.contrastive_loss_param().margin();
+      Mtype margin = this->layer_param_.contrastive_loss_param().margin();
       const bool legacy_version =
           this->layer_param_.contrastive_loss_param().legacy_version();
       const Mtype sign = (i == 0) ? 1 : -1;
       const Mtype alpha = sign * Get<Mtype>(top[0]->cpu_diff()[0]) /
-          static_cast<Dtype>(bottom[0]->num());
+          static_cast<Mtype>(bottom[0]->num());
       // NOLINT_NEXT_LINE(whitespace/operators)
       CLLBackward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
           count, channels, margin, legacy_version, alpha,

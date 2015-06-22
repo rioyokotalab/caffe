@@ -31,7 +31,7 @@ DataTransformer<Dtype,Mtype>::DataTransformer(const TransformationParameter& par
     CHECK(param_.has_mean_file() == false) <<
       "Cannot specify mean_file and mean_value at the same time";
     for (int c = 0; c < param_.mean_value_size(); ++c) {
-      mean_values_.push_back(param_.mean_value(c));
+      mean_values_.push_back(Get<Dtype>(param_.mean_value(c)));
     }
   }
 }
@@ -45,7 +45,7 @@ void DataTransformer<Dtype,Mtype>::Transform(const Datum& datum,
   const int datum_width = datum.width();
 
   const int crop_size = param_.crop_size();
-  const Dtype scale = param_.scale();
+  const Mtype scale = param_.scale();
   const bool do_mirror = param_.mirror() && Rand(2);
   const bool has_mean_file = param_.has_mean_file();
   const bool has_uint8 = data.size() > 0;
@@ -91,7 +91,7 @@ void DataTransformer<Dtype,Mtype>::Transform(const Datum& datum,
     }
   }
 
-  Dtype datum_element;
+  Mtype datum_element;
   int top_index, data_index;
   for (int c = 0; c < datum_channels; ++c) {
     for (int h = 0; h < height; ++h) {
@@ -104,19 +104,19 @@ void DataTransformer<Dtype,Mtype>::Transform(const Datum& datum,
         }
         if (has_uint8) {
           datum_element =
-            static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
+            static_cast<Mtype>(static_cast<uint8_t>(data[data_index]));
         } else {
           datum_element = datum.float_data(data_index);
         }
         if (has_mean_file) {
-          transformed_data[top_index] =
-            (datum_element - mean[data_index]) * scale;
+          transformed_data[top_index] = Get<Dtype>(
+            (datum_element - Get<Mtype>(mean[data_index])) * scale);
         } else {
           if (has_mean_values) {
-            transformed_data[top_index] =
-              (datum_element - mean_values_[c]) * scale;
+            transformed_data[top_index] = Get<Dtype>(
+              (datum_element - Get<Mtype>(mean_values_[c])) * scale);
           } else {
-            transformed_data[top_index] = datum_element * scale;
+            transformed_data[top_index] = Get<Dtype>(datum_element * scale);
           }
         }
       }
@@ -215,7 +215,7 @@ void DataTransformer<Dtype,Mtype>::Transform(const cv::Mat& cv_img,
   CHECK(cv_img.depth() == CV_8U) << "Image data type must be unsigned byte";
 
   const int crop_size = param_.crop_size();
-  const Dtype scale = param_.scale();
+  const Mtype scale = param_.scale();
   const bool do_mirror = param_.mirror() && Rand(2);
   const bool has_mean_file = param_.has_mean_file();
   const bool has_mean_values = mean_values_.size() > 0;
@@ -278,17 +278,17 @@ void DataTransformer<Dtype,Mtype>::Transform(const cv::Mat& cv_img,
           top_index = (c * height + h) * width + w;
         }
         // int top_index = (c * height + h) * width + w;
-        Dtype pixel = static_cast<Dtype>(ptr[img_index++]);
+        Mtype pixel = static_cast<Mtype>(ptr[img_index++]);
         if (has_mean_file) {
           int mean_index = (c * img_height + h_off + h) * img_width + w_off + w;
-          transformed_data[top_index] =
-            (pixel - mean[mean_index]) * scale;
+          transformed_data[top_index] = Get<Dtype>(
+            (pixel - Get<Mtype>(mean[mean_index])) * scale );
         } else {
           if (has_mean_values) {
-            transformed_data[top_index] =
-              (pixel - mean_values_[c]) * scale;
+            transformed_data[top_index] = Get<Dtype>(
+              (pixel - Get<Mtype>(mean_values_[c])) * scale );
           } else {
-            transformed_data[top_index] = pixel * scale;
+            transformed_data[top_index] = Get<Dtype>(pixel * scale);
           }
         }
       }
@@ -316,7 +316,7 @@ void DataTransformer<Dtype,Mtype>::Transform(Blob<Dtype,Mtype>* input_blob,
   CHECK_GE(input_width, width);
 
   const int crop_size = param_.crop_size();
-  const Dtype scale = param_.scale();
+  const Mtype scale = param_.scale();
   const bool do_mirror = param_.mirror() && Rand(2);
   const bool has_mean_file = param_.has_mean_file();
   const bool has_mean_values = mean_values_.size() > 0;
@@ -355,12 +355,12 @@ void DataTransformer<Dtype,Mtype>::Transform(Blob<Dtype,Mtype>* input_blob,
     CHECK(mean_values_.size() == 1 || mean_values_.size() == input_channels) <<
      "Specify either 1 mean_value or as many as channels: " << input_channels;
     if (mean_values_.size() == 1) {
-      caffe_add_scalar(input_blob->count(), -(mean_values_[0]), input_data);
+      caffe_add_scalar(input_blob->count(), -(Get<Mtype>(mean_values_[0])), input_data);
     } else {
       for (int n = 0; n < input_num; ++n) {
         for (int c = 0; c < input_channels; ++c) {
           int offset = input_blob->offset(n, c);
-          caffe_add_scalar(input_height * input_width, -(mean_values_[c]),
+          caffe_add_scalar(input_height * input_width, -(Get<Mtype>(mean_values_[c])),
             input_data + offset);
         }
       }
@@ -391,7 +391,7 @@ void DataTransformer<Dtype,Mtype>::Transform(Blob<Dtype,Mtype>* input_blob,
       }
     }
   }
-  if (scale != Dtype(1)) {
+  if (scale != Mtype(1)) {
     DLOG(INFO) << "Scale: " << scale;
     caffe_scal(size, scale, transformed_data);
   }

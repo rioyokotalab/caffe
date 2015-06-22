@@ -117,7 +117,7 @@ class Layer {
    *
    * Your layer should implement Forward_cpu and (optionally) Forward_gpu.
    */
-  inline Dtype Forward(const vector<Blob<Dtype,Mtype>*>& bottom,
+  inline Mtype Forward(const vector<Blob<Dtype,Mtype>*>& bottom,
       const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
@@ -166,17 +166,17 @@ class Layer {
    * @brief Returns the scalar loss associated with a top blob at a given index.
    */
   inline Dtype loss(const int top_index) const {
-    return (loss_.size() > top_index) ? loss_[top_index] : Dtype(0);
+    return (loss_.size() > top_index) ? loss_[top_index] : Get<Dtype>(0);
   }
 
   /**
    * @brief Sets the loss associated with a top blob at a given index.
    */
-  inline void set_loss(const int top_index, const Dtype value) {
+  inline void set_loss(const int top_index, const Mtype value) {
     if (loss_.size() <= top_index) {
-      loss_.resize(top_index + 1, Dtype(0));
+      loss_.resize(top_index + 1, Get<Dtype>(0));
     }
-    loss_[top_index] = value;
+    loss_[top_index] = Get<Dtype>(value);
   }
 
   /**
@@ -386,8 +386,8 @@ class Layer {
       CHECK_EQ(top.size(), num_loss_weights) << "loss_weight must be "
           "unspecified or specified once per top blob.";
       for (int top_id = 0; top_id < top.size(); ++top_id) {
-        const Dtype loss_weight = layer_param_.loss_weight(top_id);
-        if (loss_weight == Dtype(0)) { continue; }
+        const Mtype loss_weight = layer_param_.loss_weight(top_id);
+        if (loss_weight == Mtype(0)) { continue; }
         this->set_loss(top_id, loss_weight);
         const int count = top[top_id]->count();
         Dtype* loss_multiplier = top[top_id]->mutable_cpu_diff();
@@ -403,15 +403,15 @@ class Layer {
 // gpu specific implementations instead, and should not change these
 // functions.
 template <typename Dtype, typename Mtype>
-inline Dtype Layer<Dtype,Mtype>::Forward(const vector<Blob<Dtype,Mtype>*>& bottom,
+inline Mtype Layer<Dtype,Mtype>::Forward(const vector<Blob<Dtype,Mtype>*>& bottom,
     const vector<Blob<Dtype,Mtype>*>& top) {
-  Dtype loss = 0;
+  Mtype loss = 0;
   Reshape(bottom, top);
   switch (Caffe::mode()) {
   case Caffe::CPU:
     Forward_cpu(bottom, top);
     for (int top_id = 0; top_id < top.size(); ++top_id) {
-      if (!this->loss(top_id)) { continue; }
+      if (!Get<Mtype>(this->loss(top_id))) { continue; }
       const int count = top[top_id]->count();
       const Dtype* data = top[top_id]->cpu_data();
       const Dtype* loss_weights = top[top_id]->cpu_diff();
@@ -422,11 +422,11 @@ inline Dtype Layer<Dtype,Mtype>::Forward(const vector<Blob<Dtype,Mtype>*>& botto
     Forward_gpu(bottom, top);
 #ifndef CPU_ONLY
     for (int top_id = 0; top_id < top.size(); ++top_id) {
-      if (!this->loss(top_id)) { continue; }
+      if (!Get<Mtype>(this->loss(top_id))) { continue; }
       const int count = top[top_id]->count();
       const Dtype* data = top[top_id]->gpu_data();
       const Dtype* loss_weights = top[top_id]->gpu_diff();
-      Dtype blob_loss = 0;
+      Mtype blob_loss = Get<Mtype>(0);
       caffe_gpu_dot<Dtype,Mtype>(count, data, loss_weights, &blob_loss);
       loss += blob_loss;
     }

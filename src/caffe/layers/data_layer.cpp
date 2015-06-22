@@ -140,7 +140,7 @@ void DataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
       this->data_transformer_->Transform(datum, &(this->transformed_data_));
     }
     if (this->output_labels_) {
-      top_label[item_id] = datum.label();
+      top_label[item_id] = Get<Dtype>(datum.label());
     }
     trans_time += timer.MicroSeconds();
 

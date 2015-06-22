@@ -31,6 +31,13 @@ void caffe_cpu_gemm<double,double>(const CBLAS_TRANSPOSE TransA,
       ldb, beta, C, N);
 }
 
+template<>
+void caffe_cpu_gemm<half,float>(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const float alpha, const half* A, const half* B, const float beta,
+    half * C) {
+}
+
 template <>
 void caffe_cpu_gemv<float,float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const float* A, const float* x,
@@ -46,12 +53,26 @@ void caffe_cpu_gemv<double,double>(const CBLAS_TRANSPOSE TransA, const int M,
 }
 
 template <>
+void caffe_cpu_gemv<half,float>(const CBLAS_TRANSPOSE TransA, const int M,
+    const int N, const float alpha, const half* A, const half* x,
+    const float beta, half* y) {
+}
+
+template <>
 void caffe_axpy<float,float>(const int N, const float alpha, const float* X,
     float* Y) { cblas_saxpy(N, alpha, X, 1, Y, 1); }
 
 template <>
 void caffe_axpy<double,double>(const int N, const double alpha, const double* X,
     double* Y) { cblas_daxpy(N, alpha, X, 1, Y, 1); }
+
+template<>
+void caffe_axpy<half,float>(const int N, const float alpha, const half* X,
+    half* Y) {
+  for (int i=0; i<N; i++) {
+    Y[i] = Get<half>( alpha * Get<float>(X[i]) + Get<float>(Y[i]) );
+  }
+}
 
 template <typename Dtype, typename Mtype>
 void caffe_set(const int N, const Mtype alpha, Dtype* Y) {
@@ -67,6 +88,7 @@ void caffe_set(const int N, const Mtype alpha, Dtype* Y) {
 template void caffe_set<int,int>(const int N, const int alpha, int* Y);
 template void caffe_set<float,float>(const int N, const float alpha, float* Y);
 template void caffe_set<double,double>(const int N, const double alpha, double* Y);
+template void caffe_set<half,float>(const int N, const float alpha, half* Y);
 
 template <>
 void caffe_add_scalar(const int N, const float alpha, float* Y) {
@@ -79,6 +101,13 @@ template <>
 void caffe_add_scalar(const int N, const double alpha, double* Y) {
   for (int i = 0; i < N; ++i) {
     Y[i] += alpha;
+  }
+}
+
+template <>
+void caffe_add_scalar(const int N, const float alpha, half* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] = Get<half>( Get<float>(Y[i]) + alpha );
   }
 }
 
@@ -103,6 +132,7 @@ template void caffe_copy<unsigned int, unsigned int>(const int N, const unsigned
     unsigned int* Y);
 template void caffe_copy<float,float>(const int N, const float* X, float* Y);
 template void caffe_copy<double,double>(const int N, const double* X, double* Y);
+template void caffe_copy<half,float>(const int N, const half* X, half* Y);
 
 template <>
 void caffe_scal<float,float>(const int N, const float alpha, float *X) {
@@ -112,6 +142,13 @@ void caffe_scal<float,float>(const int N, const float alpha, float *X) {
 template <>
 void caffe_scal<double,double>(const int N, const double alpha, double *X) {
   cblas_dscal(N, alpha, X, 1);
+}
+
+template <>
+void caffe_scal<half,float>(const int N, const float alpha, half *X) {
+  for (int i=0; i<N; i++) {
+    X[i] = Get<half>( alpha * Get<float>(X[i]) );
+  }
 }
 
 template <>
@@ -127,6 +164,14 @@ void caffe_cpu_axpby<double,double>(const int N, const double alpha, const doubl
 }
 
 template <>
+void caffe_cpu_axpby<half,float>(const int N, const float alpha, const half* X,
+                             const float beta, half* Y) {
+  for (int i=0; i<N; i++) {
+    Y[i] = Get<half>( alpha * Get<float>(X[i]) + beta * Get<float>(Y[i]) );
+  }
+}
+
+template <>
 void caffe_add<float,float>(const int n, const float* a, const float* b,
     float* y) {
   vsAdd(n, a, b, y);
@@ -136,6 +181,14 @@ template <>
 void caffe_add<double,double>(const int n, const double* a, const double* b,
     double* y) {
   vdAdd(n, a, b, y);
+}
+
+template <>
+void caffe_add<half,float>(const int n, const half* a, const half* b,
+    half* y) {
+  for (int i=0; i<n; i++) {
+    y[i] = Get<half>( Get<float>(a[i]) + Get<float>(b[i]) );
+  }
 }
 
 template <>
@@ -151,6 +204,14 @@ void caffe_sub<double,double>(const int n, const double* a, const double* b,
 }
 
 template <>
+void caffe_sub<half,float>(const int n, const half* a, const half* b,
+    half* y) {
+  for (int i=0; i<n; i++) {
+    y[i] = Get<half>( Get<float>(a[i]) - Get<float>(b[i]) );
+  }
+}
+
+template <>
 void caffe_mul<float,float>(const int n, const float* a, const float* b,
     float* y) {
   vsMul(n, a, b, y);
@@ -160,6 +221,14 @@ template <>
 void caffe_mul<double,double>(const int n, const double* a, const double* b,
     double* y) {
   vdMul(n, a, b, y);
+}
+
+template <>
+void caffe_mul<half,float>(const int n, const half* a, const half* b,
+    half* y) {
+  for (int i=0; i<n; i++) {
+    y[i] = Get<half>( Get<float>(a[i]) * Get<float>(b[i]) );
+  }
 }
 
 template <>
@@ -175,6 +244,15 @@ void caffe_div<double,double>(const int n, const double* a, const double* b,
 }
 
 template <>
+void caffe_div<half,float>(const int n, const half* a, const half* b,
+    half* y)
+{
+  for (int i=0; i<n; i++) {
+    y[i] = Get<half>( Get<float>(a[i]) / Get<float>(b[i]) );
+  }
+}
+
+template <>
 void caffe_powx<float,float>(const int n, const float* a, const float b,
     float* y) {
   vsPowx(n, a, b, y);
@@ -184,6 +262,13 @@ template <>
 void caffe_powx<double,double>(const int n, const double* a, const double b,
     double* y) {
   vdPowx(n, a, b, y);
+}
+
+template <>
+void caffe_powx<half,float>(const int n, const half* a, const float b, half* y) {
+  for (int i=0; i<n; i++) {
+    y[i] = Get<half>( pow(Get<float>(a[i]), b) );
+  }
 }
 
 template <>
@@ -197,6 +282,13 @@ void caffe_sqr<double,double>(const int n, const double* a, double* y) {
 }
 
 template <>
+void caffe_sqr<half,float>(const int n, const half* a, half* y) {
+  for (int i=0; i<n; i++) {
+    y[i] = Get<half>( sqrt(Get<float>(a[i])) );
+  }
+}
+
+template <>
 void caffe_exp<float,float>(const int n, const float* a, float* y) {
   vsExp(n, a, y);
 }
@@ -207,6 +299,13 @@ void caffe_exp<double,double>(const int n, const double* a, double* y) {
 }
 
 template <>
+void caffe_exp<half,float>(const int n, const half* a, half* y) {
+  for (int i=0; i<n; i++) {
+    y[i] = Get<half>( exp(Get<float>(a[i])) );
+  }
+}
+
+template <>
 void caffe_abs<float,float>(const int n, const float* a, float* y) {
     vsAbs(n, a, y);
 }
@@ -214,6 +313,13 @@ void caffe_abs<float,float>(const int n, const float* a, float* y) {
 template <>
 void caffe_abs<double,double>(const int n, const double* a, double* y) {
     vdAbs(n, a, y);
+}
+
+template <>
+void caffe_abs<half,float>(const int n, const half* a, half* y) {
+  for (int i=0; i<n; i++) {
+    y[i] = Get<half>( fabs(Get<float>(a[i])) );
+  }
 }
 
 unsigned int caffe_rng_rand() {
@@ -233,11 +339,11 @@ template
 double caffe_nextafter(const double b);
 
 template <typename Dtype, typename Mtype>
-void caffe_rng_uniform(const int n, const Dtype a, const Dtype b, Dtype* r) {
+void caffe_rng_uniform(const int n, const Mtype a, const Mtype b, Dtype* r) {
   CHECK_GE(n, 0);
   CHECK(r);
   CHECK_LE(a, b);
-  boost::uniform_real<Mtype> random_distribution(Get<Mtype>(a), caffe_nextafter<Mtype>(Get<Mtype>(b)));
+  boost::uniform_real<Mtype> random_distribution(a, caffe_nextafter<Mtype>(b));
   boost::variate_generator<caffe::rng_t*, boost::uniform_real<Mtype> >
       variate_generator(caffe_rng(), random_distribution);
   for (int i = 0; i < n; ++i) {
@@ -252,6 +358,10 @@ void caffe_rng_uniform<float,float>(const int n, const float a, const float b,
 template
 void caffe_rng_uniform<double,double>(const int n, const double a, const double b,
                                double* r);
+
+template
+void caffe_rng_uniform<half,float>(const int n, const float a, const float b,
+                               half* r);
 
 template <typename Dtype, typename Mtype>
 void caffe_rng_gaussian(const int n, const Mtype a,
@@ -275,6 +385,10 @@ template
 void caffe_rng_gaussian<double,double>(const int n, const double mu,
                                 const double sigma, double* r);
 
+template
+void caffe_rng_gaussian<half,float>(const int n, const float mu,
+                                const float sigma, half* r);
+
 template <typename Dtype, typename Mtype>
 void caffe_rng_bernoulli(const int n, const Mtype p, int* r) {
   CHECK_GE(n, 0);
@@ -285,7 +399,7 @@ void caffe_rng_bernoulli(const int n, const Mtype p, int* r) {
   boost::variate_generator<caffe::rng_t*, boost::bernoulli_distribution<Mtype> >
       variate_generator(caffe_rng(), random_distribution);
   for (int i = 0; i < n; ++i) {
-    r[i] = Get<Dtype>(variate_generator());
+    r[i] = Get<int>(variate_generator());
   }
 }
 
@@ -294,6 +408,9 @@ void caffe_rng_bernoulli<double,double>(const int n, const double p, int* r);
 
 template
 void caffe_rng_bernoulli<float,float>(const int n, const float p, int* r);
+
+template
+void caffe_rng_bernoulli<half,float>(const int n, const float p, int* r);
 
 template <typename Dtype, typename Mtype>
 void caffe_rng_bernoulli(const int n, const Mtype p, unsigned int* r) {
@@ -315,6 +432,9 @@ void caffe_rng_bernoulli<double,double>(const int n, const double p, unsigned in
 template
 void caffe_rng_bernoulli<float,float>(const int n, const float p, unsigned int* r);
 
+template
+void caffe_rng_bernoulli<half,float>(const int n, const float p, unsigned int* r);
+
 template <>
 float caffe_cpu_strided_dot<float,float>(const int n, const float* x, const int incx,
     const float* y, const int incy) {
@@ -327,8 +447,22 @@ double caffe_cpu_strided_dot<double,double>(const int n, const double* x,
   return cblas_ddot(n, x, incx, y, incy);
 }
 
+template <>
+float caffe_cpu_strided_dot<half,float>(const int n, const half* x,
+    const int incx, const half *y, const int incy) {
+  float sum = 0.0f;
+
+  for (int i=0; i<n; i++) {
+    int idx_x = i*incx;
+    int idx_y = i*incy;
+
+    sum += Get<float>(x[idx_x]) * Get<float>(y[idx_y]);
+  }
+  return sum;
+}
+
 template <typename Dtype, typename Mtype>
-Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y) {
+Mtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y) {
   return caffe_cpu_strided_dot<Dtype,Mtype>(n, x, 1, y, 1);
 }
 
@@ -337,6 +471,9 @@ float caffe_cpu_dot<float,float>(const int n, const float* x, const float* y);
 
 template
 double caffe_cpu_dot<double,double>(const int n, const double* x, const double* y);
+
+template
+float caffe_cpu_dot<half,float>(const int n, const half* x, const half* y);
 
 template <>
 int caffe_cpu_hamming_distance<float,float>(const int n, const float* x,
@@ -361,6 +498,17 @@ int caffe_cpu_hamming_distance<double,double>(const int n, const double* x,
 }
 
 template <>
+int caffe_cpu_hamming_distance<half, float>(const int n, const half* x,
+                                  const half* y) {
+  int dist = 0;
+  for (int i = 0; i < n; ++i) {
+    dist += __builtin_popcount(static_cast<uint32_t>(Get<float>(x[i])) ^
+                               static_cast<uint32_t>(Get<float>(y[i])));
+  }
+  return dist;
+}
+
+template <>
 float caffe_cpu_asum<float,float>(const int n, const float* x) {
   return cblas_sasum(n, x, 1);
 }
@@ -368,6 +516,15 @@ float caffe_cpu_asum<float,float>(const int n, const float* x) {
 template <>
 double caffe_cpu_asum<double,double>(const int n, const double* x) {
   return cblas_dasum(n, x, 1);
+}
+
+template <>
+float caffe_cpu_asum<half,float>(const int n, const half *x) {
+  float sum = 0.0f;
+  for (int i=0; i<n; i++) {
+    sum += fabs(Get<float>(x[i]));
+  }
+  return sum;
 }
 
 template <>
@@ -382,6 +539,14 @@ void caffe_cpu_scale<double,double>(const int n, const double alpha, const doubl
                              double* y) {
   cblas_dcopy(n, x, 1, y, 1);
   cblas_dscal(n, alpha, y, 1);
+}
+
+template <>
+void caffe_cpu_scale<half,float>(const int n, const float alpha, const half *x,
+    half *y) {
+  for (int i=0; i<n; i++) {
+    y[i] = Get<half>( alpha * Get<float>(x[i]) );
+  }
 }
 
 }  // namespace caffe

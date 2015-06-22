@@ -35,7 +35,7 @@ class Net {
    *
    * You can get the input blobs using input_blobs().
    */
-  const vector<Blob<Dtype,Mtype>*>& ForwardPrefilled(Dtype* loss = NULL);
+  const vector<Blob<Dtype,Mtype>*>& ForwardPrefilled(Mtype* loss = NULL);
 
   /**
    * The From and To variants of Forward and Backward operate on the
@@ -45,17 +45,17 @@ class Net {
    * the middle may be incorrect if all of the layers of a fan-in are not
    * included.
    */
-  Dtype ForwardFromTo(int start, int end);
-  Dtype ForwardFrom(int start);
-  Dtype ForwardTo(int end);
+  Mtype ForwardFromTo(int start, int end);
+  Mtype ForwardFrom(int start);
+  Mtype ForwardTo(int end);
   /// @brief Run forward using a set of bottom blobs, and return the result.
   const vector<Blob<Dtype,Mtype>*>& Forward(const vector<Blob<Dtype,Mtype>* > & bottom,
-      Dtype* loss = NULL);
+      Mtype* loss = NULL);
   /**
    * @brief Run forward using a serialized BlobProtoVector and return the
    *        result as a serialized BlobProtoVector
    */
-  string Forward(const string& input_blob_protos, Dtype* loss = NULL);
+  string Forward(const string& input_blob_protos, Mtype* loss = NULL);
 
   /**
    * The network backward should take no input and output, since it solely
@@ -75,8 +75,8 @@ class Net {
    */
   void Reshape();
 
-  Dtype ForwardBackward(const vector<Blob<Dtype,Mtype>* > & bottom) {
-    Dtype loss;
+  Mtype ForwardBackward(const vector<Blob<Dtype,Mtype>* > & bottom) {
+    Mtype loss;
     Forward(bottom, &loss);
     Backward();
     return loss;

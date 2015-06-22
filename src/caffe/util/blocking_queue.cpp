@@ -88,9 +88,11 @@ size_t BlockingQueue<T>::size() const {
 
 template class BlockingQueue<Batch<float,float>*>;
 template class BlockingQueue<Batch<double,double>*>;
+template class BlockingQueue<Batch<half,float>*>;
 template class BlockingQueue<Datum*>;
 template class BlockingQueue<shared_ptr<DataReader::QueuePair> >;
 template class BlockingQueue<P2PSync<float,float>*>;
 template class BlockingQueue<P2PSync<double,double>*>;
+template class BlockingQueue<P2PSync<half,float>*>;
 
 }  // namespace caffe

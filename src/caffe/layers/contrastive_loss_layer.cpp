@@ -26,7 +26,7 @@ void ContrastiveLossLayer<Dtype,Mtype>::LayerSetUp(
   // vector of ones used to sum along channels
   summer_vec_.Reshape(bottom[0]->channels(), 1, 1, 1);
   for (int i = 0; i < bottom[0]->channels(); ++i)
-    summer_vec_.mutable_cpu_data()[i] = Dtype(1);
+    summer_vec_.mutable_cpu_data()[i] = Get<Dtype>(1);
 }
 
 template <typename Dtype, typename Mtype>
@@ -40,32 +40,32 @@ void ContrastiveLossLayer<Dtype,Mtype>::Forward_cpu(
       bottom[1]->cpu_data(),  // b
       diff_.mutable_cpu_data());  // a_i-b_i
   const int channels = bottom[0]->channels();
-  Dtype margin = this->layer_param_.contrastive_loss_param().margin();
+  Mtype margin = this->layer_param_.contrastive_loss_param().margin();
   bool legacy_version =
       this->layer_param_.contrastive_loss_param().legacy_version();
-  Dtype loss(0.0);
+  Mtype loss(0.0);
   for (int i = 0; i < bottom[0]->num(); ++i) {
-    dist_sq_.mutable_cpu_data()[i] = caffe_cpu_dot<Dtype,Mtype>(channels,
-        diff_.cpu_data() + (i*channels), diff_.cpu_data() + (i*channels));
-    if (static_cast<int>(bottom[2]->cpu_data()[i])) {  // similar pairs
-      loss += dist_sq_.cpu_data()[i];
+    dist_sq_.mutable_cpu_data()[i] = Get<Dtype>(caffe_cpu_dot<Dtype,Mtype>(channels,
+        diff_.cpu_data() + (i*channels), diff_.cpu_data() + (i*channels)));
+    if (Get<int>(bottom[2]->cpu_data()[i])) {  // similar pairs
+      loss += Get<Mtype>(dist_sq_.cpu_data()[i]);
     } else {  // dissimilar pairs
       if (legacy_version) {
-        loss += std::max(margin - dist_sq_.cpu_data()[i], Dtype(0.0));
+        loss += std::max(margin - Get<Mtype>(dist_sq_.cpu_data()[i]), Mtype(0.0));
       } else {
-        Dtype dist = std::max(margin - sqrt(dist_sq_.cpu_data()[i]), 0.0);
+        Mtype dist = std::max(margin - static_cast<Mtype>(sqrt(Get<Mtype>(dist_sq_.cpu_data()[i]))), Mtype(0.0));
         loss += dist*dist;
       }
     }
   }
-  loss = loss / static_cast<Dtype>(bottom[0]->num()) / Dtype(2);
-  top[0]->mutable_cpu_data()[0] = loss;
+  loss = loss / static_cast<Mtype>(bottom[0]->num()) / Mtype(2);
+  top[0]->mutable_cpu_data()[0] = Get<Dtype>(loss);
 }
 
 template <typename Dtype, typename Mtype>
 void ContrastiveLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
-  Dtype margin = this->layer_param_.contrastive_loss_param().margin();
+  Mtype margin = this->layer_param_.contrastive_loss_param().margin();
   bool legacy_version =
       this->layer_param_.contrastive_loss_param().legacy_version();
   for (int i = 0; i < 2; ++i) {
@@ -77,7 +77,7 @@ void ContrastiveLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mty
       int channels = bottom[i]->channels();
       for (int j = 0; j < num; ++j) {
         Dtype* bout = bottom[i]->mutable_cpu_diff();
-        if (static_cast<int>(bottom[2]->cpu_data()[j])) {  // similar pairs
+        if (Get<int>(bottom[2]->cpu_data()[j])) {  // similar pairs
           caffe_cpu_axpby<Dtype,Mtype>(
               channels,
               alpha,
@@ -88,12 +88,12 @@ void ContrastiveLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mty
           Mtype mdist(0.0);
           Mtype beta(0.0);
           if (legacy_version) {
-            mdist = margin - dist_sq_.cpu_data()[j];
+            mdist = margin - Get<Mtype>(dist_sq_.cpu_data()[j]);
             beta = -alpha;
           } else {
-            Mtype dist = sqrt(dist_sq_.cpu_data()[j]);
+            Mtype dist = sqrt(Get<Mtype>(dist_sq_.cpu_data()[j]));
             mdist = margin - dist;
-            beta = -alpha * mdist / (dist + Dtype(1e-4));
+            beta = -alpha * mdist / (dist + Mtype(1e-4));
           }
           if (mdist > Mtype(0.0)) {
             caffe_cpu_axpby<Dtype,Mtype>(

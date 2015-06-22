@@ -18,13 +18,13 @@ __global__ void MaxForward(const int nthreads, const Dtype* bottom_data_a,
       // only update for very first bottom_data blob (blob_idx == 0)
       if (blob_idx == 0) {
         maxval = Get<Mtype>(bottom_data_a[index]);
-        top_data[index] = maxval;
+        top_data[index] = Get<Dtype>(maxval);
         maxidx = blob_idx;
         mask[index] = maxidx;
       }
     } else {
       maxval = Get<Mtype>(bottom_data_b[index]);
-      top_data[index] = maxval;
+      top_data[index] = Get<Dtype>(maxval);
       maxidx = blob_idx + 1;
       mask[index] = maxidx;
     }
@@ -49,7 +49,7 @@ void EltwiseLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bo
     caffe_gpu_set<Dtype,Mtype>(count, Mtype(0.), top_data);
     // TODO(shelhamer) does cuBLAS optimize to sum for coeff = 1?
     for (int i = 0; i < bottom.size(); ++i) {
-      caffe_gpu_axpy<Dtype,Mtype>(count, coeffs_[i], bottom[i]->gpu_data(), top_data);
+      caffe_gpu_axpy<Dtype,Mtype>(count, Get<Mtype>(coeffs_[i]), bottom[i]->gpu_data(), top_data);
     }
     break;
   case EltwiseParameter_EltwiseOp_MAX:
@@ -111,10 +111,10 @@ void EltwiseLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& t
         caffe_gpu_mul<Dtype,Mtype>(count, bottom_diff, top_diff, bottom_diff);
         break;
       case EltwiseParameter_EltwiseOp_SUM:
-        if (coeffs_[i] == Dtype(1.)) {
+        if (Get<Mtype>(coeffs_[i]) == Mtype(1.)) {
           caffe_copy<Dtype,Mtype>(count, top_diff, bottom_diff);
         } else {
-          caffe_gpu_scale<Dtype,Mtype>(count, coeffs_[i], top_diff, bottom_diff);
+          caffe_gpu_scale<Dtype,Mtype>(count, Get<Mtype>(coeffs_[i]), top_diff, bottom_diff);
         }
         break;
       case EltwiseParameter_EltwiseOp_MAX:

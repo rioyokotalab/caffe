@@ -15,7 +15,7 @@ void LossLayer<Dtype,Mtype>::LayerSetUp(
     const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
   // LossLayers have a non-zero (1) loss by default.
   if (this->layer_param_.loss_weight_size() == 0) {
-    this->layer_param_.add_loss_weight(Dtype(1));
+    this->layer_param_.add_loss_weight(Get<Mtype>(1));
   }
 }
 

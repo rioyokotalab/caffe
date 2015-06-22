@@ -66,7 +66,7 @@ template <typename Dtype, typename Mtype>
 void caffe_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype, typename Mtype>
-void caffe_powx(const int n, const Dtype* a, const Dtype b, Dtype* y);
+void caffe_powx(const int n, const Dtype* a, const Mtype b, Dtype* y);
 
 unsigned int caffe_rng_rand();
 
@@ -74,7 +74,7 @@ template <typename Dtype, typename Mtype>
 Dtype caffe_nextafter(const Dtype b);
 
 template <typename Dtype, typename Mtype>
-void caffe_rng_uniform(const int n, const Dtype a, const Dtype b, Dtype* r);
+void caffe_rng_uniform(const int n, const Mtype a, const Mtype b, Dtype* r);
 
 template <typename Dtype, typename Mtype>
 void caffe_rng_gaussian(const int n, const Mtype mu, const Mtype sigma,
@@ -93,10 +93,10 @@ template <typename Dtype, typename Mtype>
 void caffe_abs(const int n, const Dtype* a, Dtype* y);
 
 template <typename Dtype, typename Mtype>
-Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y);
+Mtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y);
 
 template <typename Dtype, typename Mtype>
-Dtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
+Mtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
     const Dtype* y, const int incy);
 
 template <typename Dtype, typename Mtype>
@@ -104,7 +104,7 @@ int caffe_cpu_hamming_distance(const int n, const Dtype* x, const Dtype* y);
 
 // Returns the sum of the absolute values of the elements of vector x
 template <typename Dtype, typename Mtype>
-Dtype caffe_cpu_asum(const int n, const Dtype* x);
+Mtype caffe_cpu_asum(const int n, const Dtype* x);
 
 // the branchless, type-safe version from
 // http://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
@@ -130,7 +130,7 @@ inline int8_t caffe_sign(Mtype val) {
 
 // output is 1 for the positives, 0 for zero, and -1 for the negatives
 #define TYPE Dtype,Mtype
-DEFINE_CAFFE_CPU_UNARY_FUNC(sign, y[i] = caffe_sign<TYPE>(x[i]));
+DEFINE_CAFFE_CPU_UNARY_FUNC(sign, y[i] = Get<Dtype>(caffe_sign<TYPE>(Get<Mtype>(x[i]))));
 
 // This returns a nonzero value if the input has its sign bit set.
 // The name sngbit is meant to avoid conflicts with std::signbit in the macro.
@@ -218,7 +218,7 @@ void caffe_gpu_rng_uniform(const int n, unsigned int* r);
 // curandGenerateUniform; with other limits will shift and scale the outputs
 // appropriately after calling curandGenerateUniform.
 template <typename Dtype, typename Mtype>
-void caffe_gpu_rng_uniform(const int n, const Dtype a, const Dtype b, Dtype* r);
+void caffe_gpu_rng_uniform(const int n, const Mtype a, const Mtype b, Dtype* r);
 
 template <typename Dtype, typename Mtype>
 void caffe_gpu_rng_gaussian(const int n, const Mtype mu, const Mtype sigma,
@@ -228,14 +228,14 @@ template <typename Dtype, typename Mtype>
 void caffe_gpu_rng_bernoulli(const int n, const Mtype p, int* r);
 
 template <typename Dtype, typename Mtype>
-void caffe_gpu_dot(const int n, const Dtype* x, const Dtype* y, Dtype* out);
+void caffe_gpu_dot(const int n, const Dtype* x, const Dtype* y, Mtype* out);
 
 template <typename Dtype, typename Mtype>
 uint32_t caffe_gpu_hamming_distance(const int n, const Dtype* x,
                                     const Dtype* y);
 
 template <typename Dtype, typename Mtype>
-void caffe_gpu_asum(const int n, const Dtype* x, Dtype* y);
+void caffe_gpu_asum(const int n, const Dtype* x, Mtype* y);
 
 template<typename Dtype, typename Mtype>
 void caffe_gpu_sign(const int n, const Dtype* x, Dtype* y);
@@ -266,6 +266,12 @@ template <> \
 void caffe_gpu_##name<double,double>(const int n, const double* x, double* y) { \
   /* NOLINT_NEXT_LINE(whitespace/operators) */ \
   name##_kernel<double,double><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
+      n, x, y); \
+} \
+template <> \
+void caffe_gpu_##name<half,float>(const int n, const half* x, half* y) { \
+  /* NOLINT_NEXT_LINE(whitespace/operators) */ \
+  name##_kernel<half,float><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
       n, x, y); \
 }
 

@@ -13,6 +13,7 @@
 #include "caffe/loss_layers.hpp"
 #include "caffe/neuron_layers.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/util/im2col.hpp"
 
 namespace caffe {
 
@@ -79,20 +80,20 @@ class BaseConvolutionLayer : public Layer<Dtype,Mtype> {
  private:
   // wrap im2col/col2im so we don't have to remember the (long) argument lists
   inline void conv_im2col_cpu(const Dtype* data, Dtype* col_buff) {
-    im2col_cpu(data, conv_in_channels_, conv_in_height_, conv_in_width_,
+    im2col_cpu<Dtype,Mtype>(data, conv_in_channels_, conv_in_height_, conv_in_width_,
         kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_, col_buff);
   }
   inline void conv_col2im_cpu(const Dtype* col_buff, Dtype* data) {
-    col2im_cpu(col_buff, conv_in_channels_, conv_in_height_, conv_in_width_,
+    col2im_cpu<Dtype,Mtype>(col_buff, conv_in_channels_, conv_in_height_, conv_in_width_,
         kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_, data);
   }
 #ifndef CPU_ONLY
   inline void conv_im2col_gpu(const Dtype* data, Dtype* col_buff) {
-    im2col_gpu(data, conv_in_channels_, conv_in_height_, conv_in_width_,
+    im2col_gpu<Dtype,Mtype>(data, conv_in_channels_, conv_in_height_, conv_in_width_,
         kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_, col_buff);
   }
   inline void conv_col2im_gpu(const Dtype* col_buff, Dtype* data) {
-    col2im_gpu(col_buff, conv_in_channels_, conv_in_height_, conv_in_width_,
+    col2im_gpu<Dtype,Mtype>(col_buff, conv_in_channels_, conv_in_height_, conv_in_width_,
         kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_, data);
   }
 #endif
@@ -342,9 +343,9 @@ class LRNLayer : public Layer<Dtype,Mtype> {
 
   int size_;
   int pre_pad_;
-  Dtype alpha_;
-  Dtype beta_;
-  Dtype k_;
+  Mtype alpha_;
+  Mtype beta_;
+  Mtype k_;
   int num_;
   int channels_;
   int height_;

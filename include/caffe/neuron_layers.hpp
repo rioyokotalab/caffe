@@ -197,9 +197,9 @@ class DropoutLayer : public NeuronLayer<Dtype,Mtype> {
   /// when divided by UINT_MAX, the randomly generated values @f$u\sim U(0,1)@f$
   Blob<unsigned int, unsigned int> rand_vec_;
   /// the probability @f$ p @f$ of dropping any input
-  Dtype threshold_;
+  Mtype threshold_;
   /// the scale for undropped inputs at train time @f$ 1 / (1 - p) @f$
-  Dtype scale_;
+  Mtype scale_;
   unsigned int uint_thres_;
 };
 
@@ -264,7 +264,7 @@ class ExpLayer : public NeuronLayer<Dtype,Mtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
-  Dtype inner_scale_, outer_scale_;
+  Mtype inner_scale_, outer_scale_;
 };
 
 /**
@@ -331,13 +331,13 @@ class PowerLayer : public NeuronLayer<Dtype,Mtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
   /// @brief @f$ \gamma @f$ from layer_param_.power_param()
-  Dtype power_;
+  Mtype power_;
   /// @brief @f$ \alpha @f$ from layer_param_.power_param()
-  Dtype scale_;
+  Mtype scale_;
   /// @brief @f$ \beta @f$ from layer_param_.power_param()
-  Dtype shift_;
+  Mtype shift_;
   /// @brief Result of @f$ \alpha \gamma @f$
-  Dtype diff_scale_;
+  Mtype diff_scale_;
 };
 
 /**
@@ -650,7 +650,7 @@ class ThresholdLayer : public NeuronLayer<Dtype,Mtype> {
     NOT_IMPLEMENTED;
   }
 
-  Dtype threshold_;
+  Mtype threshold_;
 };
 
 /**

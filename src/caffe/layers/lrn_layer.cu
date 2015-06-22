@@ -100,6 +100,8 @@ template void LRNLayer<float,float>::CrossChannelForward_gpu(
     const vector<Blob<float,float>*>& bottom, const vector<Blob<float,float>*>& top);
 template void LRNLayer<double,double>::CrossChannelForward_gpu(
     const vector<Blob<double,double>*>& bottom, const vector<Blob<double,double>*>& top);
+template void LRNLayer<half,float>::CrossChannelForward_gpu(
+    const vector<Blob<half,float>*>& bottom, const vector<Blob<half,float>*>& top);
 
 
 template <typename Dtype, typename Mtype>
@@ -121,8 +123,8 @@ template <typename Dtype, typename Mtype>
 __global__ void LRNComputeDiff(const int nthreads, const Dtype* bottom_data,
     const Dtype* top_data, const Dtype* scale, const Dtype* top_diff,
     const int num, const int channels, const int height,
-    const int width, const int size, const Dtype negative_beta,
-    const Dtype cache_ratio,
+    const int width, const int size, const Mtype negative_beta,
+    const Mtype cache_ratio,
     Dtype* bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local offset
@@ -139,35 +141,35 @@ __global__ void LRNComputeDiff(const int nthreads, const Dtype* bottom_data,
     int head = 0;
     int pre_pad = size - (size + 1) / 2;
     int post_pad = size - pre_pad - 1;
-    Dtype accum_ratio = 0;
+    Mtype accum_ratio = 0;
     // accumulate values
     while (head < post_pad && head < channels) {
-      accum_ratio += top_diff[head * step] * top_data[head * step] /
-          scale[head * step];
+      accum_ratio += Get<Mtype>(top_diff[head * step]) * Get<Mtype>(top_data[head * step]) /
+          Get<Mtype>(scale[head * step]);
       ++head;
     }
     // both add and subtract
     while (head < channels) {
-      accum_ratio += top_diff[head * step] * top_data[head * step] /
-          scale[head * step];
+      accum_ratio += Get<Mtype>(top_diff[head * step]) * Get<Mtype>(top_data[head * step]) /
+          Get<Mtype>(scale[head * step]);
       if (head - size >= 0) {
-        accum_ratio -= top_diff[(head - size) * step] *
-            top_data[(head - size) * step] / scale[(head - size) * step];
+        accum_ratio -= Get<Mtype>(top_diff[(head - size) * step]) *
+            Get<Mtype>(top_data[(head - size) * step]) / Get<Mtype>(scale[(head - size) * step]);
       }
-      bottom_diff[(head - post_pad) * step] = top_diff[(head - post_pad) * step]
-          * pow(scale[(head - post_pad) * step], negative_beta) - cache_ratio *
-          bottom_data[(head - post_pad) * step] * accum_ratio;
+      bottom_diff[(head - post_pad) * step] = Get<Dtype>( Get<Mtype>(top_diff[(head - post_pad) * step])
+          * pow(Get<Mtype>(scale[(head - post_pad) * step]), negative_beta) - cache_ratio *
+          Get<Mtype>(bottom_data[(head - post_pad) * step]) * accum_ratio );
       ++head;
     }
     // subtract only
     while (head < channels + post_pad) {
       if (head - size >= 0) {
-        accum_ratio -= top_diff[(head - size) * step] *
-            top_data[(head - size) * step] / scale[(head - size) * step];
+        accum_ratio -= Get<Mtype>(top_diff[(head - size) * step]) *
+            Get<Mtype>(top_data[(head - size) * step]) / Get<Mtype>(scale[(head - size) * step]);
       }
-      bottom_diff[(head - post_pad) * step] = top_diff[(head - post_pad) * step]
-          * pow(scale[(head - post_pad) * step], negative_beta) - cache_ratio *
-          bottom_data[(head - post_pad) * step] * accum_ratio;
+      bottom_diff[(head - post_pad) * step] = Get<Dtype>( Get<Mtype>(top_diff[(head - post_pad) * step])
+          * pow(Get<Mtype>(scale[(head - post_pad) * step]), negative_beta) - cache_ratio *
+          Get<Mtype>(bottom_data[(head - post_pad) * step]) * accum_ratio );
       ++head;
     }
   }
@@ -182,7 +184,7 @@ void LRNLayer<Dtype,Mtype>::CrossChannelBackward_gpu(
   LRNComputeDiff<Dtype,Mtype><<<CAFFE_GET_BLOCKS(n_threads), CAFFE_CUDA_NUM_THREADS>>>(
       n_threads, bottom[0]->gpu_data(), top[0]->gpu_data(),
       scale_.gpu_data(), top[0]->gpu_diff(), num_, channels_, height_, width_,
-      size_, -beta_, Dtype(2. * alpha_ * beta_ / size_),
+      size_, -beta_, Mtype(2. * alpha_ * beta_ / size_),
       bottom[0]->mutable_gpu_diff());
 }
 template void LRNLayer<float,float>::CrossChannelBackward_gpu(
@@ -191,6 +193,9 @@ template void LRNLayer<float,float>::CrossChannelBackward_gpu(
 template void LRNLayer<double,double>::CrossChannelBackward_gpu(
     const vector<Blob<double,double>*>& top, const vector<bool>& propagate_down,
     const vector<Blob<double,double>*>& bottom);
+template void LRNLayer<half,float>::CrossChannelBackward_gpu(
+    const vector<Blob<half,float>*>& top, const vector<bool>& propagate_down,
+    const vector<Blob<half,float>*>& bottom);
 
 
 

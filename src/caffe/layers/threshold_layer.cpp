@@ -20,7 +20,7 @@ void ThresholdLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& 
   Dtype* top_data = top[0]->mutable_cpu_data();
   const int count = bottom[0]->count();
   for (int i = 0; i < count; ++i) {
-    top_data[i] = (Get<Mtype>(bottom_data[i]) > threshold_) ? Dtype(1) : Dtype(0);
+    top_data[i] = (Get<Mtype>(bottom_data[i]) > threshold_) ? Get<Dtype>(1) : Get<Dtype>(0);
   }
 }
 

@@ -45,7 +45,7 @@ void MemoryDataLayer<Dtype,Mtype>::AddDatumVector(const vector<Datum>& datum_vec
   // Copy Labels
   Dtype* top_label = added_label_.mutable_cpu_data();
   for (int item_id = 0; item_id < num; ++item_id) {
-    top_label[item_id] = datum_vector[item_id].label();
+    top_label[item_id] = Get<Dtype>(datum_vector[item_id].label());
   }
   // num_images == batch_size_
   Dtype* top_data = added_data_.mutable_cpu_data();
@@ -69,7 +69,7 @@ void MemoryDataLayer<Dtype,Mtype>::AddMatVector(const vector<cv::Mat>& mat_vecto
   // Copy Labels
   Dtype* top_label = added_label_.mutable_cpu_data();
   for (int item_id = 0; item_id < num; ++item_id) {
-    top_label[item_id] = labels[item_id];
+    top_label[item_id] = Get<Dtype>(labels[item_id]);
   }
   // num_images == batch_size_
   Dtype* top_data = added_data_.mutable_cpu_data();

@@ -36,10 +36,10 @@ class ConstantFiller : public Filler<Dtype,Mtype> {
   virtual void Fill(Blob<Dtype,Mtype>* blob) {
     Dtype* data = blob->mutable_cpu_data();
     const int count = blob->count();
-    const Dtype value = this->filler_param_.value();
+    const Mtype value = this->filler_param_.value();
     CHECK(count);
     for (int i = 0; i < count; ++i) {
-      data[i] = value;
+      data[i] = Get<Dtype>(value);
     }
     CHECK_EQ(this->filler_param_.sparse(), -1)
          << "Sparsity not supported by this Filler.";
@@ -54,8 +54,8 @@ class UniformFiller : public Filler<Dtype,Mtype> {
       : Filler<Dtype,Mtype>(param) {}
   virtual void Fill(Blob<Dtype,Mtype>* blob) {
     CHECK(blob->count());
-    caffe_rng_uniform<Dtype,Mtype>(blob->count(), Dtype(this->filler_param_.min()),
-        Dtype(this->filler_param_.max()), blob->mutable_cpu_data());
+    caffe_rng_uniform<Dtype,Mtype>(blob->count(), Mtype(this->filler_param_.min()),
+        Mtype(this->filler_param_.max()), blob->mutable_cpu_data());
     CHECK_EQ(this->filler_param_.sparse(), -1)
          << "Sparsity not supported by this Filler.";
   }
@@ -70,8 +70,8 @@ class GaussianFiller : public Filler<Dtype,Mtype> {
   virtual void Fill(Blob<Dtype,Mtype>* blob) {
     Dtype* data = blob->mutable_cpu_data();
     CHECK(blob->count());
-    caffe_rng_gaussian<Dtype,Mtype>(blob->count(), Dtype(this->filler_param_.mean()),
-        Dtype(this->filler_param_.std()), blob->mutable_cpu_data());
+    caffe_rng_gaussian<Dtype,Mtype>(blob->count(), Mtype(this->filler_param_.mean()),
+        Mtype(this->filler_param_.std()), blob->mutable_cpu_data());
     int sparse = this->filler_param_.sparse();
     CHECK_GE(sparse, -1);
     if (sparse >= 0) {
@@ -81,12 +81,12 @@ class GaussianFiller : public Filler<Dtype,Mtype> {
       // of non-zero input weights for a given output.
       CHECK_GE(blob->num_axes(), 1);
       const int num_outputs = blob->shape(0);
-      Dtype non_zero_probability = Dtype(sparse) / Dtype(num_outputs);
+      Mtype non_zero_probability = Mtype(sparse) / Mtype(num_outputs);
       rand_vec_.reset(new SyncedMemory(blob->count() * sizeof(int)));
       int* mask = reinterpret_cast<int*>(rand_vec_->mutable_cpu_data());
       caffe_rng_bernoulli<Dtype,Mtype>(blob->count(), non_zero_probability, mask);
       for (int i = 0; i < blob->count(); ++i) {
-        data[i] *= mask[i];
+        data[i] = Get<Dtype>( Get<Mtype>(data[i]) * mask[i] );
       }
     }
   }
@@ -112,12 +112,12 @@ class PositiveUnitballFiller : public Filler<Dtype,Mtype> {
     int dim = blob->count() / blob->num();
     CHECK(dim);
     for (int i = 0; i < blob->num(); ++i) {
-      Dtype sum = 0;
+      Mtype sum = 0;
       for (int j = 0; j < dim; ++j) {
-        sum += data[i * dim + j];
+        sum += Get<Mtype>(data[i * dim + j]);
       }
       for (int j = 0; j < dim; ++j) {
-        data[i * dim + j] /= sum;
+        data[i * dim + j] = Get<Dtype>( Get<Mtype>(data[i * dim + j]) / sum );
       }
     }
     CHECK_EQ(this->filler_param_.sparse(), -1)
@@ -148,7 +148,7 @@ class XavierFiller : public Filler<Dtype,Mtype> {
   virtual void Fill(Blob<Dtype,Mtype>* blob) {
     CHECK(blob->count());
     int fan_in = blob->count() / blob->num();
-    Dtype scale = sqrt(Dtype(3) / fan_in);
+    Mtype scale = sqrt(Mtype(3) / fan_in);
     caffe_rng_uniform<Dtype,Mtype>(blob->count(), -scale, scale,
         blob->mutable_cpu_data());
     CHECK_EQ(this->filler_param_.sparse(), -1)

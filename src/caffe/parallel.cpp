@@ -90,7 +90,7 @@ GPUParams<Dtype,Mtype>::GPUParams(shared_ptr<Solver<Dtype,Mtype> > root_solver, 
   apply_buffers(net, data_, size_, copy);
 
   CUDA_CHECK(cudaMalloc(&diff_, size_ * sizeof(Dtype)));
-  caffe_gpu_set<Dtype,Mtype>(size_, Dtype(0), diff_);
+  caffe_gpu_set<Dtype,Mtype>(size_, Mtype(0), diff_);
 
   CUDA_CHECK(cudaSetDevice(initial_device));
 #else
@@ -378,7 +378,7 @@ void P2PSync<Dtype,Mtype>::on_gradients_ready(Timer* timer, ostringstream* timin
   } else {
     // Loss functions divide gradients by the batch size, so to compensate
     // for split batch, the root solver divides by number of solvers.
-    caffe_gpu_scal<Dtype,Mtype>(size_, Dtype(1.0 / Caffe::solver_count()), diff_);
+    caffe_gpu_scal<Dtype,Mtype>(size_, Mtype(1.0 / Caffe::solver_count()), diff_);
   }
 #endif
 }

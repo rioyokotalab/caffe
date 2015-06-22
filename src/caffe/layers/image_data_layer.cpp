@@ -146,7 +146,7 @@ void ImageDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
     this->data_transformer_->Transform(cv_img, &(this->transformed_data_));
     trans_time += timer.MicroSeconds();
 
-    prefetch_label[item_id] = lines_[lines_id_].second;
+    prefetch_label[item_id] = Get<Dtype>(lines_[lines_id_].second);
     // go to the next iter
     lines_id_++;
     if (lines_id_ >= lines_size) {

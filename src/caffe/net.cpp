@@ -133,16 +133,16 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
     layers_[layer_id]->SetUp(bottom_vecs_[layer_id], top_vecs_[layer_id]);
     for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
       if (blob_loss_weights_.size() <= top_id_vecs_[layer_id][top_id]) {
-        blob_loss_weights_.resize(top_id_vecs_[layer_id][top_id] + 1, Dtype(0));
+        blob_loss_weights_.resize(top_id_vecs_[layer_id][top_id] + 1, Get<Dtype>(0));
       }
       blob_loss_weights_[top_id_vecs_[layer_id][top_id]] = layer->loss(top_id);
       if (Caffe::root_solver()) {
         LOG(INFO) << "Top shape: "
                   << top_vecs_[layer_id][top_id]->shape_string();
       }
-      if (layer->loss(top_id)) {
+      if (Get<Mtype>(layer->loss(top_id))) {
         if (Caffe::root_solver()) {
-          LOG(INFO) << "    with loss weight " << layer->loss(top_id);
+          LOG(INFO) << "    with loss weight " << Get<Mtype>(layer->loss(top_id));
         }
       }
       memory_used_ += top_vecs_[layer_id][top_id]->count();
@@ -188,7 +188,7 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
     bool layer_skip_propagate_down = true;
     for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
       const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
-      if (layers_[layer_id]->loss(top_id) ||
+      if (Get<Mtype>(layers_[layer_id]->loss(top_id)) ||
           (blobs_under_loss.find(blob_name) != blobs_under_loss.end())) {
         layer_contributes_loss = true;
       }
@@ -542,10 +542,10 @@ void Net<Dtype,Mtype>::GetLearningRateAndWeightDecay() {
 }
 
 template <typename Dtype, typename Mtype>
-Dtype Net<Dtype,Mtype>::ForwardFromTo(int start, int end) {
+Mtype Net<Dtype,Mtype>::ForwardFromTo(int start, int end) {
   CHECK_GE(start, 0);
   CHECK_LT(end, layers_.size());
-  Dtype loss = 0;
+  Mtype loss = 0;
   if (debug_info_) {
     for (int i = 0; i < net_input_blobs_.size(); ++i) {
       InputDebugInfo(i);
@@ -553,7 +553,7 @@ Dtype Net<Dtype,Mtype>::ForwardFromTo(int start, int end) {
   }
   for (int i = start; i <= end; ++i) {
     // LOG(ERROR) << "Forwarding " << layer_names_[i];
-    Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);
+    Mtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);
     loss += layer_loss;
     if (debug_info_) { ForwardDebugInfo(i); }
   }
@@ -561,17 +561,17 @@ Dtype Net<Dtype,Mtype>::ForwardFromTo(int start, int end) {
 }
 
 template <typename Dtype, typename Mtype>
-Dtype Net<Dtype,Mtype>::ForwardFrom(int start) {
+Mtype Net<Dtype,Mtype>::ForwardFrom(int start) {
   return ForwardFromTo(start, layers_.size() - 1);
 }
 
 template <typename Dtype, typename Mtype>
-Dtype Net<Dtype,Mtype>::ForwardTo(int end) {
+Mtype Net<Dtype,Mtype>::ForwardTo(int end) {
   return ForwardFromTo(0, end);
 }
 
 template <typename Dtype, typename Mtype>
-const vector<Blob<Dtype,Mtype>*>& Net<Dtype,Mtype>::ForwardPrefilled(Dtype* loss) {
+const vector<Blob<Dtype,Mtype>*>& Net<Dtype,Mtype>::ForwardPrefilled(Mtype* loss) {
   if (loss != NULL) {
     *loss = ForwardFromTo(0, layers_.size() - 1);
   } else {
@@ -582,7 +582,7 @@ const vector<Blob<Dtype,Mtype>*>& Net<Dtype,Mtype>::ForwardPrefilled(Dtype* loss
 
 template <typename Dtype, typename Mtype>
 const vector<Blob<Dtype,Mtype>*>& Net<Dtype,Mtype>::Forward(
-    const vector<Blob<Dtype,Mtype>*> & bottom, Dtype* loss) {
+    const vector<Blob<Dtype,Mtype>*> & bottom, Mtype* loss) {
   // Copy bottom to internal bottom
   for (int i = 0; i < bottom.size(); ++i) {
     net_input_blobs_[i]->CopyFrom(*bottom[i]);
@@ -591,7 +591,7 @@ const vector<Blob<Dtype,Mtype>*>& Net<Dtype,Mtype>::Forward(
 }
 
 template <typename Dtype, typename Mtype>
-string Net<Dtype,Mtype>::Forward(const string& input_blob_protos, Dtype* loss) {
+string Net<Dtype,Mtype>::Forward(const string& input_blob_protos, Mtype* loss) {
   BlobProtoVector blob_proto_vec;
   if (net_input_blobs_.size()) {
     blob_proto_vec.ParseFromString(input_blob_protos);
@@ -628,7 +628,7 @@ template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::InputDebugInfo(const int input_id) {
   const Blob<Dtype,Mtype>& blob = *net_input_blobs_[input_id];
   const string& blob_name = blob_names_[net_input_blob_indices_[input_id]];
-  const Dtype data_abs_val_mean = blob.asum_data() / blob.count();
+  const Mtype data_abs_val_mean = blob.asum_data() / blob.count();
   if (Caffe::root_solver()) {
     LOG(INFO) << "    [Forward] "
               << "Input " << blob_name << " data: " << data_abs_val_mean;
@@ -640,7 +640,7 @@ void Net<Dtype,Mtype>::ForwardDebugInfo(const int layer_id) {
   for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
     const Blob<Dtype,Mtype>& blob = *top_vecs_[layer_id][top_id];
     const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
-    const Dtype data_abs_val_mean = blob.asum_data() / blob.count();
+    const Mtype data_abs_val_mean = blob.asum_data() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Forward] "
                 << "Layer " << layer_names_[layer_id]
@@ -653,7 +653,7 @@ void Net<Dtype,Mtype>::ForwardDebugInfo(const int layer_id) {
     const Blob<Dtype,Mtype>& blob = *layers_[layer_id]->blobs()[param_id];
     const int net_param_id = param_id_vecs_[layer_id][param_id];
     const string& blob_name = param_display_names_[net_param_id];
-    const Dtype data_abs_val_mean = blob.asum_data() / blob.count();
+    const Mtype data_abs_val_mean = blob.asum_data() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Forward] "
                 << "Layer " << layer_names_[layer_id]
@@ -670,7 +670,7 @@ void Net<Dtype,Mtype>::BackwardDebugInfo(const int layer_id) {
     if (!bottom_need_backward_[layer_id][bottom_id]) { continue; }
     const Blob<Dtype,Mtype>& blob = *bottom_vec[bottom_id];
     const string& blob_name = blob_names_[bottom_id_vecs_[layer_id][bottom_id]];
-    const Dtype diff_abs_val_mean = blob.asum_diff() / blob.count();
+    const Mtype diff_abs_val_mean = blob.asum_diff() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Backward] "
                 << "Layer " << layer_names_[layer_id]
@@ -682,7 +682,7 @@ void Net<Dtype,Mtype>::BackwardDebugInfo(const int layer_id) {
        ++param_id) {
     if (!layers_[layer_id]->param_propagate_down(param_id)) { continue; }
     const Blob<Dtype,Mtype>& blob = *layers_[layer_id]->blobs()[param_id];
-    const Dtype diff_abs_val_mean = blob.asum_diff() / blob.count();
+    const Mtype diff_abs_val_mean = blob.asum_diff() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Backward] "
                 << "Layer " << layer_names_[layer_id]
@@ -698,9 +698,9 @@ void Net<Dtype,Mtype>::UpdateDebugInfo(const int param_id) {
   const int param_owner = param_owners_[param_id];
   const string& layer_name = layer_names_[param_layer_indices_[param_id].first];
   const string& param_display_name = param_display_names_[param_id];
-  const Dtype diff_abs_val_mean = blob.asum_diff() / blob.count();
+  const Mtype diff_abs_val_mean = blob.asum_diff() / blob.count();
   if (param_owner < 0) {
-    const Dtype data_abs_val_mean = blob.asum_data() / blob.count();
+    const Mtype data_abs_val_mean = blob.asum_data() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Update] Layer " << layer_name
                 << ", param " << param_display_name
@@ -762,7 +762,7 @@ template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::Backward() {
   BackwardFromTo(layers_.size() - 1, 0);
   if (debug_info_) {
-    Dtype asum_data = 0, asum_diff = 0, sumsq_data = 0, sumsq_diff = 0;
+    Mtype asum_data = 0, asum_diff = 0, sumsq_data = 0, sumsq_diff = 0;
     for (int i = 0; i < params_.size(); ++i) {
       if (param_owners_[i] >= 0) { continue; }
       asum_data += params_[i]->asum_data();
@@ -770,8 +770,8 @@ void Net<Dtype,Mtype>::Backward() {
       sumsq_data += params_[i]->sumsq_data();
       sumsq_diff += params_[i]->sumsq_diff();
     }
-    const Dtype l2norm_data = std::sqrt(sumsq_data);
-    const Dtype l2norm_diff = std::sqrt(sumsq_diff);
+    const Mtype l2norm_data = std::sqrt(sumsq_data);
+    const Mtype l2norm_diff = std::sqrt(sumsq_diff);
     LOG(ERROR) << "    [Backward] All net params (data, diff): "
                << "L1 norm = (" << asum_data << ", " << asum_diff << "); "
                << "L2 norm = (" << l2norm_data << ", " << l2norm_diff << ")";

@@ -41,7 +41,7 @@ __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
     if (mask) {
       mask[index] = maxidx;
     } else {
-      top_mask[index] = maxidx;
+      top_mask[index] = Get<Dtype>(maxidx);
     }
   }
 }
@@ -101,14 +101,14 @@ __global__ void StoPoolForwardTrain(const int nthreads,
         cumsum += Get<Mtype>(bottom_data[h * width + w]);
       }
     }
-    Mtype thres = rand_idx[index] * cumsum;
+    Mtype thres = Get<Mtype>(rand_idx[index]) * cumsum;
     // Second pass: get value, and set index.
     cumsum = 0;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
         cumsum += Get<Mtype>(bottom_data[h * width + w]);
         if (cumsum >= thres) {
-          rand_idx[index] = ((n * channels + c) * height + h) * width + w;
+          rand_idx[index] = Get<Dtype>(((n * channels + c) * height + h) * width + w);
           top_data[index] = bottom_data[h * width + w];
           return;
         }
@@ -184,7 +184,7 @@ void PoolingLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bo
   case PoolingParameter_PoolMethod_STOCHASTIC:
     if (this->phase_ == TRAIN) {
       // We need to create the random index as well.
-      caffe_gpu_rng_uniform<Dtype,Mtype>(count, Dtype(0), Dtype(1),
+      caffe_gpu_rng_uniform<Dtype,Mtype>(count, Mtype(0), Mtype(1),
                             rand_idx_.mutable_gpu_data());
       // NOLINT_NEXT_LINE(whitespace/operators)
       StoPoolForwardTrain<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count),
@@ -245,7 +245,7 @@ __global__ void MaxPoolBackward(const int nthreads, const Dtype* top_diff,
       top_mask += offset;
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
-          if (top_mask[ph * pooled_width + pw] == h * width + w) {
+          if (Get<int>(top_mask[ph * pooled_width + pw]) == h * width + w) {
             gradient += Get<Mtype>(top_diff[ph * pooled_width + pw]);
           }
         }
@@ -315,7 +315,7 @@ __global__ void StoPoolBackward(const int nthreads,
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
         gradient += Get<Mtype>(top_diff[ph * pooled_width + pw]) *
-            (index == static_cast<int>(rand_idx[ph * pooled_width + pw]));
+            (index == Get<int>(rand_idx[ph * pooled_width + pw]));
       }
     }
     bottom_diff[index] = Get<Dtype>(gradient);

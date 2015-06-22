@@ -13,7 +13,7 @@ __global__ void PReLUForward(const int n, const int channels, const int dim,
     const int div_factor) {
   CUDA_KERNEL_LOOP(index, n) {
     int c = (index / dim) % channels / div_factor;
-    out[index] = Get<Dtype>( Get<Mtype>(in[index]) > 0 ? Get<Mtype>(in[index]) : Get<Mtype>(in[index]) * slope_data[c] );
+    out[index] = Get<Dtype>( Get<Mtype>(in[index]) > 0 ? Get<Mtype>(in[index]) : Get<Mtype>(in[index]) * Get<Mtype>(slope_data[c]) );
   }
 }
 
@@ -25,7 +25,7 @@ __global__ void PReLUBackward(const int n, const int channels, const int dim,
   CUDA_KERNEL_LOOP(index, n) {
     int c = (index / dim) % channels / div_factor;
     out_diff[index] = Get<Dtype>( Get<Mtype>(in_diff[index]) * ((Get<Mtype>(in_data[index]) > 0)
-        + (Get<Mtype>(in_data[index]) <= 0) * slope_data[c]) );
+        + (Get<Mtype>(in_data[index]) <= 0) * Get<Mtype>(slope_data[c])) );
   }
 }
 
@@ -82,7 +82,7 @@ void PReLULayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top
   if (this->param_propagate_down_[0]) {
     Dtype* slope_diff = this->blobs_[0]->mutable_gpu_diff();
     // slope_diff is set as 0, then accumulated over batches
-    caffe_gpu_set<Dtype,Mtype>(this->blobs_[0]->count(), Dtype(0), slope_diff);
+    caffe_gpu_set<Dtype,Mtype>(this->blobs_[0]->count(), Mtype(0), slope_diff);
     int cdim = channels * dim;
     Mtype dsum = 0.;
     for (int n = 0; n < bottom[0]->num(); ++n) {

@@ -113,12 +113,12 @@ void LRNLayer<Dtype,Mtype>::CrossChannelForward_cpu(
   Dtype* scale_data = scale_.mutable_cpu_data();
   // start with the constant value
   for (int i = 0; i < scale_.count(); ++i) {
-    scale_data[i] = k_;
+    scale_data[i] = Get<Dtype>(k_);
   }
   Blob<Dtype,Mtype> padded_square(1, channels_ + size_ - 1, height_, width_);
   Dtype* padded_square_data = padded_square.mutable_cpu_data();
-  caffe_set<Dtype,Mtype>(padded_square.count(), Dtype(0), padded_square_data);
-  Dtype alpha_over_size = alpha_ / size_;
+  caffe_set<Dtype,Mtype>(padded_square.count(), Mtype(0), padded_square_data);
+  Mtype alpha_over_size = alpha_ / size_;
   // go through the images
   for (int n = 0; n < num_; ++n) {
     // compute the padded square
@@ -192,8 +192,8 @@ void LRNLayer<Dtype,Mtype>::CrossChannelBackward_cpu(
   Dtype* accum_ratio_data = accum_ratio.mutable_cpu_data();
   // We hack a little bit by using the diff() to store an additional result
   Dtype* accum_ratio_times_bottom = accum_ratio.mutable_cpu_diff();
-  caffe_set<Dtype,Mtype>(padded_ratio.count(), Dtype(0), padded_ratio_data);
-  Dtype cache_ratio_value = 2. * alpha_ * beta_ / size_;
+  caffe_set<Dtype,Mtype>(padded_ratio.count(), Mtype(0), padded_ratio_data);
+  Mtype cache_ratio_value = 2. * alpha_ * beta_ / size_;
 
   caffe_powx<Dtype,Mtype>(scale_.count(), scale_data, -beta_, bottom_diff);
   caffe_mul<Dtype,Mtype>(scale_.count(), top_diff, bottom_diff, bottom_diff);

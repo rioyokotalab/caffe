@@ -11,6 +11,7 @@ namespace caffe {
 template <typename Dtype, typename Mtype>
 void ConvolutionLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
       const vector<Blob<Dtype,Mtype>*>& top) {
+  printf("ConvolutionalLayer::Forward_gpu()\n");
   const Dtype* weight = this->blobs_[0]->gpu_data();
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->gpu_data();
@@ -32,10 +33,10 @@ void ConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*
   const Dtype* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_gpu_diff();
   if (this->param_propagate_down_[0]) {
-    caffe_gpu_set<Dtype,Mtype>(this->blobs_[0]->count(), Dtype(0), weight_diff);
+    caffe_gpu_set<Dtype,Mtype>(this->blobs_[0]->count(), Mtype(0), weight_diff);
   }
   if (this->bias_term_ && this->param_propagate_down_[1]) {
-    caffe_gpu_set<Dtype,Mtype>(this->blobs_[1]->count(), Dtype(0),
+    caffe_gpu_set<Dtype,Mtype>(this->blobs_[1]->count(), Mtype(0),
         this->blobs_[1]->mutable_gpu_diff());
   }
   for (int i = 0; i < top.size(); ++i) {

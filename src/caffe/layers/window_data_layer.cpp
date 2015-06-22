@@ -200,7 +200,7 @@ void WindowDataLayer<Dtype,Mtype>::DataLayerSetUp(const vector<Blob<Dtype,Mtype>
     CHECK(has_mean_file_ == false) <<
       "Cannot specify mean_file and mean_value at the same time";
     for (int c = 0; c < this->transform_param_.mean_value_size(); ++c) {
-      mean_values_.push_back(this->transform_param_.mean_value(c));
+      mean_values_.push_back(Get<Dtype>(this->transform_param_.mean_value(c)));
     }
     CHECK(mean_values_.size() == 1 || mean_values_.size() == channels) <<
      "Specify either 1 mean_value or as many as channels: " << channels;
@@ -233,7 +233,7 @@ void WindowDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
   CPUTimer timer;
   Dtype* top_data = batch->data_.mutable_cpu_data();
   Dtype* top_label = batch->label_.mutable_cpu_data();
-  const Dtype scale = this->layer_param_.window_data_param().scale();
+  const Mtype scale = this->layer_param_.window_data_param().scale();
   const int batch_size = this->layer_param_.window_data_param().batch_size();
   const int context_pad = this->layer_param_.window_data_param().context_pad();
   const int crop_size = this->transform_param_.crop_size();
@@ -256,7 +256,7 @@ void WindowDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
   bool use_square = (crop_mode == "square") ? true : false;
 
   // zero out batch
-  caffe_set(batch->data_.count(), Dtype(0), top_data);
+  caffe_set(batch->data_.count(), Mtype(0), top_data);
 
   const int num_fg = static_cast<int>(static_cast<float>(batch_size)
       * fg_fraction);
@@ -307,14 +307,14 @@ void WindowDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
         // scale factor by which to expand the original region
         // such that after warping the expanded region to crop_size x crop_size
         // there's exactly context_pad amount of padding on each side
-        Dtype context_scale = static_cast<Dtype>(crop_size) /
-            static_cast<Dtype>(crop_size - 2*context_pad);
+        Mtype context_scale = static_cast<Mtype>(crop_size) /
+            static_cast<Mtype>(crop_size - 2*context_pad);
 
         // compute the expanded region
-        Dtype half_height = static_cast<Dtype>(y2-y1+1)/2.0;
-        Dtype half_width = static_cast<Dtype>(x2-x1+1)/2.0;
-        Dtype center_x = static_cast<Dtype>(x1) + half_width;
-        Dtype center_y = static_cast<Dtype>(y1) + half_height;
+        Mtype half_height = static_cast<Mtype>(y2-y1+1)/2.0;
+        Mtype half_width = static_cast<Mtype>(x2-x1+1)/2.0;
+        Mtype center_x = static_cast<Mtype>(x1) + half_width;
+        Mtype center_y = static_cast<Mtype>(y1) + half_height;
         if (use_square) {
           if (half_height > half_width) {
             half_width = half_height;
@@ -351,20 +351,20 @@ void WindowDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
 
         // scale factors that would be used to warp the unclipped
         // expanded region
-        Dtype scale_x =
-            static_cast<Dtype>(crop_size)/static_cast<Dtype>(unclipped_width);
-        Dtype scale_y =
-            static_cast<Dtype>(crop_size)/static_cast<Dtype>(unclipped_height);
+        Mtype scale_x =
+            static_cast<Mtype>(crop_size)/static_cast<Mtype>(unclipped_width);
+        Mtype scale_y =
+            static_cast<Mtype>(crop_size)/static_cast<Mtype>(unclipped_height);
 
         // size to warp the clipped expanded region to
         cv_crop_size.width =
-            static_cast<int>(round(static_cast<Dtype>(clipped_width)*scale_x));
+            static_cast<int>(round(static_cast<Mtype>(clipped_width)*scale_x));
         cv_crop_size.height =
-            static_cast<int>(round(static_cast<Dtype>(clipped_height)*scale_y));
-        pad_x1 = static_cast<int>(round(static_cast<Dtype>(pad_x1)*scale_x));
-        pad_x2 = static_cast<int>(round(static_cast<Dtype>(pad_x2)*scale_x));
-        pad_y1 = static_cast<int>(round(static_cast<Dtype>(pad_y1)*scale_y));
-        pad_y2 = static_cast<int>(round(static_cast<Dtype>(pad_y2)*scale_y));
+            static_cast<int>(round(static_cast<Mtype>(clipped_height)*scale_y));
+        pad_x1 = static_cast<int>(round(static_cast<Mtype>(pad_x1)*scale_x));
+        pad_x2 = static_cast<int>(round(static_cast<Mtype>(pad_x2)*scale_x));
+        pad_y1 = static_cast<int>(round(static_cast<Mtype>(pad_y1)*scale_y));
+        pad_y2 = static_cast<int>(round(static_cast<Mtype>(pad_y2)*scale_y));
 
         pad_h = pad_y1;
         // if we're mirroring, we mirror the padding too (to be pedantic)
@@ -403,16 +403,16 @@ void WindowDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
             int top_index = ((item_id * channels + c) * crop_size + h + pad_h)
                      * crop_size + w + pad_w;
             // int top_index = (c * height + h) * width + w;
-            Dtype pixel = static_cast<Dtype>(ptr[img_index++]);
+            Mtype pixel = static_cast<Mtype>(ptr[img_index++]);
             if (this->has_mean_file_) {
               int mean_index = (c * mean_height + h + mean_off + pad_h)
                            * mean_width + w + mean_off + pad_w;
-              top_data[top_index] = (pixel - mean[mean_index]) * scale;
+              top_data[top_index] = Get<Dtype>((pixel - Get<Mtype>(mean[mean_index])) * scale);
             } else {
               if (this->has_mean_values_) {
-                top_data[top_index] = (pixel - this->mean_values_[c]) * scale;
+                top_data[top_index] = Get<Dtype>((pixel - Get<Mtype>(this->mean_values_[c])) * scale);
               } else {
-                top_data[top_index] = pixel * scale;
+                top_data[top_index] = Get<Dtype>(pixel * scale);
               }
             }
           }
@@ -420,7 +420,7 @@ void WindowDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
       }
       trans_time += timer.MicroSeconds();
       // get window label
-      top_label[item_id] = window[WindowDataLayer<Dtype,Mtype>::LABEL];
+      top_label[item_id] = Get<Dtype>(window[WindowDataLayer<Dtype,Mtype>::LABEL]);
 
       #if 0
       // useful debugging code for dumping transformed windows to disk

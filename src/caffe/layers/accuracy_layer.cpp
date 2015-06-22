@@ -43,7 +43,7 @@ void AccuracyLayer<Dtype,Mtype>::Reshape(
 template <typename Dtype, typename Mtype>
 void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
     const vector<Blob<Dtype,Mtype>*>& top) {
-  Dtype accuracy = 0;
+  Mtype accuracy = 0;
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bottom_label = bottom[1]->cpu_data();
   const int dim = bottom[0]->count() / outer_num_;
@@ -54,21 +54,21 @@ void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& b
   for (int i = 0; i < outer_num_; ++i) {
     for (int j = 0; j < inner_num_; ++j) {
       const int label_value =
-          static_cast<int>(bottom_label[i * inner_num_ + j]);
+          static_cast<int>(Get<Mtype>(bottom_label[i * inner_num_ + j]));
       if (has_ignore_label_ && label_value == ignore_label_) {
         continue;
       }
       DCHECK_GE(label_value, 0);
       DCHECK_LT(label_value, num_labels);
       // Top-k accuracy
-      std::vector<std::pair<Dtype, int> > bottom_data_vector;
+      std::vector<std::pair<Mtype, int> > bottom_data_vector;
       for (int k = 0; k < num_labels; ++k) {
         bottom_data_vector.push_back(std::make_pair(
-            bottom_data[i * dim + k * inner_num_ + j], k));
+            Get<Mtype>(bottom_data[i * dim + k * inner_num_ + j]), k));
       }
       std::partial_sort(
           bottom_data_vector.begin(), bottom_data_vector.begin() + top_k_,
-          bottom_data_vector.end(), std::greater<std::pair<Dtype, int> >());
+          bottom_data_vector.end(), std::greater<std::pair<Mtype, int> >());
       // check if true label is in top k predictions
       for (int k = 0; k < top_k_; k++) {
         if (bottom_data_vector[k].second == label_value) {
@@ -81,7 +81,7 @@ void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& b
   }
 
   // LOG(INFO) << "Accuracy: " << accuracy;
-  top[0]->mutable_cpu_data()[0] = accuracy / count;
+  top[0]->mutable_cpu_data()[0] = Get<Dtype>(accuracy / count);
   // Accuracy layer should not be used as a loss function.
 }
 

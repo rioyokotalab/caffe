@@ -32,10 +32,10 @@ void DeconvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype
   const Dtype* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_gpu_diff();
   if (this->param_propagate_down_[0]) {
-    caffe_gpu_set<Dtype,Mtype>(this->blobs_[0]->count(), Dtype(0), weight_diff);
+    caffe_gpu_set<Dtype,Mtype>(this->blobs_[0]->count(), Mtype(0), weight_diff);
   }
   if (this->bias_term_ && this->param_propagate_down_[1]) {
-    caffe_gpu_set<Dtype,Mtype>(this->blobs_[1]->count(), Dtype(0),
+    caffe_gpu_set<Dtype,Mtype>(this->blobs_[1]->count(), Mtype(0),
         this->blobs_[1]->mutable_gpu_diff());
   }
   for (int i = 0; i < top.size(); ++i) {
