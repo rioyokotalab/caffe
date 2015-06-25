@@ -66,6 +66,45 @@ shared_ptr<Layer<Dtype,Mtype> > GetPoolingLayer(const LayerParameter& param) {
 
 REGISTER_LAYER_CREATOR(Pooling, GetPoolingLayer);
 
+// Get LRN layer according to engine
+template <typename Dtype, typename Mtype>
+shared_ptr<Layer<Dtype,Mtype> > GetLRNLayer(const LayerParameter& param) {
+  LRNParameter_Engine engine = param.lrn_param().engine();
+
+  if (engine == LRNParameter_Engine_DEFAULT) {
+    engine = LRNParameter_Engine_CAFFE;
+#ifdef USE_CUDNN
+    engine = LRNParameter_Engine_CUDNN;
+#endif
+  }
+
+  if (engine == LRNParameter_Engine_CAFFE) {
+    return shared_ptr<Layer<Dtype,Mtype> >(new LRNLayer<Dtype,Mtype>(param));
+#ifdef USE_CUDNN
+  } else if (engine == LRNParameter_Engine_CUDNN) {
+    LRNParameter lrn_param = param.lrn_param();
+
+    if (lrn_param.norm_region() ==LRNParameter_NormRegion_WITHIN_CHANNEL) {
+      // not valid for cudnn
+      // return shared_ptr<Layer<Dtype,Mtype> >(new LRNLayer<Dtype,Mtype>(param));
+      return shared_ptr<Layer<Dtype,Mtype> >(new CuDNNLCNLayer<Dtype,Mtype>(param));
+    } else {
+      // local size is too big to be handled through cuDNN
+      if (param.lrn_param().local_size() > CUDNN_LRN_MAX_N) {
+        return shared_ptr<Layer<Dtype,Mtype> >(new LRNLayer<Dtype,Mtype>(param));
+      } else {
+        // return shared_ptr<Layer<Dtype,Mtype> >(new LRNLayer<Dtype,Mtype>(param));
+        return shared_ptr<Layer<Dtype,Mtype> >(new CuDNNLRNLayer<Dtype,Mtype>(param));
+      }
+    }
+#endif
+  } else {
+    LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
+  }
+}
+
+REGISTER_LAYER_CREATOR(LRN, GetLRNLayer);
+
 // Get relu layer according to engine.
 template <typename Dtype, typename Mtype>
 shared_ptr<Layer<Dtype,Mtype> > GetReLULayer(const LayerParameter& param) {

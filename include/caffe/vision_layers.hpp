@@ -374,6 +374,64 @@ class LRNLayer : public Layer<Dtype,Mtype> {
   vector<Blob<Dtype,Mtype>*> product_bottom_vec_;
 };
 
+#ifdef USE_CUDNN
+
+template <typename Dtype, typename Mtype>
+class CuDNNLRNLayer : public LRNLayer<Dtype,Mtype> {
+ public:
+  explicit CuDNNLRNLayer(const LayerParameter& param)
+      : LRNLayer<Dtype,Mtype>(param), handles_setup_(false) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual ~CuDNNLRNLayer();
+
+ protected:
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+
+  bool handles_setup_;
+  cudnnHandle_t             handle_;
+  cudnnLRNDescriptor_t norm_desc_;
+  cudnnTensorDescriptor_t bottom_desc_, top_desc_;
+
+  int size_;
+  Mtype alpha_, beta_, k_;
+};
+
+template <typename Dtype, typename Mtype>
+class CuDNNLCNLayer : public LRNLayer<Dtype,Mtype> {
+ public:
+  explicit CuDNNLCNLayer(const LayerParameter& param)
+      : LRNLayer<Dtype,Mtype>(param), handles_setup_(false), tempDataSize(0) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual ~CuDNNLCNLayer();
+
+ protected:
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+
+  bool handles_setup_;
+  cudnnHandle_t             handle_;
+  cudnnLRNDescriptor_t norm_desc_;
+  cudnnTensorDescriptor_t bottom_desc_, top_desc_;
+
+  int size_, pre_pad_;
+  Mtype alpha_, beta_, k_;
+
+  size_t tempDataSize;
+  void *tempData1, *tempData2;
+};
+
+#endif
 
 /**
  * @brief Pools the input image by taking the max, average, etc. within regions.
