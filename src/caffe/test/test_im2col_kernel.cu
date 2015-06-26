@@ -14,7 +14,7 @@
 namespace caffe {
 
 // Forward declare kernel functions
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void im2col_gpu_kernel(const int n, const Dtype* data_im,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w,
@@ -89,7 +89,7 @@ TYPED_TEST(Im2colKernelTest, TestGPU) {
 
   // CPU Version
   for (int n = 0; n < this->blob_bottom_->num(); ++n) {
-    im2col_cpu(this->blob_bottom_->cpu_data() + this->blob_bottom_->offset(n),
+    im2col_cpu<Dtype,Mtype>(this->blob_bottom_->cpu_data() + this->blob_bottom_->offset(n),
       this->channels_, this->height_, this->width_,
       this->kernel_size_, this->kernel_size_, this->pad_, this->pad_,
       this->stride_, this->stride_,
@@ -105,7 +105,7 @@ TYPED_TEST(Im2colKernelTest, TestGPU) {
     for (int n = 0; n < this->blob_bottom_->num(); ++n) {
       int grid_dim = default_grid_dim/grid_div;
       // NOLINT_NEXT_LINE(whitespace/operators)
-      im2col_gpu_kernel<Dtype><<<grid_dim, CAFFE_CUDA_NUM_THREADS>>>(
+      im2col_gpu_kernel<Dtype,Mtype><<<grid_dim, CAFFE_CUDA_NUM_THREADS>>>(
         num_kernels, bottom_data + this->blob_bottom_->offset(n),
         this->height_, this->width_, this->kernel_size_, this->kernel_size_,
         this->pad_, this->pad_, this->stride_, this->stride_,
