@@ -1,3 +1,4 @@
+#include <fp16_emu.h>
 #include "caffe/util/fp16_conversion.hpp"
 
 half cpu_float2half_rn(float f)
@@ -84,4 +85,12 @@ float cpu_half2float(half h)
     int temp = ((sign << 31) | (exponent << 23) | mantissa);
 
     return *((float*)((void*)&temp));
+}
+
+half operator - (const half& h) {
+    return hneg(h);
+}
+
+int isnan(const half& h) {
+    return ishnan(h);
 }

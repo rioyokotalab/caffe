@@ -146,7 +146,7 @@ TYPED_TEST(MVNLayerTest, TestGradient) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   MVNLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(6e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -157,7 +157,7 @@ TYPED_TEST(MVNLayerTest, TestGradientMeanOnly) {
   LayerParameter layer_param;
   layer_param.ParseFromString("mvn_param{normalize_variance: false}");
   MVNLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(5e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -168,7 +168,7 @@ TYPED_TEST(MVNLayerTest, TestGradientAcrossChannels) {
   LayerParameter layer_param;
   layer_param.ParseFromString("mvn_param{across_channels: true}");
   MVNLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(6e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

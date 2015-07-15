@@ -285,7 +285,7 @@ TYPED_TEST(ReshapeLayerTest, TestGradient) {
   shape->add_dim(3);
   shape->add_dim(5);
   ReshapeLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

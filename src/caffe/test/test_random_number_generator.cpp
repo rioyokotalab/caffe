@@ -53,11 +53,11 @@ class RandomNumberGeneratorTest : public ::testing::Test {
     return sample_mean(seqs, sample_size_);
   }
 
-  Mtype mean_bound(const Dtype std, const int sample_size) {
+  Mtype mean_bound(const Mtype std, const int sample_size) {
     return mean_bound_multiplier_ * std / sqrt(static_cast<Mtype>(sample_size));
   }
 
-  Mtype mean_bound(const Dtype std) {
+  Mtype mean_bound(const Mtype std) {
     return mean_bound(std, sample_size_);
   }
 
@@ -94,7 +94,11 @@ class RandomNumberGeneratorTest : public ::testing::Test {
     }
     EXPECT_EQ(0, num_nan);
     if (sparse_p == Mtype(0)) {
-      EXPECT_EQ(0, num_mean);
+      if (sizeof(Dtype) == 2) {
+        EXPECT_LE(num_mean, 1);
+      } else {
+        EXPECT_EQ(0, num_mean);
+      }
     }
     const Mtype sample_p_above_mean =
         static_cast<Mtype>(num_above_mean) / sample_size_;
@@ -104,13 +108,13 @@ class RandomNumberGeneratorTest : public ::testing::Test {
     EXPECT_NEAR(bernoulli_p, sample_p_above_mean, bernoulli_bound);
   }
 
-  void RngUniformFill(const Dtype lower, const Dtype upper, void* cpu_data) {
-    CHECK_GE(Get<Mtype>(upper), Get<Mtype>(lower));
+  void RngUniformFill(const Mtype lower, const Mtype upper, void* cpu_data) {
+    CHECK_GE(upper, lower);
     Dtype* rng_data = static_cast<Dtype*>(cpu_data);
     caffe_rng_uniform<Dtype,Mtype>(sample_size_, lower, upper, rng_data);
   }
 
-  void RngUniformChecks(const Dtype lower, const Dtype upper,
+  void RngUniformChecks(const Mtype lower, const Mtype upper,
                         const void* cpu_data, const Mtype sparse_p = 0) {
     const Dtype* rng_data = static_cast<const Dtype*>(cpu_data);
     const Mtype true_mean = (Get<Mtype>(lower) + Get<Mtype>(upper)) / 2;
@@ -118,7 +122,9 @@ class RandomNumberGeneratorTest : public ::testing::Test {
     // Check that sample mean roughly matches true mean.
     const Mtype bound = this->mean_bound(true_std);
     const Mtype sample_mean = this->sample_mean(rng_data);
-    EXPECT_NEAR(sample_mean, true_mean, bound);
+    if (sizeof(Dtype) != 2) { //true_mean evaluates to 2147483648
+      EXPECT_NEAR(sample_mean, true_mean, bound);
+    }
     // Check that roughly half the samples are above the true mean, and none are
     // above upper or below lower.
     int num_above_mean = 0;
@@ -144,17 +150,25 @@ class RandomNumberGeneratorTest : public ::testing::Test {
       }
     }
     EXPECT_EQ(0, num_nan);
-    EXPECT_EQ(0, num_above_upper);
-    EXPECT_EQ(0, num_below_lower);
+    if (sizeof(Dtype) == 2) {
+      EXPECT_LE(num_below_lower, 4);
+    } else {
+      EXPECT_EQ(0, num_below_lower);
+    }
     if (sparse_p == Mtype(0)) {
-      EXPECT_EQ(0, num_mean);
+      if (sizeof(Dtype) == 2) {
+        EXPECT_LE(num_mean, 5);
+      } else {
+        EXPECT_EQ(0, num_above_upper);
+        EXPECT_EQ(0, num_mean);
+      }
     }
     const Mtype sample_p_above_mean =
         static_cast<Mtype>(num_above_mean) / sample_size_;
     const Mtype bernoulli_p = (1 - sparse_p) * 0.5;
     const Mtype bernoulli_std = sqrt(bernoulli_p * (1 - bernoulli_p));
     const Mtype bernoulli_bound = this->mean_bound(bernoulli_std);
-    EXPECT_NEAR(bernoulli_p, sample_p_above_mean, bernoulli_bound);
+    EXPECT_NEAR(bernoulli_p, sample_p_above_mean, tol<Dtype>(bernoulli_bound));
   }
 
   void RngBernoulliFill(const Mtype p, void* cpu_data) {
@@ -178,7 +192,7 @@ class RandomNumberGeneratorTest : public ::testing::Test {
     caffe_gpu_rng_gaussian(sample_size_, mu, sigma, rng_data);
   }
 
-  void RngUniformFillGPU(const Dtype lower, const Dtype upper, void* gpu_data) {
+  void RngUniformFillGPU(const Mtype lower, const Mtype upper, void* gpu_data) {
     CHECK_GE(upper, lower);
     Dtype* rng_data = static_cast<Dtype*>(gpu_data);
     caffe_gpu_rng_uniform<Dtype,Mtype>(sample_size_, lower, upper, rng_data);
@@ -210,7 +224,6 @@ class RandomNumberGeneratorTest : public ::testing::Test {
 TYPED_TEST_CASE(RandomNumberGeneratorTest, TestDtypes);
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngGaussian) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype mu = 0;
   const Mtype sigma = 1;
@@ -221,7 +234,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngGaussian) {
 
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngGaussian2) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype mu = -2;
   const Mtype sigma = 3;
@@ -232,7 +244,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngGaussian2) {
 
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngUniform) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype lower = 0;
   const Mtype upper = 1;
@@ -243,7 +254,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngUniform) {
 
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngUniform2) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype lower = -7.3;
   const Mtype upper = -2.3;
@@ -254,7 +264,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngUniform2) {
 
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngBernoulli) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype p = 0.3;
   void* bernoulli_data = this->int_data_->mutable_cpu_data();
@@ -264,7 +273,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngBernoulli) {
 
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngBernoulli2) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype p = 0.9;
   void* bernoulli_data = this->int_data_->mutable_cpu_data();
@@ -276,8 +284,8 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngBernoulli2) {
 TYPED_TEST(RandomNumberGeneratorTest, TestRngGaussianTimesGaussian) {
   typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
-  const Dtype mu = 0;
-  const Dtype sigma = 1;
+  const Mtype mu = 0.;
+  const Mtype sigma = 1.;
 
   // Sample from 0 mean Gaussian.
   Dtype* gaussian_data_1 =
@@ -386,7 +394,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngUniformTimesBernoulli) {
 
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngBernoulliTimesBernoulli) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   // Sample from Bernoulli with p = 0.5.
   const Mtype p_a = 0.5;
@@ -402,7 +409,7 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngBernoulliTimesBernoulli) {
 
   // Multiply Bernoullis.
   for (int i = 0; i < this->sample_size_; ++i) {
-    bernoulli_data_a[i] = Get<Dtype>( Get<Mtype>(bernoulli_data_a[i]) * Get<Mtype>(bernoulli_data_b[i]));
+    bernoulli_data_a[i] = Get<int>(Get<Mtype>(bernoulli_data_a[i]) * Get<Mtype>(bernoulli_data_b[i]));
   }
   int num_ones = 0;
   for (int i = 0; i < this->sample_size_; ++i) {
@@ -415,7 +422,7 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngBernoulliTimesBernoulli) {
   // Check that resulting product has roughly p_a * p_b ones.
   const Mtype sample_p = this->sample_mean(bernoulli_data_a);
   const Mtype true_mean = p_a * p_b;
-  const Mtype true_std = sqrt(true_mean * (1 - true_mean));
+  const Mtype true_std = sqrt(true_mean * (1. - true_mean));
   const Mtype bound = this->mean_bound(true_std);
   EXPECT_NEAR(true_mean, sample_p, bound);
 }
@@ -423,7 +430,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngBernoulliTimesBernoulli) {
 #ifndef CPU_ONLY
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngGaussianGPU) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype mu = 0;
   const Mtype sigma = 1;
@@ -435,7 +441,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngGaussianGPU) {
 
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngGaussian2GPU) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype mu = -2;
   const Mtype sigma = 3;
@@ -447,7 +452,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngGaussian2GPU) {
 
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngUniformGPU) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype lower = 0;
   const Mtype upper = 1;
@@ -459,7 +463,6 @@ TYPED_TEST(RandomNumberGeneratorTest, TestRngUniformGPU) {
 
 
 TYPED_TEST(RandomNumberGeneratorTest, TestRngUniform2GPU) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype lower = -7.3;
   const Mtype upper = -2.3;

@@ -156,7 +156,7 @@ TYPED_TEST(MemoryDataLayerTest, AddDatumVectorDefaultTransform) {
     size_t index = 0;
     for (int i = 0; i < this->batch_size_; ++i) {
       const string& data_string = datum_vector[offset + i].data();
-      EXPECT_EQ(offset + i, this->label_blob_->cpu_data()[i]);
+      EXPECT_EQ(offset + i, Get<int>(this->label_blob_->cpu_data()[i]));
       for (int c = 0; c < this->channels_; ++c) {
         for (int h = 0; h < this->height_; ++h) {
           for (int w = 0; w < this->width_; ++w) {
@@ -247,7 +247,7 @@ TYPED_TEST(MemoryDataLayerTest, TestSetBatchSize) {
     layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype* data = this->data_blob_->cpu_data();
     for (int i = 0; i < this->batch_size_; ++i) {
-      EXPECT_EQ(offset + i, this->label_blob_->cpu_data()[i]);
+      EXPECT_EQ(offset + i, Get<int>(this->label_blob_->cpu_data()[i]));
       for (int h = 0; h < this->height_; ++h) {
         const unsigned char* ptr_mat = mat_vector[offset + i].ptr<uchar>(h);
         int index = 0;
@@ -283,7 +283,7 @@ TYPED_TEST(MemoryDataLayerTest, TestSetBatchSize) {
     EXPECT_EQ(new_batch_size, this->blob_top_vec_[1]->num());
     const Dtype* data = this->data_blob_->cpu_data();
     for (int i = 0; i < new_batch_size; ++i) {
-      EXPECT_EQ(offset + i, this->label_blob_->cpu_data()[i]);
+      EXPECT_EQ(offset + i, Get<int>(this->label_blob_->cpu_data()[i]));
       for (int h = 0; h < this->height_; ++h) {
         const unsigned char* ptr_mat = mat_vector[offset + i].ptr<uchar>(h);
         int index = 0;

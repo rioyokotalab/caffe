@@ -174,7 +174,7 @@ TYPED_TEST(SliceLayerTest, TestGradientAcrossNum) {
   LayerParameter layer_param;
   layer_param.mutable_slice_param()->set_axis(0);
   SliceLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
     this->blob_top_vec_0_);
 }
@@ -188,7 +188,7 @@ TYPED_TEST(SliceLayerTest, TestGradientAcrossChannels) {
   const int kSlicePoint = 4;
   layer_param.mutable_slice_param()->add_slice_point(kSlicePoint);
   SliceLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
     this->blob_top_vec_0_);
 }

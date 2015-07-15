@@ -51,6 +51,8 @@ class MathFunctionsTest : public MultiDeviceTest<TypeParam> {
         val = static_cast<uint64_t>(Get<Mtype>(x[i])) ^ static_cast<uint64_t>(Get<Mtype>(y[i]));
       } else if (sizeof(Dtype) == 4) {
         val = static_cast<uint32_t>(Get<Mtype>(x[i])) ^ static_cast<uint32_t>(Get<Mtype>(y[i]));
+      } else if (sizeof(Dtype) == 2) {
+        val = static_cast<uint16_t>(Get<Mtype>(x[i])) ^ static_cast<uint16_t>(Get<Mtype>(y[i]));
       } else {
         LOG(FATAL) << "Unrecognized Dtype size: " << sizeof(Dtype);
       }

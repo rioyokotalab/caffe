@@ -167,8 +167,6 @@ TYPED_TEST(DataTransformTest, TestCropSize) {
 }
 
 TYPED_TEST(DataTransformTest, TestCropTrain) {
-  typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = true;  // pixels are consecutive ints [0,size]
   const int label = 0;
@@ -186,8 +184,6 @@ TYPED_TEST(DataTransformTest, TestCropTrain) {
 }
 
 TYPED_TEST(DataTransformTest, TestCropTest) {
-  typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = true;  // pixels are consecutive ints [0,size]
   const int label = 0;
@@ -205,8 +201,6 @@ TYPED_TEST(DataTransformTest, TestCropTest) {
 }
 
 TYPED_TEST(DataTransformTest, TestMirrorTrain) {
-  typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = true;  // pixels are consecutive ints [0,size]
   const int label = 0;
@@ -223,8 +217,6 @@ TYPED_TEST(DataTransformTest, TestMirrorTrain) {
 }
 
 TYPED_TEST(DataTransformTest, TestMirrorTest) {
-  typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = true;  // pixels are consecutive ints [0,size]
   const int label = 0;
@@ -241,8 +233,6 @@ TYPED_TEST(DataTransformTest, TestMirrorTest) {
 }
 
 TYPED_TEST(DataTransformTest, TestCropMirrorTrain) {
-  typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = true;  // pixels are consecutive ints [0,size]
   const int label = 0;
@@ -265,8 +255,6 @@ TYPED_TEST(DataTransformTest, TestCropMirrorTrain) {
 }
 
 TYPED_TEST(DataTransformTest, TestCropMirrorTest) {
-  typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = true;  // pixels are consecutive ints [0,size]
   const int label = 0;

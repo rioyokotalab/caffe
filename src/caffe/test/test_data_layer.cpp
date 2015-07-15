@@ -153,7 +153,7 @@ class DataLayerTest : public MultiDeviceTest<TypeParam> {
       layer.Forward(blob_bottom_vec_, blob_top_vec_);
       EXPECT_EQ(blob_top_data_->height(), iter % 2 + 1);
       EXPECT_EQ(blob_top_data_->width(), iter % 4 + 1);
-      EXPECT_EQ(iter, blob_top_label_->cpu_data()[0]);
+      EXPECT_EQ(iter, Get<int>(blob_top_label_->cpu_data()[0]));
       const int channels = blob_top_data_->channels();
       const int height = blob_top_data_->height();
       const int width = blob_top_data_->width();

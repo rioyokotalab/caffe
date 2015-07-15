@@ -81,14 +81,14 @@ class SigmoidCrossEntropyLossLayerTest : public MultiDeviceTest<TypeParam> {
       targets_filler.Fill(this->blob_bottom_targets_);
       SigmoidCrossEntropyLossLayer<Dtype,Mtype> layer(layer_param);
       layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-      Dtype layer_loss =
+      Mtype layer_loss =
           layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
       const int count = this->blob_bottom_data_->count();
       const int num = this->blob_bottom_data_->num();
       const Dtype* blob_bottom_data = this->blob_bottom_data_->cpu_data();
       const Dtype* blob_bottom_targets =
           this->blob_bottom_targets_->cpu_data();
-      Dtype reference_loss = kLossWeight * SigmoidCrossEntropyLossReference(
+      Mtype reference_loss = kLossWeight * SigmoidCrossEntropyLossReference(
           count, num, blob_bottom_data, blob_bottom_targets);
       EXPECT_NEAR(reference_loss, layer_loss, eps) << "debug: trial #" << i;
     }
@@ -115,7 +115,7 @@ TYPED_TEST(SigmoidCrossEntropyLossLayerTest, TestGradient) {
   layer_param.add_loss_weight(kLossWeight);
   SigmoidCrossEntropyLossLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2, 1701);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2), 1701);
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_, 0);
 }

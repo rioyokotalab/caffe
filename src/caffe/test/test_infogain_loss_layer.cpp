@@ -32,7 +32,7 @@ class InfogainLossLayerTest : public MultiDeviceTest<TypeParam> {
     filler.Fill(this->blob_bottom_data_);
     blob_bottom_vec_.push_back(blob_bottom_data_);
     for (int i = 0; i < blob_bottom_label_->count(); ++i) {
-      blob_bottom_label_->mutable_cpu_data()[i] = caffe_rng_rand() % 5;
+      blob_bottom_label_->mutable_cpu_data()[i] = Get<Dtype>(caffe_rng_rand() % 5);
     }
     blob_bottom_vec_.push_back(blob_bottom_label_);
     filler_param.set_min(0.1);
@@ -64,7 +64,7 @@ TYPED_TEST(InfogainLossLayerTest, TestGradient) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   InfogainLossLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-4, 2e-2, 1701, 1, 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-4), Get<Dtype>(2e-2), 1701, Get<Dtype>(1.), Get<Dtype>(0.01));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_, 0);
 }

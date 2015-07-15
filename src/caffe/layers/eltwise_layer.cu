@@ -12,7 +12,7 @@ __global__ void MaxForward(const int nthreads, const Dtype* bottom_data_a,
     const Dtype* bottom_data_b, const int blob_idx, Dtype* top_data,
     int* mask) {
   CUDA_KERNEL_LOOP(index, nthreads) {
-    Mtype maxval = -FLT_MAX;
+    Mtype maxval = - maxDtype<Dtype>();
     int maxidx = -1;
     if (Get<Mtype>(bottom_data_a[index]) > Get<Mtype>(bottom_data_b[index])) {
       // only update for very first bottom_data blob (blob_idx == 0)

@@ -122,11 +122,17 @@ TYPED_TEST(HDF5DataLayerTest, TestRead) {
               i * num_cols * height * width +
               j * height * width +
               h * width + w);
-            EXPECT_EQ(
-              file_offset + data_offset + idx,
-              Get<int>(this->blob_top_data_->cpu_data()[idx]))
-              << "debug: i " << i << " j " << j
-              << " iter " << iter;
+            if (sizeof(Dtype) == 2) {
+              EXPECT_NEAR(
+                file_offset + data_offset + idx,
+                Get<int>(this->blob_top_data_->cpu_data()[idx]), 2.);
+            } else {
+              EXPECT_EQ(
+                file_offset + data_offset + idx,
+                Get<int>(this->blob_top_data_->cpu_data()[idx]))
+                << "debug: i " << i << " j " << j
+                << " iter " << iter;
+            }
           }
         }
       }

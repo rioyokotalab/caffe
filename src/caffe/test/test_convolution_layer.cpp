@@ -210,14 +210,14 @@ TYPED_TEST(ConvolutionLayerTest, TestSimpleConvolution) {
   top_data = this->blob_top_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), tol<Dtype>(1e-4));
   }
   caffe_conv<Dtype,Mtype>(this->blob_bottom_2_, convolution_param, layer->blobs(),
       this->MakeReferenceTop(this->blob_top_2_));
   top_data = this->blob_top_2_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), tol<Dtype>(1e-4));
   }
 }
 
@@ -245,7 +245,7 @@ TYPED_TEST(ConvolutionLayerTest, Test1x1Convolution) {
   top_data = this->blob_top_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), tol<Dtype>(1e-4));
   }
 }
 
@@ -274,7 +274,7 @@ TYPED_TEST(ConvolutionLayerTest, TestSimpleConvolutionGroup) {
   top_data = this->blob_top_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), tol<Dtype>(1e-4));
   }
 }
 
@@ -371,7 +371,7 @@ TYPED_TEST(ConvolutionLayerTest, TestSobelConvolution) {
   const Dtype* top_data = this->blob_top_->cpu_data();
   const Dtype* sep_top_data = this->blob_top_2_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(sep_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(sep_top_data[i]), tol<Dtype>(1e-4));
   }
 }
 
@@ -389,7 +389,7 @@ TYPED_TEST(ConvolutionLayerTest, TestGradient) {
   convolution_param->mutable_weight_filler()->set_type("gaussian");
   convolution_param->mutable_bias_filler()->set_type("gaussian");
   ConvolutionLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(6e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -408,7 +408,7 @@ TYPED_TEST(ConvolutionLayerTest, Test1x1Gradient) {
   convolution_param->mutable_weight_filler()->set_type("gaussian");
   convolution_param->mutable_bias_filler()->set_type("gaussian");
   ConvolutionLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(5e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -426,7 +426,7 @@ TYPED_TEST(ConvolutionLayerTest, TestGradientGroup) {
   convolution_param->mutable_weight_filler()->set_type("gaussian");
   convolution_param->mutable_bias_filler()->set_type("gaussian");
   ConvolutionLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(5e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -543,14 +543,14 @@ TYPED_TEST(CuDNNConvolutionLayerTest, TestSimpleConvolutionCuDNN) {
   top_data = this->blob_top_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), tol<Dtype>(1e-4));
   }
   caffe_conv<Dtype,Mtype>(this->blob_bottom_2_, convolution_param, layer->blobs(),
       this->MakeReferenceTop(this->blob_top_2_));
   top_data = this->blob_top_2_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), tol<Dtype>(1e-4));
   }
 }
 
@@ -579,7 +579,7 @@ TYPED_TEST(CuDNNConvolutionLayerTest, TestSimpleConvolutionGroupCuDNN) {
   top_data = this->blob_top_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(ref_top_data[i]), tol<Dtype>(1e-4));
   }
 }
 
@@ -677,7 +677,7 @@ TYPED_TEST(CuDNNConvolutionLayerTest, TestSobelConvolutionCuDNN) {
   const Dtype* top_data = this->blob_top_->cpu_data();
   const Dtype* sep_top_data = this->blob_top_2_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(sep_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(sep_top_data[i]), tol<Dtype>(1e-4));
   }
 }
 
@@ -695,7 +695,7 @@ TYPED_TEST(CuDNNConvolutionLayerTest, TestGradientCuDNN) {
   convolution_param->mutable_weight_filler()->set_type("gaussian");
   convolution_param->mutable_bias_filler()->set_type("gaussian");
   CuDNNConvolutionLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(5e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -713,7 +713,7 @@ TYPED_TEST(CuDNNConvolutionLayerTest, TestGradientGroupCuDNN) {
   convolution_param->mutable_weight_filler()->set_type("gaussian");
   convolution_param->mutable_bias_filler()->set_type("gaussian");
   CuDNNConvolutionLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(5e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

@@ -46,7 +46,9 @@ class MultiDeviceTest : public ::testing::Test {
   virtual ~MultiDeviceTest() {}
 };
 
-typedef ::testing::Types<MultiPrecision<float,float>, MultiPrecision<double,double> > TestDtypes;
+typedef ::testing::Types<MultiPrecision<float,float>,
+                         MultiPrecision<double,double>,
+                         MultiPrecision<half,float> > TestDtypes;
 
 template <typename TypeParam>
 struct CPUDevice {
@@ -62,7 +64,8 @@ class CPUDeviceTest : public MultiDeviceTest<CPUDevice<TypeParam> > {
 #ifdef CPU_ONLY
 
 typedef ::testing::Types<CPUDevice<MultiPrecision<float,float> >,
-                         CPUDevice<MultiPrecision<double,double> > > TestDtypesAndDevices;
+                         CPUDevice<MultiPrecision<double,double> >,
+                         CPUDevice<MultiPrecision<half,float> > > TestDtypesAndDevices;
 
 #else
 
@@ -77,9 +80,12 @@ template <typename TypeParam>
 class GPUDeviceTest : public MultiDeviceTest<GPUDevice<TypeParam> > {
 };
 
-typedef ::testing::Types<CPUDevice<MultiPrecision<float,float> >, CPUDevice<MultiPrecision<double,double> >,
-                         GPUDevice<MultiPrecision<float,float> >, GPUDevice<MultiPrecision<double, double> > >
-                         TestDtypesAndDevices;
+typedef ::testing::Types<CPUDevice<MultiPrecision<float,float> >,
+                         CPUDevice<MultiPrecision<double,double> >,
+                         CPUDevice<MultiPrecision<half,float> >,
+                         GPUDevice<MultiPrecision<float,float> >,
+                         GPUDevice<MultiPrecision<double, double> >,
+                         GPUDevice<MultiPrecision<half,float> > > TestDtypesAndDevices;
 
 #endif
 

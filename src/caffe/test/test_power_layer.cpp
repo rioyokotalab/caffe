@@ -32,7 +32,7 @@ class PowerLayerTest : public MultiDeviceTest<TypeParam> {
   }
   virtual ~PowerLayerTest() { delete blob_bottom_; delete blob_top_; }
 
-  void TestForward(Mtype power, Mtype scale, Dtype shift) {
+  void TestForward(Mtype power, Mtype scale, Mtype shift) {
     LayerParameter layer_param;
     layer_param.mutable_power_param()->set_power(power);
     layer_param.mutable_power_param()->set_scale(scale);
@@ -54,12 +54,12 @@ class PowerLayerTest : public MultiDeviceTest<TypeParam> {
       } else {
         Mtype precision = std::max(
           Mtype(std::abs(expected_value * Mtype(1e-4))), min_precision);
-        EXPECT_NEAR(expected_value, Get<Mtype>(top_data[i]), precision);
+        EXPECT_NEAR(expected_value, Get<Mtype>(top_data[i]), tol<Dtype>(precision));
       }
     }
   }
 
-  void TestBackward(Dtype power, Dtype scale, Dtype shift) {
+  void TestBackward(Mtype power, Mtype scale, Mtype shift) {
     LayerParameter layer_param;
     layer_param.mutable_power_param()->set_power(power);
     layer_param.mutable_power_param()->set_scale(scale);
@@ -75,7 +75,7 @@ class PowerLayerTest : public MultiDeviceTest<TypeParam> {
         }
       }
     }
-    GradientChecker<Dtype,Mtype> checker(1e-3, 1e-2, 1701, 0., 0.01);
+    GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-3), Get<Dtype>(1e-2), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
     checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
         this->blob_top_vec_);
   }
@@ -89,7 +89,6 @@ class PowerLayerTest : public MultiDeviceTest<TypeParam> {
 TYPED_TEST_CASE(PowerLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(PowerLayerTest, TestPower) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 0.37;
   Mtype scale = 0.83;
@@ -98,7 +97,6 @@ TYPED_TEST(PowerLayerTest, TestPower) {
 }
 
 TYPED_TEST(PowerLayerTest, TestPowerGradient) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 0.37;
   Mtype scale = 0.83;
@@ -107,7 +105,6 @@ TYPED_TEST(PowerLayerTest, TestPowerGradient) {
 }
 
 TYPED_TEST(PowerLayerTest, TestPowerGradientShiftZero) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 0.37;
   Mtype scale = 0.83;
@@ -116,7 +113,6 @@ TYPED_TEST(PowerLayerTest, TestPowerGradientShiftZero) {
 }
 
 TYPED_TEST(PowerLayerTest, TestPowerZero) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 0.0;
   Mtype scale = 0.83;
@@ -125,7 +121,6 @@ TYPED_TEST(PowerLayerTest, TestPowerZero) {
 }
 
 TYPED_TEST(PowerLayerTest, TestPowerZeroGradient) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 0.0;
   Mtype scale = 0.83;
@@ -134,7 +129,6 @@ TYPED_TEST(PowerLayerTest, TestPowerZeroGradient) {
 }
 
 TYPED_TEST(PowerLayerTest, TestPowerOne) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 1.0;
   Mtype scale = 0.83;
@@ -143,7 +137,6 @@ TYPED_TEST(PowerLayerTest, TestPowerOne) {
 }
 
 TYPED_TEST(PowerLayerTest, TestPowerOneGradient) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 1.0;
   Mtype scale = 0.83;
@@ -152,7 +145,6 @@ TYPED_TEST(PowerLayerTest, TestPowerOneGradient) {
 }
 
 TYPED_TEST(PowerLayerTest, TestPowerTwo) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 2.0;
   Mtype scale = 0.34;
@@ -161,7 +153,6 @@ TYPED_TEST(PowerLayerTest, TestPowerTwo) {
 }
 
 TYPED_TEST(PowerLayerTest, TestPowerTwoGradient) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 2.0;
   Mtype scale = 0.83;
@@ -170,7 +161,6 @@ TYPED_TEST(PowerLayerTest, TestPowerTwoGradient) {
 }
 
 TYPED_TEST(PowerLayerTest, TestPowerTwoScaleHalfGradient) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   Mtype power = 2.0;
   Mtype scale = 0.5;

@@ -50,7 +50,7 @@ class AccuracyLayerTest : public CPUDeviceTest<TypeParam> {
           static_cast<caffe::rng_t*>(rng->generator());
     Dtype* label_data = blob_bottom_label_->mutable_cpu_data();
     for (int i = 0; i < blob_bottom_label_->count(); ++i) {
-      label_data[i] = (*prefetch_rng)() % 10;
+      label_data[i] = Get<Dtype>((*prefetch_rng)() % 10);
     }
   }
 
@@ -173,7 +173,7 @@ TYPED_TEST(AccuracyLayerTest, TestForwardIgnoreLabel) {
   typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  const Mtype kIgnoreLabelValue = Get<Dtype>(-1);
+  const Mtype kIgnoreLabelValue = -1.;
   layer_param.mutable_accuracy_param()->set_ignore_label(kIgnoreLabelValue);
   AccuracyLayer<Dtype,Mtype> layer(layer_param);
   // Manually set some labels to the ignore label value (-1).

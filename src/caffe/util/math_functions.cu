@@ -50,17 +50,15 @@ void caffe_gpu_gemm<half,float>(const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
     const float alpha, const half* A, const half* B, const float beta,
     half* C) {
-  // cudaDeviceSynchronize();
-  // printf("%s\n", __FUNCTION__);
   // Note that cublas follows fortran order.
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
+  const int lda = (TransA == CblasNoTrans) ? K : M;
+  const int ldb = (TransB == CblasNoTrans) ? N : K;
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
   cublasOperation_t cuTransB =
       (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
   CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), cuTransB, cuTransA,
-      N, M, K, &alpha, B, CUBLAS_DATA_HALF, ldb, A, CUBLAS_DATA_HALF, 
+      N, M, K, &alpha, B, CUBLAS_DATA_HALF, ldb, A, CUBLAS_DATA_HALF,
       lda, &beta, C, CUBLAS_DATA_HALF, N));
 }
 
@@ -88,15 +86,14 @@ template <>
 void caffe_gpu_gemv<half, float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const half* A, const half* x,
     const float beta, half* y) {
-  // cudaDeviceSynchronize();
-  // printf("%s : (%d,%d) %c\n", __FUNCTION__, M, N, (TransA == CblasNoTrans) ? 'N' : 'T');
+  // Note that cublas still follows Fortran order.
   cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
-  int lda = (TransA == CblasNoTrans) ? N : M;
-  int ldb = (TransA == CblasNoTrans) ? 1 : N;
-  CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), cuTransA, cuTransA,
-        M, 1, N, &alpha, A, CUBLAS_DATA_HALF, lda, x, CUBLAS_DATA_HALF, ldb, &beta, y, CUBLAS_DATA_HALF, lda));
-
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  const int m = (TransA == CblasNoTrans) ? M : N;
+  const int n = (TransA == CblasNoTrans) ? N : M;
+  CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), CUBLAS_OP_N, cuTransA,
+      1, m, n, &alpha, x, CUBLAS_DATA_HALF, 1, A, CUBLAS_DATA_HALF, N, &beta,
+      y, CUBLAS_DATA_HALF, 1));
 }
 
 template <>
@@ -774,6 +771,16 @@ void caffe_gpu_rng_gaussian(const int n, const double mu, const double sigma,
                             double* r) {
   CURAND_CHECK(
       curandGenerateNormalDouble(Caffe::curand_generator(), r, n, mu, sigma));
+}
+
+template <>
+void caffe_gpu_rng_gaussian(const int n, const float mu, const float sigma,
+                            half* r) {
+  // TODO: call fp16-based version of curandGenerateNormal when it becomes available.
+  thrust::device_vector<float> rf(n);
+  CURAND_CHECK(
+      curandGenerateNormal(Caffe::curand_generator(), thrust::raw_pointer_cast(rf.data()), n, mu, sigma));
+  caffe_gpu_convert<float,half>(n, thrust::raw_pointer_cast(rf.data()), r);
 }
 
 }  // namespace caffe

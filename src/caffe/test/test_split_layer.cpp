@@ -84,7 +84,7 @@ TYPED_TEST(SplitLayerTest, TestGradient) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   SplitLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

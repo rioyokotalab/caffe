@@ -174,7 +174,7 @@ TYPED_TEST(GPUStochasticPoolingLayerTest, TestGradient) {
   pooling_param->set_stride(2);
   pooling_param->set_pool(PoolingParameter_PoolMethod_STOCHASTIC);
   PoolingLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-4, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-4), Get<Dtype>(1e-2));
   // it is too expensive to call curand multiple times, so we don't do an
   // exhaustive gradient check.
   checker.CheckGradient(&layer, this->blob_bottom_vec_,

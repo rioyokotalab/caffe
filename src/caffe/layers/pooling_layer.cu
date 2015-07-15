@@ -26,7 +26,7 @@ __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
     int wend = min(wstart + kernel_w, width);
     hstart = max(hstart, 0);
     wstart = max(wstart, 0);
-    Mtype maxval = -FLT_MAX;
+    Mtype maxval = - maxDtype<Dtype>();
     int maxidx = -1;
     bottom_data += (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {

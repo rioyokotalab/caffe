@@ -106,7 +106,7 @@ TYPED_TEST(InnerProductLayerTest, TestGradient) {
     inner_product_param->mutable_bias_filler()->set_min(1);
     inner_product_param->mutable_bias_filler()->set_max(2);
     InnerProductLayer<Dtype,Mtype> layer(layer_param);
-    GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+    GradientChecker<Dtype,Mtype> checker(Get<Dtype>(5e-2), Get<Dtype>(1e-3));
     checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
         this->blob_top_vec_);
   } else {

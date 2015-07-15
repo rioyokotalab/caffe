@@ -85,9 +85,10 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
       const Mtype bottom_val = Get<Mtype>(bottom_data[i]);
       const Mtype top_val = Get<Mtype>(top_data[i]);
       if (base == -1) {
-        EXPECT_NEAR(top_val, exp(shift + scale * bottom_val), kDelta);
+        EXPECT_NEAR(top_val, exp(shift + scale * bottom_val), tol<Dtype>(kDelta));
       } else {
-        EXPECT_NEAR(top_val, pow(base, shift + scale * bottom_val), kDelta);
+        EXPECT_NEAR(top_val, pow(base, shift + scale * bottom_val),
+            sizeof(Dtype) == 2 ? tol<Dtype>(kDelta) * top_val : kDelta);
       }
     }
   }
@@ -98,7 +99,7 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
     layer_param.mutable_exp_param()->set_scale(scale);
     layer_param.mutable_exp_param()->set_shift(shift);
     ExpLayer<Dtype,Mtype> layer(layer_param);
-    GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+    GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3));
     checker.CheckGradientEltwise(&layer, blob_bottom_vec_, blob_top_vec_);
   }
 
@@ -113,9 +114,10 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
     bool channel_shared = layer->layer_param().prelu_param().channel_shared();
     for (int i = 0; i < this->blob_bottom_->count(); ++i) {
       int c = channel_shared ? 0 : (i / hw) % channels;
-      EXPECT_EQ(Get<Mtype>(top_data[i]),
+      EXPECT_NEAR(Get<Mtype>(top_data[i]),
           std::max(Get<Mtype>(bottom_data[i]), (Mtype)(0))
-          + Get<Mtype>(slope_data[c]) * std::min(Get<Mtype>(bottom_data[i]), (Mtype)(0)));
+          + Get<Mtype>(slope_data[c]) * std::min(Get<Mtype>(bottom_data[i]), (Mtype)(0)),
+          tol<Dtype>(1.e-6));
     }
   }
 };
@@ -142,7 +144,7 @@ TYPED_TEST(NeuronLayerTest, TestAbsGradient) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   AbsValLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -168,7 +170,7 @@ TYPED_TEST(NeuronLayerTest, TestReLUGradient) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   ReLULayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -189,7 +191,8 @@ TYPED_TEST(NeuronLayerTest, TestReLUWithNegativeSlope) {
     if (Get<Mtype>(top_data[i]) >= 0) {
       EXPECT_FLOAT_EQ(Get<Mtype>(top_data[i]), Get<Mtype>(bottom_data[i]));
     } else {
-      EXPECT_FLOAT_EQ(Get<Mtype>(top_data[i]), Get<Mtype>(bottom_data[i]) * 0.01);
+      EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(bottom_data[i]) * 0.01,
+          tol<Dtype>(1.e-6));
     }
   }
 }
@@ -201,7 +204,7 @@ TYPED_TEST(NeuronLayerTest, TestReLUGradientWithNegativeSlope) {
   CHECK(google::protobuf::TextFormat::ParseFromString(
       "relu_param { negative_slope: 0.01 }", &layer_param));
   ReLULayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -217,7 +220,8 @@ TYPED_TEST(NeuronLayerTest, TestSigmoid) {
   const Dtype* bottom_data = this->blob_bottom_->cpu_data();
   const Dtype* top_data = this->blob_top_->cpu_data();
   for (int i = 0; i < this->blob_bottom_->count(); ++i) {
-    EXPECT_FLOAT_EQ(Get<Mtype>(top_data[i]), 1. / (1 + exp(-Get<Mtype>(bottom_data[i]))));
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), 1. / (1 + exp(-Get<Mtype>(bottom_data[i]))),
+        tol<Dtype>(1.e-6));
     // check that we squashed the value between 0 and 1
     EXPECT_GE(Get<Mtype>(top_data[i]), 0.);
     EXPECT_LE(Get<Mtype>(top_data[i]), 1.);
@@ -229,7 +233,7 @@ TYPED_TEST(NeuronLayerTest, TestSigmoidGradient) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   SigmoidLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -246,10 +250,10 @@ TYPED_TEST(NeuronLayerTest, TestTanH) {
     for (int j = 0; j < this->blob_bottom_->channels(); ++j) {
       for (int k = 0; k < this->blob_bottom_->height(); ++k) {
         for (int l = 0; l < this->blob_bottom_->width(); ++l) {
-          EXPECT_GE(Get<Mtype>(this->blob_top_->data_at(i, j, k, l)) + 1e-4,
+          EXPECT_GE(Get<Mtype>(this->blob_top_->data_at(i, j, k, l)) + tol<Dtype>(1e-4),
              (exp(2*Get<Mtype>(this->blob_bottom_->data_at(i, j, k, l))) - 1) /
              (exp(2*Get<Mtype>(this->blob_bottom_->data_at(i, j, k, l))) + 1));
-          EXPECT_LE(Get<Mtype>(this->blob_top_->data_at(i, j, k, l)) - 1e-4,
+          EXPECT_LE(Get<Mtype>(this->blob_top_->data_at(i, j, k, l)) - tol<Dtype>(1e-4),
              (exp(2*Get<Mtype>(this->blob_bottom_->data_at(i, j, k, l))) - 1) /
              (exp(2*Get<Mtype>(this->blob_bottom_->data_at(i, j, k, l))) + 1));
         }
@@ -263,13 +267,12 @@ TYPED_TEST(NeuronLayerTest, TestTanHGradient) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   TanHLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpLayer) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   // Test default base of "-1" -- should actually set base := e.
   const Mtype kBase = -1;
@@ -279,7 +282,6 @@ TYPED_TEST(NeuronLayerTest, TestExpLayer) {
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpGradient) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   // Test default base of "-1" -- should actually set base := e.
   const Mtype kBase = -1;
@@ -289,7 +291,6 @@ TYPED_TEST(NeuronLayerTest, TestExpGradient) {
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpLayerBase2) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype kBase = 2;
   const Mtype kScale = 1;
@@ -298,7 +299,6 @@ TYPED_TEST(NeuronLayerTest, TestExpLayerBase2) {
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpGradientBase2) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype kBase = 2;
   const Mtype kScale = 1;
@@ -307,7 +307,6 @@ TYPED_TEST(NeuronLayerTest, TestExpGradientBase2) {
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpLayerBase2Shift1) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype kBase = 2;
   const Mtype kScale = 1;
@@ -316,7 +315,6 @@ TYPED_TEST(NeuronLayerTest, TestExpLayerBase2Shift1) {
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpGradientBase2Shift1) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype kBase = 2;
   const Mtype kScale = 1;
@@ -325,7 +323,6 @@ TYPED_TEST(NeuronLayerTest, TestExpGradientBase2Shift1) {
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpLayerBase2Scale3) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype kBase = 2;
   const Mtype kScale = 3;
@@ -334,7 +331,6 @@ TYPED_TEST(NeuronLayerTest, TestExpLayerBase2Scale3) {
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpGradientBase2Scale3) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype kBase = 2;
   const Mtype kScale = 3;
@@ -343,7 +339,6 @@ TYPED_TEST(NeuronLayerTest, TestExpGradientBase2Scale3) {
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpLayerBase2Shift1Scale3) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype kBase = 2;
   const Mtype kScale = 3;
@@ -352,7 +347,6 @@ TYPED_TEST(NeuronLayerTest, TestExpLayerBase2Shift1Scale3) {
 }
 
 TYPED_TEST(NeuronLayerTest, TestExpGradientBase2Shift1Scale3) {
-  typedef typename TypeParam::Dtype Dtype;
   typedef typename TypeParam::Mtype Mtype;
   const Mtype kBase = 2;
   const Mtype kScale = 3;
@@ -394,7 +388,7 @@ TYPED_TEST(NeuronLayerTest, TestDropoutGradient) {
   LayerParameter layer_param;
   layer_param.set_phase(TRAIN);
   DropoutLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -405,7 +399,7 @@ TYPED_TEST(NeuronLayerTest, TestDropoutGradientTest) {
   LayerParameter layer_param;
   layer_param.set_phase(TEST);
   DropoutLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -431,7 +425,7 @@ TYPED_TEST(NeuronLayerTest, TestBNLLGradient) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   BNLLLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -480,7 +474,7 @@ TYPED_TEST(NeuronLayerTest, TestPReLUGradient) {
   FillerParameter filler_param;
   GaussianFiller<Dtype,Mtype> filler(filler_param);
   filler.Fill(layer.blobs()[0].get());
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -492,7 +486,7 @@ TYPED_TEST(NeuronLayerTest, TestPReLUGradientChannelShared) {
   layer_param.mutable_prelu_param()->set_channel_shared(true);
   PReLULayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -664,7 +658,7 @@ TYPED_TEST(CuDNNNeuronLayerTest, TestReLUGradientCuDNN) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   CuDNNReLULayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -683,9 +677,9 @@ TYPED_TEST(CuDNNNeuronLayerTest, TestReLUWithNegativeSlopeCuDNN) {
   const Dtype* top_data = this->blob_top_->cpu_data();
   for (int i = 0; i < this->blob_bottom_->count(); ++i) {
     if (Get<Mtype>(top_data[i]) >= 0) {
-      EXPECT_FLOAT_EQ(Get<Mtype>(top_data[i]), Get<Mtype>(bottom_data[i]));
+      EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(bottom_data[i]), tol<Dtype>(0.));
     } else {
-      EXPECT_FLOAT_EQ(Get<Mtype>(top_data[i]), Get<Mtype>(bottom_data[i]) * 0.01);
+      EXPECT_NEAR(Get<Mtype>(top_data[i]), Get<Mtype>(bottom_data[i]) * 0.01, tol<Dtype>(1.e-8));
     }
   }
 }
@@ -697,7 +691,7 @@ TYPED_TEST(CuDNNNeuronLayerTest, TestReLUGradientWithNegativeSlopeCuDNN) {
   CHECK(google::protobuf::TextFormat::ParseFromString(
       "relu_param { negative_slope: 0.01 }", &layer_param));
   CuDNNReLULayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -713,7 +707,7 @@ TYPED_TEST(CuDNNNeuronLayerTest, TestSigmoidCuDNN) {
   const Dtype* bottom_data = this->blob_bottom_->cpu_data();
   const Dtype* top_data = this->blob_top_->cpu_data();
   for (int i = 0; i < this->blob_bottom_->count(); ++i) {
-    EXPECT_FLOAT_EQ(Get<Mtype>(top_data[i]), 1. / (1 + exp(-Get<Mtype>(bottom_data[i]))));
+    EXPECT_NEAR(Get<Mtype>(top_data[i]), 1. / (1 + exp(-Get<Mtype>(bottom_data[i]))), tol<Dtype>(1.e-7));
     // check that we squashed the value between 0 and 1
     EXPECT_GE(Get<Mtype>(top_data[i]), 0.);
     EXPECT_LE(Get<Mtype>(top_data[i]), 1.);
@@ -725,7 +719,7 @@ TYPED_TEST(CuDNNNeuronLayerTest, TestSigmoidGradientCuDNN) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   CuDNNSigmoidLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3), 1701, Get<Dtype>(0.), Get<Dtype>(0.01));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -742,10 +736,10 @@ TYPED_TEST(CuDNNNeuronLayerTest, TestTanHCuDNN) {
     for (int j = 0; j < this->blob_bottom_->channels(); ++j) {
       for (int k = 0; k < this->blob_bottom_->height(); ++k) {
         for (int l = 0; l < this->blob_bottom_->width(); ++l) {
-          EXPECT_GE(Get<Mtype>(this->blob_top_->data_at(i, j, k, l)) + 1e-4,
+          EXPECT_GE(Get<Mtype>(this->blob_top_->data_at(i, j, k, l)) + tol<Dtype>(1e-4),
              (exp(2*Get<Mtype>(this->blob_bottom_->data_at(i, j, k, l))) - 1) /
              (exp(2*Get<Mtype>(this->blob_bottom_->data_at(i, j, k, l))) + 1));
-          EXPECT_LE(Get<Mtype>(this->blob_top_->data_at(i, j, k, l)) - 1e-4,
+          EXPECT_LE(Get<Mtype>(this->blob_top_->data_at(i, j, k, l)) - tol<Dtype>(1e-4),
              (exp(2*Get<Mtype>(this->blob_bottom_->data_at(i, j, k, l))) - 1) /
              (exp(2*Get<Mtype>(this->blob_bottom_->data_at(i, j, k, l))) + 1));
         }
@@ -759,7 +753,7 @@ TYPED_TEST(CuDNNNeuronLayerTest, TestTanHGradientCuDNN) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   CuDNNTanHLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

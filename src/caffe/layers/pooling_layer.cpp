@@ -149,7 +149,7 @@ void PoolingLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bo
       mask = max_idx_.mutable_cpu_data();
       caffe_set<int,int>(top_count, -1, mask);
     }
-    caffe_set<Dtype,Mtype>(top_count, Mtype(-FLT_MAX), top_data);
+    caffe_set<Dtype,Mtype>(top_count, - maxDtype<Dtype>(), top_data);
     // The main loop
     for (int n = 0; n < bottom[0]->num(); ++n) {
       for (int c = 0; c < channels_; ++c) {

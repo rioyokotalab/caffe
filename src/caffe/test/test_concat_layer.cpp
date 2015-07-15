@@ -166,7 +166,7 @@ TYPED_TEST(ConcatLayerTest, TestGradientNum) {
   LayerParameter layer_param;
   layer_param.mutable_concat_param()->set_axis(0);
   ConcatLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradient(&layer, this->blob_bottom_vec_1_,
     this->blob_top_vec_);
 }
@@ -176,7 +176,7 @@ TYPED_TEST(ConcatLayerTest, TestGradientChannels) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   ConcatLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradient(&layer, this->blob_bottom_vec_0_,
     this->blob_top_vec_);
 }

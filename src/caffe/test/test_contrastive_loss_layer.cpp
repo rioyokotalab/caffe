@@ -86,7 +86,7 @@ TYPED_TEST(ContrastiveLossLayerTest, TestForward) {
     }
   }
   loss /= Get<Mtype>(num) * Mtype(2);
-  EXPECT_NEAR(Get<Mtype>(this->blob_top_loss_->cpu_data()[0]), loss, 1e-6);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_loss_->cpu_data()[0]), loss, tol<Dtype>(1e-6));
 }
 
 TYPED_TEST(ContrastiveLossLayerTest, TestGradient) {
@@ -95,7 +95,7 @@ TYPED_TEST(ContrastiveLossLayerTest, TestGradient) {
   LayerParameter layer_param;
   ContrastiveLossLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2, 1701);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2), 1701);
   // check the gradient for the first two bottom layers
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_, 0);
@@ -130,7 +130,7 @@ TYPED_TEST(ContrastiveLossLayerTest, TestForwardLegacy) {
     }
   }
   loss /= Get<Mtype>(num) * Mtype(2);
-  EXPECT_NEAR(Get<Mtype>(this->blob_top_loss_->cpu_data()[0]), loss, 1e-6);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_loss_->cpu_data()[0]), loss, tol<Dtype>(1e-6));
 }
 
 TYPED_TEST(ContrastiveLossLayerTest, TestGradientLegacy) {
@@ -140,7 +140,7 @@ TYPED_TEST(ContrastiveLossLayerTest, TestGradientLegacy) {
   layer_param.mutable_contrastive_loss_param()->set_legacy_version(true);
   ContrastiveLossLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2, 1701);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2), 1701);
   // check the gradient for the first two bottom layers
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_, 0);

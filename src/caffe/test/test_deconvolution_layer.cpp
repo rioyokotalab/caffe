@@ -133,7 +133,7 @@ TYPED_TEST(DeconvolutionLayerTest, TestSimpleDeconvolution) {
             expected += 3;
           }
           EXPECT_NEAR(Get<Mtype>(top_data[this->blob_top_->offset(n, c, h, w)]),
-              expected, 1e-4);
+              expected, tol<Dtype>(1e-4));
         }
       }
     }
@@ -154,7 +154,7 @@ TYPED_TEST(DeconvolutionLayerTest, TestGradient) {
   convolution_param->mutable_weight_filler()->set_type("gaussian");
   convolution_param->mutable_bias_filler()->set_type("gaussian");
   DeconvolutionLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-3);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(5e-2), Get<Dtype>(1e-3));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

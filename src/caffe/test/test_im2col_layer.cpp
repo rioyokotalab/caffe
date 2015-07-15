@@ -80,7 +80,7 @@ TYPED_TEST(Im2colLayerTest, TestGradient) {
   convolution_param->set_kernel_size(3);
   convolution_param->set_stride(2);
   Im2colLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
@@ -116,7 +116,7 @@ TYPED_TEST(Im2colLayerTest, TestRectGradient) {
   convolution_param->set_kernel_w(3);
   convolution_param->set_stride(2);
   Im2colLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

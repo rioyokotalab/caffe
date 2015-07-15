@@ -24,7 +24,7 @@ class LRNLayerTest : public MultiDeviceTest<TypeParam> {
 
  protected:
   LRNLayerTest()
-      : epsilon_(Mtype(1e-5)),
+      : epsilon_(Get<Dtype>(1e-5)),
         blob_bottom_(new Blob<Dtype,Mtype>()),
         blob_top_(new Blob<Dtype,Mtype>()) {}
   virtual void SetUp() {
@@ -138,7 +138,7 @@ TYPED_TEST(LRNLayerTest, TestForwardAcrossChannels) {
       &top_reference);
   for (int i = 0; i < this->blob_bottom_->count(); ++i) {
     EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[i]), Get<Mtype>(top_reference.cpu_data()[i]),
-                this->epsilon_);
+                tol<Dtype>(Get<Mtype>(this->epsilon_)));
   }
 }
 
@@ -155,7 +155,7 @@ TYPED_TEST(LRNLayerTest, TestForwardAcrossChannelsLargeRegion) {
       &top_reference);
   for (int i = 0; i < this->blob_bottom_->count(); ++i) {
     EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[i]), Get<Mtype>(top_reference.cpu_data()[i]),
-                this->epsilon_);
+        tol<Dtype>(Get<Mtype>(this->epsilon_)));
   }
 }
 
@@ -164,7 +164,7 @@ TYPED_TEST(LRNLayerTest, TestGradientAcrossChannels) {
   typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   LRNLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   for (int i = 0; i < this->blob_top_->count(); ++i) {
@@ -187,7 +187,7 @@ TYPED_TEST(LRNLayerTest, TestGradientAcrossChannelsLargeRegion) {
   LayerParameter layer_param;
   layer_param.mutable_lrn_param()->set_local_size(15);
   LRNLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   for (int i = 0; i < this->blob_top_->count(); ++i) {
@@ -234,7 +234,7 @@ TYPED_TEST(LRNLayerTest, TestForwardWithinChannel) {
       &top_reference);
   for (int i = 0; i < this->blob_bottom_->count(); ++i) {
     EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[i]), Get<Mtype>(top_reference.cpu_data()[i]),
-                this->epsilon_);
+                tol<Dtype>(Get<Mtype>(this->epsilon_)));
   }
 }
 
@@ -246,7 +246,7 @@ TYPED_TEST(LRNLayerTest, TestGradientWithinChannel) {
       LRNParameter_NormRegion_WITHIN_CHANNEL);
   layer_param.mutable_lrn_param()->set_local_size(3);
   LRNLayer<Dtype,Mtype> layer(layer_param);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   for (int i = 0; i < this->blob_top_->count(); ++i) {

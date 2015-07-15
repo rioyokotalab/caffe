@@ -7,5 +7,7 @@
 
 half cpu_float2half_rn(float f);
 float cpu_half2float(half h);
+half operator - (const half& h);
+int isnan(const half& h);
 
 #endif

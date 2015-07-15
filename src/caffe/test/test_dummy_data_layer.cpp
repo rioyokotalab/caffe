@@ -190,7 +190,7 @@ TYPED_TEST(DummyDataLayerTest, TestThreeTopConstantGaussianConstant) {
     EXPECT_NEAR(gaussian_mean, Get<Mtype>(this->blob_top_b_->cpu_data()[i]),
                 gaussian_std * 10);
   }
-  EXPECT_NE(first_gaussian_sample, Get<Mtype>(this->blob_top_b_->cpu_data()[0]));
+  EXPECT_NE(first_gaussian_sample, Get<Mtype>(this->blob_top_b_->cpu_data()[0]) + tol<Dtype>(0.));
   EXPECT_NE(last_gaussian_sample,
       Get<Mtype>(this->blob_top_b_->cpu_data()[this->blob_top_b_->count() - 1]));
   for (int i = 0; i < this->blob_top_c_->count(); ++i) {

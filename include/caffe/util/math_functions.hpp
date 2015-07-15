@@ -13,6 +13,14 @@
 
 namespace caffe {
 
+template <typename T_IN, typename T_OUT>
+void caffe_cpu_convert(const size_t N, const T_IN *in, T_OUT *out)
+{
+  for (size_t i = 0; i < N; ++i) {
+    out[i] = Get<T_OUT>(in[i]);
+  }
+}
+
 // Caffe gemm provides a simpler interface to the gemm functions, with the
 // limitation that the data has to be contiguous in memory.
 template <typename Dtype, typename Mtype>
@@ -137,7 +145,7 @@ DEFINE_CAFFE_CPU_UNARY_FUNC(sign, y[i] = Get<Dtype>(caffe_sign<TYPE>(Get<Mtype>(
 // The extra parens are needed because CUDA < 6.5 defines signbit as a macro,
 // and we don't want that to expand here when CUDA headers are also included.
 DEFINE_CAFFE_CPU_UNARY_FUNC(sgnbit, \
-    y[i] = static_cast<bool>((std::signbit)(x[i])));
+    y[i] = Get<Dtype>(static_cast<int>(std::signbit(Get<double>(x[i])))));
 
 DEFINE_CAFFE_CPU_UNARY_FUNC(fabs, y[i] = std::fabs(x[i]));
 

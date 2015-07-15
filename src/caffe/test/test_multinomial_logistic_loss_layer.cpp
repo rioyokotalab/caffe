@@ -31,7 +31,7 @@ class MultinomialLogisticLossLayerTest : public CPUDeviceTest<TypeParam> {
     filler.Fill(this->blob_bottom_data_);
     blob_bottom_vec_.push_back(blob_bottom_data_);
     for (int i = 0; i < blob_bottom_label_->count(); ++i) {
-      blob_bottom_label_->mutable_cpu_data()[i] = caffe_rng_rand() % 5;
+      blob_bottom_label_->mutable_cpu_data()[i] = Get<Dtype>(caffe_rng_rand() % 5);
     }
     blob_bottom_vec_.push_back(blob_bottom_label_);
     blob_top_vec_.push_back(blob_top_loss_);
@@ -57,7 +57,7 @@ TYPED_TEST(MultinomialLogisticLossLayerTest, TestGradientCPU) {
   LayerParameter layer_param;
   MultinomialLogisticLossLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
-  GradientChecker<Dtype,Mtype> checker(1e-2, 2*1e-2, 1701, 0, 0.05);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(2e-2), 1701, Get<Dtype>(0.), Get<Dtype>(0.05));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_, 0);
 }

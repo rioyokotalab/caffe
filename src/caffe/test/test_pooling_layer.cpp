@@ -470,7 +470,7 @@ TYPED_TEST(PoolingLayerTest, TestGradientMax) {
       pooling_param->set_pad(1);
       pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
       PoolingLayer<Dtype,Mtype> layer(layer_param);
-      GradientChecker<Dtype,Mtype> checker(1e-4, 1e-2);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-4), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -536,7 +536,7 @@ TYPED_TEST(PoolingLayerTest, TestGradientMaxTopMask) {
       pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
       this->blob_top_vec_.push_back(this->blob_top_mask_);
       PoolingLayer<Dtype,Mtype> layer(layer_param);
-      GradientChecker<Dtype,Mtype> checker(1e-4, 1e-2);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-4), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
       this->blob_top_vec_.pop_back();
@@ -555,7 +555,7 @@ TYPED_TEST(PoolingLayerTest, TestForwardAve) {
   pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
   this->blob_bottom_->Reshape(1, 1, 3, 3);
   FillerParameter filler_param;
-  filler_param.set_value(Dtype(2));
+  filler_param.set_value(2.F);
   ConstantFiller<Dtype,Mtype> filler(filler_param);
   filler.Fill(this->blob_bottom_);
   PoolingLayer<Dtype,Mtype> layer(layer_param);
@@ -565,7 +565,7 @@ TYPED_TEST(PoolingLayerTest, TestForwardAve) {
   EXPECT_EQ(this->blob_top_->height(), 3);
   EXPECT_EQ(this->blob_top_->width(), 3);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-  Mtype epsilon = 1e-5;
+  Mtype epsilon = tol<Dtype>(1e-5);
   EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[0]), 8.0 / 9, epsilon);
   EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[1]), 4.0 / 3, epsilon);
   EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[2]), 8.0 / 9, epsilon);
@@ -589,7 +589,7 @@ TYPED_TEST(PoolingLayerTest, TestGradientAve) {
       pooling_param->set_stride(2);
       pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
       PoolingLayer<Dtype,Mtype> layer(layer_param);
-      GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -609,7 +609,7 @@ TYPED_TEST(PoolingLayerTest, TestGradientAvePadded) {
       pooling_param->set_pad(2);
       pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
       PoolingLayer<Dtype,Mtype> layer(layer_param);
-      GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -1064,7 +1064,7 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestGradientMaxCuDNN) {
       pooling_param->set_pad(0);
       pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
       CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
-      GradientChecker<Dtype,Mtype> checker(1e-4, 1e-2);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-4), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -1177,7 +1177,7 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestGradientAveCuDNN) {
       pooling_param->set_stride(2);
       pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
       CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
-      GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -1197,7 +1197,7 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestGradientAvePaddedCuDNN) {
       pooling_param->set_pad(2);
       pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
       CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
-      GradientChecker<Dtype,Mtype> checker(1e-2, 1e-2);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }

@@ -2,6 +2,7 @@
 #include <boost/random.hpp>
 
 #include <limits>
+#include <vector>
 
 #include "caffe/common.hpp"
 #include "caffe/util/math_functions.hpp"
@@ -35,7 +36,19 @@ template<>
 void caffe_cpu_gemm<half,float>(const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
     const float alpha, const half* A, const half* B, const float beta,
-    half * C) {
+    half* C) {
+  if (M <= 0 || N <= 0 || K <= 0) {
+    return;
+  }
+  std::vector<float> a(M*K), b(K*N), c(M*N);
+  caffe_cpu_convert(a.size(), A, &a.front());
+  caffe_cpu_convert(b.size(), B, &b.front());
+  caffe_cpu_convert(c.size(), C, &c.front());
+  const int lda = (TransA == CblasNoTrans) ? K : M;
+  const int ldb = (TransB == CblasNoTrans) ? N : K;
+  cblas_sgemm(CblasRowMajor, TransA, TransB, M, N, K, alpha, &a.front(), lda, &b.front(),
+      ldb, beta, &c.front(), N);
+  caffe_cpu_convert(c.size(), &c.front(), C);
 }
 
 template <>
@@ -56,6 +69,17 @@ template <>
 void caffe_cpu_gemv<half,float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const half* A, const half* x,
     const float beta, half* y) {
+  if (M <= 0 || N <= 0) {
+    return;
+  }
+  const int lx = (TransA == CblasNoTrans) ? N : M;
+  const int ly = (TransA == CblasNoTrans) ? M : N;
+  std::vector<float> a(M*N), xv(lx), yv(ly);
+  caffe_cpu_convert(a.size(), A, &a.front());
+  caffe_cpu_convert(xv.size(), x, &xv.front());
+  caffe_cpu_convert(yv.size(), y, &yv.front());
+  cblas_sgemv(CblasRowMajor, TransA, M, N, alpha, &a.front(), N, &xv.front(), 1, beta, &yv.front(), 1);
+  caffe_cpu_convert(yv.size(), &yv.front(), y);
 }
 
 template <>
@@ -283,8 +307,10 @@ void caffe_sqr<double,double>(const int n, const double* a, double* y) {
 
 template <>
 void caffe_sqr<half,float>(const int n, const half* a, half* y) {
-  for (int i=0; i<n; i++) {
-    y[i] = Get<half>( sqrt(Get<float>(a[i])) );
+  float f;
+  for (int i = 0; i < n; ++i) {
+    f = Get<float>(a[i]);
+    y[i] = Get<half>(f * f);
   }
 }
 
@@ -502,8 +528,8 @@ int caffe_cpu_hamming_distance<half, float>(const int n, const half* x,
                                   const half* y) {
   int dist = 0;
   for (int i = 0; i < n; ++i) {
-    dist += __builtin_popcount(static_cast<uint32_t>(Get<float>(x[i])) ^
-                               static_cast<uint32_t>(Get<float>(y[i])));
+    dist += __builtin_popcount(static_cast<uint16_t>(Get<float>(x[i])) ^
+                               static_cast<uint16_t>(Get<float>(y[i])));
   }
   return dist;
 }

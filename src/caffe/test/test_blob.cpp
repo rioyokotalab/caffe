@@ -176,7 +176,7 @@ TYPED_TEST(BlobMathTest, TestSumOfSquares) {
   const Mtype expected_sumsq_diff =
       expected_sumsq * kDiffScaleFactor * kDiffScaleFactor;
   EXPECT_NEAR(expected_sumsq_diff, this->blob_->sumsq_diff(),
-              this->epsilon_ * expected_sumsq_diff);
+              tol<Dtype>(this->epsilon_) * expected_sumsq_diff);
 }
 
 TYPED_TEST(BlobMathTest, TestAsum) {
@@ -231,7 +231,7 @@ TYPED_TEST(BlobMathTest, TestAsum) {
               this->epsilon_ * expected_asum);
   const Mtype expected_diff_asum = expected_asum * kDiffScaleFactor;
   EXPECT_NEAR(expected_diff_asum, this->blob_->asum_diff(),
-              this->epsilon_ * expected_diff_asum);
+      tol<Dtype>(this->epsilon_) * expected_diff_asum);
 }
 
 TYPED_TEST(BlobMathTest, TestScaleData) {
@@ -262,8 +262,8 @@ TYPED_TEST(BlobMathTest, TestScaleData) {
   const Mtype kDataScaleFactor = 3;
   this->blob_->scale_data(kDataScaleFactor);
   EXPECT_NEAR(asum_before_scale * kDataScaleFactor, this->blob_->asum_data(),
-              this->epsilon_ * asum_before_scale * kDataScaleFactor);
-  EXPECT_EQ(0, this->blob_->asum_diff());
+              tol<Dtype>(this->epsilon_) * asum_before_scale * kDataScaleFactor);
+  EXPECT_NEAR(0, this->blob_->asum_diff(), tol<Dtype>(0.e-6));
 
   // Check scale_diff too.
   const Mtype kDataToDiffScaleFactor = 7;
@@ -272,11 +272,11 @@ TYPED_TEST(BlobMathTest, TestScaleData) {
                   this->blob_->mutable_cpu_diff());
   const Mtype expected_asum_before_scale = asum_before_scale * kDataScaleFactor;
   EXPECT_NEAR(expected_asum_before_scale, this->blob_->asum_data(),
-              this->epsilon_ * expected_asum_before_scale);
+      tol<Dtype>(this->epsilon_) * expected_asum_before_scale);
   const Mtype expected_diff_asum_before_scale =
       asum_before_scale * kDataScaleFactor * kDataToDiffScaleFactor;
   EXPECT_NEAR(expected_diff_asum_before_scale, this->blob_->asum_diff(),
-              this->epsilon_ * expected_diff_asum_before_scale);
+      tol<Dtype>(this->epsilon_) * expected_diff_asum_before_scale);
   switch (TypeParam::device) {
   case Caffe::CPU:
     this->blob_->mutable_cpu_diff();
@@ -290,11 +290,11 @@ TYPED_TEST(BlobMathTest, TestScaleData) {
   const Mtype kDiffScaleFactor = 3;
   this->blob_->scale_diff(kDiffScaleFactor);
   EXPECT_NEAR(asum_before_scale * kDataScaleFactor, this->blob_->asum_data(),
-              this->epsilon_ * asum_before_scale * kDataScaleFactor);
+      tol<Dtype>(this->epsilon_) * asum_before_scale * kDataScaleFactor);
   const Mtype expected_diff_asum =
       expected_diff_asum_before_scale * kDiffScaleFactor;
   EXPECT_NEAR(expected_diff_asum, this->blob_->asum_diff(),
-              this->epsilon_ * expected_diff_asum);
+      tol<Dtype>(this->epsilon_) * expected_diff_asum);
 }
 
 }  // namespace caffe
