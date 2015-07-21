@@ -43,10 +43,12 @@ template void im2col_cpu<double,double>(const double* data_im, const int channel
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, double* data_col);
+#ifndef CPU_ONLY
 template void im2col_cpu<half,float>(const half* data_im, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, half* data_col);
+#endif
 
 template <typename Dtype, typename Mtype>
 void col2im_cpu(const Dtype* data_col, const int channels,
@@ -84,9 +86,10 @@ template void col2im_cpu<double,double>(const double* data_col, const int channe
     const int height, const int width, const int patch_h, const int patch_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, double* data_im);
+#ifndef CPU_ONLY
 template void col2im_cpu<half,float>(const half* data_col, const int channels,
     const int height, const int width, const int patch_h, const int patch_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, half* data_im);
-
+#endif
 }  // namespace caffe

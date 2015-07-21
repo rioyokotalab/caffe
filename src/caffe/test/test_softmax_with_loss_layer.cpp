@@ -86,7 +86,8 @@ TYPED_TEST(SoftmaxWithLossLayerTest, TestForwardIgnoreLabel) {
     Incr(accum_loss, this->blob_top_loss_->cpu_data()[0]);
   }
   // Check that each label was included all but once.
-  EXPECT_NEAR(4. * Get<Mtype>(full_loss), Get<Mtype>(accum_loss), 1e-4);
+  EXPECT_NEAR(4. * Get<Mtype>(full_loss), Get<Mtype>(accum_loss),
+      tol<Dtype>(1e-4));
 }
 
 TYPED_TEST(SoftmaxWithLossLayerTest, TestGradientIgnoreLabel) {

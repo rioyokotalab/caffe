@@ -46,9 +46,14 @@ class MultiDeviceTest : public ::testing::Test {
   virtual ~MultiDeviceTest() {}
 };
 
+#ifdef CPU_ONLY
+typedef ::testing::Types<MultiPrecision<float,float>,
+                         MultiPrecision<double,double> > TestDtypes;
+#else
 typedef ::testing::Types<MultiPrecision<float,float>,
                          MultiPrecision<double,double>,
                          MultiPrecision<half,float> > TestDtypes;
+#endif
 
 template <typename TypeParam>
 struct CPUDevice {
@@ -62,11 +67,8 @@ class CPUDeviceTest : public MultiDeviceTest<CPUDevice<TypeParam> > {
 };
 
 #ifdef CPU_ONLY
-
 typedef ::testing::Types<CPUDevice<MultiPrecision<float,float> >,
-                         CPUDevice<MultiPrecision<double,double> >,
-                         CPUDevice<MultiPrecision<half,float> > > TestDtypesAndDevices;
-
+                         CPUDevice<MultiPrecision<double,double> > > TestDtypesAndDevices;
 #else
 
 template <typename TypeParam>
@@ -86,7 +88,6 @@ typedef ::testing::Types<CPUDevice<MultiPrecision<float,float> >,
                          GPUDevice<MultiPrecision<float,float> >,
                          GPUDevice<MultiPrecision<double, double> >,
                          GPUDevice<MultiPrecision<half,float> > > TestDtypesAndDevices;
-
 #endif
 
 }  // namespace caffe

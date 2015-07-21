@@ -277,6 +277,7 @@ void hdf5_load_nd_dataset<double>(hid_t file_id, const char* dataset_name_,
   CHECK_GE(status, 0) << "Failed to read double dataset " << dataset_name_;
 }
 
+#ifndef CPU_ONLY
 template <>
 void hdf5_load_nd_dataset<half>(hid_t file_id, const char* dataset_name_,
         int min_dim, int max_dim, Blob<half,float>* blob) {
@@ -291,6 +292,7 @@ void hdf5_load_nd_dataset<half>(hid_t file_id, const char* dataset_name_,
     blob->mutable_cpu_data()[i] = Get<half>(temp_data[i]);
   }
 }
+#endif
 
 template <>
 void hdf5_save_nd_dataset<float>(
@@ -318,6 +320,7 @@ void hdf5_save_nd_dataset<double>(
   CHECK_GE(status, 0) << "Failed to make double dataset " << dataset_name;
 }
 
+#ifndef CPU_ONLY
 template <>
 void hdf5_save_nd_dataset<half>(
     const hid_t file_id, const string& dataset_name, const Blob<half,float>& blob) {
@@ -337,6 +340,6 @@ void hdf5_save_nd_dataset<half>(
       file_id, dataset_name.c_str(), HDF5_NUM_DIMS, dims, &temp_data[0]);
   CHECK_GE(status, 0) << "Failed to make float dataset " << dataset_name;
 }
-
+#endif
 
 }  // namespace caffe

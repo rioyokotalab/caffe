@@ -113,6 +113,7 @@ RegisterBrewFunction(device_query);
 
 // Load the weights from the specified caffemodel(s) into the train and
 // test nets.
+#ifndef CPU_ONLY
 void CopyLayers(caffe::Solver<half,float>* solver, const std::string& model_list) {
   std::vector<std::string> model_names;
   boost::split(model_names, model_list, boost::is_any_of(",") );
@@ -337,6 +338,7 @@ int time() {
   return 0;
 }
 RegisterBrewFunction(time);
+#endif // ifndef CPU_ONLY
 
 int main(int argc, char** argv) {
   // Print output to stderr (while still logging).

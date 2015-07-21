@@ -18,7 +18,9 @@
 
 #include "caffe/util/device_alternate.hpp"
 
+#ifndef CPU_ONLY
 #include <cuda_fp16.h>
+#endif
 
 // gflags 2.1 issue: namespace google was changed to gflags without warning.
 // Luckily we will be able to use GFLAGS_GFLAGS_H_ to detect if it is version
@@ -36,6 +38,32 @@ private:\
   classname& operator=(const classname&)
 
 // Instantiate a class with float and double specifications.
+#ifdef CPU_ONLY
+#define INSTANTIATE_CLASS(classname) \
+  char gInstantiationGuard##classname; \
+  template class classname<float, float>; \
+  template class classname<double, double>
+
+#define INSTANTIATE_LAYER_GPU_FORWARD(classname) \
+  template void classname<float, float>::Forward_gpu( \
+      const std::vector<Blob<float, float>*>& bottom, \
+      const std::vector<Blob<float, float>*>& top); \
+  template void classname<double, double>::Forward_gpu( \
+      const std::vector<Blob<double, double>*>& bottom, \
+      const std::vector<Blob<double, double>*>& top);
+
+#define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
+  template void classname<float, float>::Backward_gpu( \
+      const std::vector<Blob<float, float>*>& top, \
+      const std::vector<bool>& propagate_down, \
+      const std::vector<Blob<float, float>*>& bottom); \
+  template void classname<double, double>::Backward_gpu( \
+      const std::vector<Blob<double, double>*>& top, \
+      const std::vector<bool>& propagate_down, \
+      const std::vector<Blob<double, double>*>& bottom)
+
+#else
+
 #define INSTANTIATE_CLASS(classname) \
   char gInstantiationGuard##classname; \
   template class classname<float, float>; \
@@ -66,6 +94,7 @@ private:\
       const std::vector<Blob<half,float>*>& top, \
       const std::vector<bool>& propagate_down, \
       const std::vector<Blob<half,float>*>& bottom)
+#endif
 
 #define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
   INSTANTIATE_LAYER_GPU_FORWARD(classname); \
