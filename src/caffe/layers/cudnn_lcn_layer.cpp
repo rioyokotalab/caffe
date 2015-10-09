@@ -9,11 +9,12 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void CuDNNLCNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  LRNLayer<Dtype>::LayerSetUp(bottom, top);
+template <typename Dtype, typename Mtype>
+void CuDNNLCNLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+    const vector<Blob<Dtype,Mtype>*>& top) {
+  LRNLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
 
+  CUDNN_CHECK(cudnnCreate(&handle_));
   CUDNN_CHECK(cudnnCreateLRNDescriptor(&norm_desc_));
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);
   cudnn::createTensor4dDesc<Dtype>(&top_desc_);
@@ -28,10 +29,10 @@ void CuDNNLCNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   k_ = this->layer_param().lrn_param().k();
 }
 
-template <typename Dtype>
-void CuDNNLCNLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  LRNLayer<Dtype>::Reshape(bottom, top);
+template <typename Dtype, typename Mtype>
+void CuDNNLCNLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+    const vector<Blob<Dtype,Mtype>*>& top) {
+  LRNLayer<Dtype,Mtype>::Reshape(bottom, top);
   cudnn::setTensor4dDesc<Dtype>(&bottom_desc_, bottom[0]->num(),
       this->channels_, this->height_, this->width_);
   cudnn::setTensor4dDesc<Dtype>(&top_desc_, bottom[0]->num(),
@@ -60,8 +61,8 @@ void CuDNNLCNLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 #endif
 }
 
-template <typename Dtype>
-CuDNNLCNLayer<Dtype>::~CuDNNLCNLayer() {
+template <typename Dtype, typename Mtype>
+CuDNNLCNLayer<Dtype,Mtype>::~CuDNNLCNLayer() {
   // Check that handles have been setup before destroying.
   if (!handles_setup_) { return; }
 
@@ -70,10 +71,11 @@ CuDNNLCNLayer<Dtype>::~CuDNNLCNLayer() {
 
   // destroy LRN handle
   CUDNN_CHECK(cudnnDestroyLRNDescriptor(norm_desc_));
+  cudnnDestroy(handle_);
 
   // free temp buffers
-  cudaFree(tempData1);
-  cudaFree(tempData2);
+  if (tempData1 != NULL) cudaFree(tempData1);
+  if (tempData2 != NULL) cudaFree(tempData2);
 }
 
 INSTANTIATE_CLASS(CuDNNLCNLayer);

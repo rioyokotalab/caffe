@@ -16,18 +16,19 @@ namespace caffe {
 template <typename TypeParam>
 class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
  protected:
   PoolingLayerTest()
-      : blob_bottom_(new Blob<Dtype>()),
-        blob_top_(new Blob<Dtype>()),
-        blob_top_mask_(new Blob<Dtype>()) {}
+      : blob_bottom_(new Blob<Dtype,Mtype>()),
+        blob_top_(new Blob<Dtype,Mtype>()),
+        blob_top_mask_(new Blob<Dtype,Mtype>()) {}
   virtual void SetUp() {
     Caffe::set_random_seed(1701);
     blob_bottom_->Reshape(2, 3, 6, 5);
     // fill the values
     FillerParameter filler_param;
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
     blob_bottom_vec_.push_back(blob_bottom_);
     blob_top_vec_.push_back(blob_top_);
@@ -37,11 +38,11 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
     delete blob_top_;
     delete blob_top_mask_;
   }
-  Blob<Dtype>* const blob_bottom_;
-  Blob<Dtype>* const blob_top_;
-  Blob<Dtype>* const blob_top_mask_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const blob_bottom_;
+  Blob<Dtype,Mtype>* const blob_top_;
+  Blob<Dtype,Mtype>* const blob_top_mask_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
   // Test for 2x 2 square pooling layer
   void TestForwardSquare() {
     LayerParameter layer_param;
@@ -56,23 +57,23 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
     //     [9 4 1 4 8]
     //     [1 2 5 2 3]
     for (int i = 0; i < 15 * num * channels; i += 15) {
-      blob_bottom_->mutable_cpu_data()[i +  0] = 1;
-      blob_bottom_->mutable_cpu_data()[i +  1] = 2;
-      blob_bottom_->mutable_cpu_data()[i +  2] = 5;
-      blob_bottom_->mutable_cpu_data()[i +  3] = 2;
-      blob_bottom_->mutable_cpu_data()[i +  4] = 3;
-      blob_bottom_->mutable_cpu_data()[i +  5] = 9;
-      blob_bottom_->mutable_cpu_data()[i +  6] = 4;
-      blob_bottom_->mutable_cpu_data()[i +  7] = 1;
-      blob_bottom_->mutable_cpu_data()[i +  8] = 4;
-      blob_bottom_->mutable_cpu_data()[i +  9] = 8;
-      blob_bottom_->mutable_cpu_data()[i + 10] = 1;
-      blob_bottom_->mutable_cpu_data()[i + 11] = 2;
-      blob_bottom_->mutable_cpu_data()[i + 12] = 5;
-      blob_bottom_->mutable_cpu_data()[i + 13] = 2;
-      blob_bottom_->mutable_cpu_data()[i + 14] = 3;
+      blob_bottom_->mutable_cpu_data()[i +  0] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i +  1] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i +  2] = Get<Dtype>(5);
+      blob_bottom_->mutable_cpu_data()[i +  3] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i +  4] = Get<Dtype>(3);
+      blob_bottom_->mutable_cpu_data()[i +  5] = Get<Dtype>(9);
+      blob_bottom_->mutable_cpu_data()[i +  6] = Get<Dtype>(4);
+      blob_bottom_->mutable_cpu_data()[i +  7] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i +  8] = Get<Dtype>(4);
+      blob_bottom_->mutable_cpu_data()[i +  9] = Get<Dtype>(8);
+      blob_bottom_->mutable_cpu_data()[i + 10] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i + 11] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i + 12] = Get<Dtype>(5);
+      blob_bottom_->mutable_cpu_data()[i + 13] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i + 14] = Get<Dtype>(3);
     }
-    PoolingLayer<Dtype> layer(layer_param);
+    PoolingLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     EXPECT_EQ(blob_top_->num(), num);
     EXPECT_EQ(blob_top_->channels(), channels);
@@ -89,28 +90,28 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
     //     [9 5 5 8]
     //     [9 5 5 8]
     for (int i = 0; i < 8 * num * channels; i += 8) {
-      EXPECT_EQ(blob_top_->cpu_data()[i + 0], 9);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 1], 5);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 2], 5);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 3], 8);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 4], 9);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 5], 5);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 6], 5);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 7], 8);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 0]), 9);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 1]), 5);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 2]), 5);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 3]), 8);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 4]), 9);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 5]), 5);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 6]), 5);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 7]), 8);
     }
     if (blob_top_vec_.size() > 1) {
       // Expected mask output: 2x 2 channels of:
       //     [5  2  2 9]
       //     [5 12 12 9]
       for (int i = 0; i < 8 * num * channels; i += 8) {
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 0],  5);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 1],  2);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 2],  2);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 3],  9);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 4],  5);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 5], 12);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 6], 12);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 7],  9);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 0]),  5);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 1]),  2);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 2]),  2);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 3]),  9);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 4]),  5);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 5]), 12);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 6]), 12);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 7]),  9);
       }
     }
   }
@@ -133,44 +134,44 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
     // [ 4    36    29    13    18    11]
     // (this is generated by magic(6) in MATLAB)
     for (int i = 0; i < 36 * num * channels; i += 36) {
-      blob_bottom_->mutable_cpu_data()[i +  0] = 35;
-      blob_bottom_->mutable_cpu_data()[i +  1] = 1;
-      blob_bottom_->mutable_cpu_data()[i +  2] = 6;
-      blob_bottom_->mutable_cpu_data()[i +  3] = 26;
-      blob_bottom_->mutable_cpu_data()[i +  4] = 19;
-      blob_bottom_->mutable_cpu_data()[i +  5] = 24;
-      blob_bottom_->mutable_cpu_data()[i +  6] = 3;
-      blob_bottom_->mutable_cpu_data()[i +  7] = 32;
-      blob_bottom_->mutable_cpu_data()[i +  8] = 7;
-      blob_bottom_->mutable_cpu_data()[i +  9] = 21;
-      blob_bottom_->mutable_cpu_data()[i + 10] = 23;
-      blob_bottom_->mutable_cpu_data()[i + 11] = 25;
-      blob_bottom_->mutable_cpu_data()[i + 12] = 31;
-      blob_bottom_->mutable_cpu_data()[i + 13] = 9;
-      blob_bottom_->mutable_cpu_data()[i + 14] = 2;
-      blob_bottom_->mutable_cpu_data()[i + 15] = 22;
-      blob_bottom_->mutable_cpu_data()[i + 16] = 27;
-      blob_bottom_->mutable_cpu_data()[i + 17] = 20;
-      blob_bottom_->mutable_cpu_data()[i + 18] = 8;
-      blob_bottom_->mutable_cpu_data()[i + 19] = 28;
-      blob_bottom_->mutable_cpu_data()[i + 20] = 33;
-      blob_bottom_->mutable_cpu_data()[i + 21] = 17;
-      blob_bottom_->mutable_cpu_data()[i + 22] = 10;
-      blob_bottom_->mutable_cpu_data()[i + 23] = 15;
-      blob_bottom_->mutable_cpu_data()[i + 24] = 30;
-      blob_bottom_->mutable_cpu_data()[i + 25] = 5;
-      blob_bottom_->mutable_cpu_data()[i + 26] = 34;
-      blob_bottom_->mutable_cpu_data()[i + 27] = 12;
-      blob_bottom_->mutable_cpu_data()[i + 28] = 14;
-      blob_bottom_->mutable_cpu_data()[i + 29] = 16;
-      blob_bottom_->mutable_cpu_data()[i + 30] = 4;
-      blob_bottom_->mutable_cpu_data()[i + 31] = 36;
-      blob_bottom_->mutable_cpu_data()[i + 32] = 29;
-      blob_bottom_->mutable_cpu_data()[i + 33] = 13;
-      blob_bottom_->mutable_cpu_data()[i + 34] = 18;
-      blob_bottom_->mutable_cpu_data()[i + 35] = 11;
+      blob_bottom_->mutable_cpu_data()[i +  0] = Get<Dtype>(35);
+      blob_bottom_->mutable_cpu_data()[i +  1] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i +  2] = Get<Dtype>(6);
+      blob_bottom_->mutable_cpu_data()[i +  3] = Get<Dtype>(26);
+      blob_bottom_->mutable_cpu_data()[i +  4] = Get<Dtype>(19);
+      blob_bottom_->mutable_cpu_data()[i +  5] = Get<Dtype>(24);
+      blob_bottom_->mutable_cpu_data()[i +  6] = Get<Dtype>(3);
+      blob_bottom_->mutable_cpu_data()[i +  7] = Get<Dtype>(32);
+      blob_bottom_->mutable_cpu_data()[i +  8] = Get<Dtype>(7);
+      blob_bottom_->mutable_cpu_data()[i +  9] = Get<Dtype>(21);
+      blob_bottom_->mutable_cpu_data()[i + 10] = Get<Dtype>(23);
+      blob_bottom_->mutable_cpu_data()[i + 11] = Get<Dtype>(25);
+      blob_bottom_->mutable_cpu_data()[i + 12] = Get<Dtype>(31);
+      blob_bottom_->mutable_cpu_data()[i + 13] = Get<Dtype>(9);
+      blob_bottom_->mutable_cpu_data()[i + 14] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i + 15] = Get<Dtype>(22);
+      blob_bottom_->mutable_cpu_data()[i + 16] = Get<Dtype>(27);
+      blob_bottom_->mutable_cpu_data()[i + 17] = Get<Dtype>(20);
+      blob_bottom_->mutable_cpu_data()[i + 18] = Get<Dtype>(8);
+      blob_bottom_->mutable_cpu_data()[i + 19] = Get<Dtype>(28);
+      blob_bottom_->mutable_cpu_data()[i + 20] = Get<Dtype>(33);
+      blob_bottom_->mutable_cpu_data()[i + 21] = Get<Dtype>(17);
+      blob_bottom_->mutable_cpu_data()[i + 22] = Get<Dtype>(10);
+      blob_bottom_->mutable_cpu_data()[i + 23] = Get<Dtype>(15);
+      blob_bottom_->mutable_cpu_data()[i + 24] = Get<Dtype>(30);
+      blob_bottom_->mutable_cpu_data()[i + 25] = Get<Dtype>(5);
+      blob_bottom_->mutable_cpu_data()[i + 26] = Get<Dtype>(34);
+      blob_bottom_->mutable_cpu_data()[i + 27] = Get<Dtype>(12);
+      blob_bottom_->mutable_cpu_data()[i + 28] = Get<Dtype>(14);
+      blob_bottom_->mutable_cpu_data()[i + 29] = Get<Dtype>(16);
+      blob_bottom_->mutable_cpu_data()[i + 30] = Get<Dtype>(4);
+      blob_bottom_->mutable_cpu_data()[i + 31] = Get<Dtype>(36);
+      blob_bottom_->mutable_cpu_data()[i + 32] = Get<Dtype>(29);
+      blob_bottom_->mutable_cpu_data()[i + 33] = Get<Dtype>(13);
+      blob_bottom_->mutable_cpu_data()[i + 34] = Get<Dtype>(18);
+      blob_bottom_->mutable_cpu_data()[i + 35] = Get<Dtype>(11);
     }
-    PoolingLayer<Dtype> layer(layer_param);
+    PoolingLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     EXPECT_EQ(blob_top_->num(), num);
     EXPECT_EQ(blob_top_->channels(), channels);
@@ -189,26 +190,26 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
     // [31    34    34    27    27]
     // [36    36    34    18    18]
     for (int i = 0; i < 20 * num * channels; i += 20) {
-      EXPECT_EQ(blob_top_->cpu_data()[i +  0], 35);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  1], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  2], 26);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  3], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  4], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  5], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  6], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  7], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  8], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  9], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 10], 31);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 11], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 12], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 13], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 14], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 15], 36);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 16], 36);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 17], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 18], 18);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 19], 18);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  0]), 35);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  1]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  2]), 26);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  3]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  4]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  5]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  6]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  7]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  8]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  9]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 10]), 31);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 11]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 12]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 13]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 14]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 15]), 36);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 16]), 36);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 17]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 18]), 18);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 19]), 18);
     }
     if (blob_top_vec_.size() > 1) {
         // [ 1     8     4    17    17]
@@ -216,26 +217,26 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
         // [13    27    27    17    17]
         // [32    32    27    35    35]
       for (int i = 0; i < 20 * num * channels; i += 20) {
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  0],  0);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  1],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  2],  3);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  3], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  4], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  5],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  6], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  7], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  8], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  9], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 10], 12);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 11], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 12], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 13], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 14], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 15], 31);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 16], 31);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 17], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 18], 34);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 19], 34);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  0]),  0);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  1]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  2]),  3);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  3]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  4]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  5]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  6]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  7]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  8]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  9]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 10]), 12);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 11]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 12]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 13]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 14]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 15]), 31);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 16]), 31);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 17]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 18]), 34);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 19]), 34);
       }
     }
   }
@@ -258,44 +259,44 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
     // [ 4    36    29    13    18    11]
     // (this is generated by magic(6) in MATLAB)
     for (int i = 0; i < 36 * num * channels; i += 36) {
-      blob_bottom_->mutable_cpu_data()[i +  0] = 35;
-      blob_bottom_->mutable_cpu_data()[i +  1] = 1;
-      blob_bottom_->mutable_cpu_data()[i +  2] = 6;
-      blob_bottom_->mutable_cpu_data()[i +  3] = 26;
-      blob_bottom_->mutable_cpu_data()[i +  4] = 19;
-      blob_bottom_->mutable_cpu_data()[i +  5] = 24;
-      blob_bottom_->mutable_cpu_data()[i +  6] = 3;
-      blob_bottom_->mutable_cpu_data()[i +  7] = 32;
-      blob_bottom_->mutable_cpu_data()[i +  8] = 7;
-      blob_bottom_->mutable_cpu_data()[i +  9] = 21;
-      blob_bottom_->mutable_cpu_data()[i + 10] = 23;
-      blob_bottom_->mutable_cpu_data()[i + 11] = 25;
-      blob_bottom_->mutable_cpu_data()[i + 12] = 31;
-      blob_bottom_->mutable_cpu_data()[i + 13] = 9;
-      blob_bottom_->mutable_cpu_data()[i + 14] = 2;
-      blob_bottom_->mutable_cpu_data()[i + 15] = 22;
-      blob_bottom_->mutable_cpu_data()[i + 16] = 27;
-      blob_bottom_->mutable_cpu_data()[i + 17] = 20;
-      blob_bottom_->mutable_cpu_data()[i + 18] = 8;
-      blob_bottom_->mutable_cpu_data()[i + 19] = 28;
-      blob_bottom_->mutable_cpu_data()[i + 20] = 33;
-      blob_bottom_->mutable_cpu_data()[i + 21] = 17;
-      blob_bottom_->mutable_cpu_data()[i + 22] = 10;
-      blob_bottom_->mutable_cpu_data()[i + 23] = 15;
-      blob_bottom_->mutable_cpu_data()[i + 24] = 30;
-      blob_bottom_->mutable_cpu_data()[i + 25] = 5;
-      blob_bottom_->mutable_cpu_data()[i + 26] = 34;
-      blob_bottom_->mutable_cpu_data()[i + 27] = 12;
-      blob_bottom_->mutable_cpu_data()[i + 28] = 14;
-      blob_bottom_->mutable_cpu_data()[i + 29] = 16;
-      blob_bottom_->mutable_cpu_data()[i + 30] = 4;
-      blob_bottom_->mutable_cpu_data()[i + 31] = 36;
-      blob_bottom_->mutable_cpu_data()[i + 32] = 29;
-      blob_bottom_->mutable_cpu_data()[i + 33] = 13;
-      blob_bottom_->mutable_cpu_data()[i + 34] = 18;
-      blob_bottom_->mutable_cpu_data()[i + 35] = 11;
+      blob_bottom_->mutable_cpu_data()[i +  0] = Get<Dtype>(35);
+      blob_bottom_->mutable_cpu_data()[i +  1] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i +  2] = Get<Dtype>(6);
+      blob_bottom_->mutable_cpu_data()[i +  3] = Get<Dtype>(26);
+      blob_bottom_->mutable_cpu_data()[i +  4] = Get<Dtype>(19);
+      blob_bottom_->mutable_cpu_data()[i +  5] = Get<Dtype>(24);
+      blob_bottom_->mutable_cpu_data()[i +  6] = Get<Dtype>(3);
+      blob_bottom_->mutable_cpu_data()[i +  7] = Get<Dtype>(32);
+      blob_bottom_->mutable_cpu_data()[i +  8] = Get<Dtype>(7);
+      blob_bottom_->mutable_cpu_data()[i +  9] = Get<Dtype>(21);
+      blob_bottom_->mutable_cpu_data()[i + 10] = Get<Dtype>(23);
+      blob_bottom_->mutable_cpu_data()[i + 11] = Get<Dtype>(25);
+      blob_bottom_->mutable_cpu_data()[i + 12] = Get<Dtype>(31);
+      blob_bottom_->mutable_cpu_data()[i + 13] = Get<Dtype>(9);
+      blob_bottom_->mutable_cpu_data()[i + 14] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i + 15] = Get<Dtype>(22);
+      blob_bottom_->mutable_cpu_data()[i + 16] = Get<Dtype>(27);
+      blob_bottom_->mutable_cpu_data()[i + 17] = Get<Dtype>(20);
+      blob_bottom_->mutable_cpu_data()[i + 18] = Get<Dtype>(8);
+      blob_bottom_->mutable_cpu_data()[i + 19] = Get<Dtype>(28);
+      blob_bottom_->mutable_cpu_data()[i + 20] = Get<Dtype>(33);
+      blob_bottom_->mutable_cpu_data()[i + 21] = Get<Dtype>(17);
+      blob_bottom_->mutable_cpu_data()[i + 22] = Get<Dtype>(10);
+      blob_bottom_->mutable_cpu_data()[i + 23] = Get<Dtype>(15);
+      blob_bottom_->mutable_cpu_data()[i + 24] = Get<Dtype>(30);
+      blob_bottom_->mutable_cpu_data()[i + 25] = Get<Dtype>(5);
+      blob_bottom_->mutable_cpu_data()[i + 26] = Get<Dtype>(34);
+      blob_bottom_->mutable_cpu_data()[i + 27] = Get<Dtype>(12);
+      blob_bottom_->mutable_cpu_data()[i + 28] = Get<Dtype>(14);
+      blob_bottom_->mutable_cpu_data()[i + 29] = Get<Dtype>(16);
+      blob_bottom_->mutable_cpu_data()[i + 30] = Get<Dtype>(4);
+      blob_bottom_->mutable_cpu_data()[i + 31] = Get<Dtype>(36);
+      blob_bottom_->mutable_cpu_data()[i + 32] = Get<Dtype>(29);
+      blob_bottom_->mutable_cpu_data()[i + 33] = Get<Dtype>(13);
+      blob_bottom_->mutable_cpu_data()[i + 34] = Get<Dtype>(18);
+      blob_bottom_->mutable_cpu_data()[i + 35] = Get<Dtype>(11);
     }
-    PoolingLayer<Dtype> layer(layer_param);
+    PoolingLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     EXPECT_EQ(blob_top_->num(), num);
     EXPECT_EQ(blob_top_->channels(), channels);
@@ -315,26 +316,26 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
     // [34    34    34    17]
     // [36    36    34    18]
     for (int i = 0; i < 20 * num * channels; i += 20) {
-      EXPECT_EQ(blob_top_->cpu_data()[i +  0], 35);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  1], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  2], 26);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  3], 26);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  4], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  5], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  6], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  7], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  8], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  9], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 10], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 11], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 12], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 13], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 14], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 15], 17);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 16], 36);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 17], 36);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 18], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 19], 18);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  0]), 35);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  1]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  2]), 26);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  3]), 26);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  4]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  5]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  6]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  7]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  8]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  9]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 10]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 11]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 12]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 13]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 14]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 15]), 17);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 16]), 36);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 17]), 36);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 18]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 19]), 18);
     }
     if (blob_top_vec_.size() > 1) {
         // [ 1     8     4     4]
@@ -343,26 +344,26 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
         // [27    27    27    22]
         // [32    32    27    35]
       for (int i = 0; i < 20 * num * channels; i += 20) {
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  0],  0);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  1],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  2],  3);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  3],  3);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  4],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  5],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  6], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  7], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  8], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  9], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 10], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 11], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 12], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 13], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 14], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 15], 21);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 16], 31);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 17], 31);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 18], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 19], 34);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  0]),  0);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  1]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  2]),  3);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  3]),  3);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  4]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  5]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  6]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  7]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  8]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  9]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 10]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 11]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 12]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 13]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 14]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 15]), 21);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 16]), 31);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 17]), 31);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 18]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 19]), 34);
       }
     }
   }
@@ -372,11 +373,12 @@ TYPED_TEST_CASE(PoolingLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(PoolingLayerTest, TestSetup) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
   pooling_param->set_kernel_size(3);
   pooling_param->set_stride(2);
-  PoolingLayer<Dtype> layer(layer_param);
+  PoolingLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
   EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
@@ -386,13 +388,14 @@ TYPED_TEST(PoolingLayerTest, TestSetup) {
 
 TYPED_TEST(PoolingLayerTest, TestSetupPadded) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
   pooling_param->set_kernel_size(3);
   pooling_param->set_stride(2);
   pooling_param->set_pad(1);
   pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
-  PoolingLayer<Dtype> layer(layer_param);
+  PoolingLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
   EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
@@ -402,11 +405,12 @@ TYPED_TEST(PoolingLayerTest, TestSetupPadded) {
 
 TYPED_TEST(PoolingLayerTest, TestSetupGlobalPooling) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
   pooling_param->set_global_pooling(true);
   pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
-  PoolingLayer<Dtype> layer(layer_param);
+  PoolingLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
   EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
@@ -455,6 +459,7 @@ TYPED_TEST(PoolingLayerTest, TestForwardMaxTopMask) {
 
 TYPED_TEST(PoolingLayerTest, TestGradientMax) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   for (int kernel_h = 3; kernel_h <= 4; kernel_h++) {
     for (int kernel_w = 3; kernel_w <= 4; kernel_w++) {
       LayerParameter layer_param;
@@ -464,8 +469,8 @@ TYPED_TEST(PoolingLayerTest, TestGradientMax) {
       pooling_param->set_stride(2);
       pooling_param->set_pad(1);
       pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
-      PoolingLayer<Dtype> layer(layer_param);
-      GradientChecker<Dtype> checker(1e-4, 1e-2);
+      PoolingLayer<Dtype,Mtype> layer(layer_param);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-4), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -474,6 +479,7 @@ TYPED_TEST(PoolingLayerTest, TestGradientMax) {
 
 TYPED_TEST(PoolingLayerTest, TestForwardMaxPadded) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
   pooling_param->set_kernel_size(3);
@@ -485,40 +491,41 @@ TYPED_TEST(PoolingLayerTest, TestForwardMaxPadded) {
   //     [ 1 2 4 ]
   //     [ 2 3 2 ]
   //     [ 4 2 1 ]
-  this->blob_bottom_->mutable_cpu_data()[0] = 1;
-  this->blob_bottom_->mutable_cpu_data()[1] = 2;
-  this->blob_bottom_->mutable_cpu_data()[2] = 4;
-  this->blob_bottom_->mutable_cpu_data()[3] = 2;
-  this->blob_bottom_->mutable_cpu_data()[4] = 3;
-  this->blob_bottom_->mutable_cpu_data()[5] = 2;
-  this->blob_bottom_->mutable_cpu_data()[6] = 4;
-  this->blob_bottom_->mutable_cpu_data()[7] = 2;
-  this->blob_bottom_->mutable_cpu_data()[8] = 1;
-  PoolingLayer<Dtype> layer(layer_param);
+  this->blob_bottom_->mutable_cpu_data()[0] = Get<Dtype>(1);
+  this->blob_bottom_->mutable_cpu_data()[1] = Get<Dtype>(2);
+  this->blob_bottom_->mutable_cpu_data()[2] = Get<Dtype>(4);
+  this->blob_bottom_->mutable_cpu_data()[3] = Get<Dtype>(2);
+  this->blob_bottom_->mutable_cpu_data()[4] = Get<Dtype>(3);
+  this->blob_bottom_->mutable_cpu_data()[5] = Get<Dtype>(2);
+  this->blob_bottom_->mutable_cpu_data()[6] = Get<Dtype>(4);
+  this->blob_bottom_->mutable_cpu_data()[7] = Get<Dtype>(2);
+  this->blob_bottom_->mutable_cpu_data()[8] = Get<Dtype>(1);
+  PoolingLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), 1);
   EXPECT_EQ(this->blob_top_->channels(), 1);
   EXPECT_EQ(this->blob_top_->height(), 3);
   EXPECT_EQ(this->blob_top_->width(), 3);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-  Dtype epsilon = 1e-8;
+  Mtype epsilon = 1e-8;
   // Output:
   //     [ 1 4 4 ]
   //     [ 4 4 4 ]
   //     [ 4 4 1 ]
-  EXPECT_NEAR(this->blob_top_->cpu_data()[0], 1, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[1], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[2], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[3], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[4], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[5], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[6], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[7], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[8], 1, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[0]), 1, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[1]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[2]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[3]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[4]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[5]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[6]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[7]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[8]), 1, epsilon);
 }
 
 TYPED_TEST(PoolingLayerTest, TestGradientMaxTopMask) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   for (int kernel_h = 3; kernel_h <= 4; kernel_h++) {
     for (int kernel_w = 3; kernel_w <= 4; kernel_w++) {
       LayerParameter layer_param;
@@ -528,8 +535,8 @@ TYPED_TEST(PoolingLayerTest, TestGradientMaxTopMask) {
       pooling_param->set_stride(2);
       pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
       this->blob_top_vec_.push_back(this->blob_top_mask_);
-      PoolingLayer<Dtype> layer(layer_param);
-      GradientChecker<Dtype> checker(1e-4, 1e-2);
+      PoolingLayer<Dtype,Mtype> layer(layer_param);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-4), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
       this->blob_top_vec_.pop_back();
@@ -539,6 +546,7 @@ TYPED_TEST(PoolingLayerTest, TestGradientMaxTopMask) {
 
 TYPED_TEST(PoolingLayerTest, TestForwardAve) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
   pooling_param->set_kernel_size(3);
@@ -547,30 +555,31 @@ TYPED_TEST(PoolingLayerTest, TestForwardAve) {
   pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
   this->blob_bottom_->Reshape(1, 1, 3, 3);
   FillerParameter filler_param;
-  filler_param.set_value(Dtype(2));
-  ConstantFiller<Dtype> filler(filler_param);
+  filler_param.set_value(2.F);
+  ConstantFiller<Dtype,Mtype> filler(filler_param);
   filler.Fill(this->blob_bottom_);
-  PoolingLayer<Dtype> layer(layer_param);
+  PoolingLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), 1);
   EXPECT_EQ(this->blob_top_->channels(), 1);
   EXPECT_EQ(this->blob_top_->height(), 3);
   EXPECT_EQ(this->blob_top_->width(), 3);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-  Dtype epsilon = 1e-5;
-  EXPECT_NEAR(this->blob_top_->cpu_data()[0], 8.0 / 9, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[1], 4.0 / 3, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[2], 8.0 / 9, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[3], 4.0 / 3, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[4], 2.0    , epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[5], 4.0 / 3, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[6], 8.0 / 9, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[7], 4.0 / 3, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[8], 8.0 / 9, epsilon);
+  Mtype epsilon = tol<Dtype>(1e-5);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[0]), 8.0 / 9, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[1]), 4.0 / 3, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[2]), 8.0 / 9, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[3]), 4.0 / 3, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[4]), 2.0    , epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[5]), 4.0 / 3, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[6]), 8.0 / 9, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[7]), 4.0 / 3, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[8]), 8.0 / 9, epsilon);
 }
 
 TYPED_TEST(PoolingLayerTest, TestGradientAve) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   for (int kernel_h = 3; kernel_h <= 4; kernel_h++) {
     for (int kernel_w = 3; kernel_w <= 4; kernel_w++) {
       LayerParameter layer_param;
@@ -579,8 +588,8 @@ TYPED_TEST(PoolingLayerTest, TestGradientAve) {
       pooling_param->set_kernel_w(kernel_w);
       pooling_param->set_stride(2);
       pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
-      PoolingLayer<Dtype> layer(layer_param);
-      GradientChecker<Dtype> checker(1e-2, 1e-2);
+      PoolingLayer<Dtype,Mtype> layer(layer_param);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -589,6 +598,7 @@ TYPED_TEST(PoolingLayerTest, TestGradientAve) {
 
 TYPED_TEST(PoolingLayerTest, TestGradientAvePadded) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   for (int kernel_h = 3; kernel_h <= 4; kernel_h++) {
     for (int kernel_w = 3; kernel_w <= 4; kernel_w++) {
       LayerParameter layer_param;
@@ -598,8 +608,8 @@ TYPED_TEST(PoolingLayerTest, TestGradientAvePadded) {
       pooling_param->set_stride(2);
       pooling_param->set_pad(2);
       pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
-      PoolingLayer<Dtype> layer(layer_param);
-      GradientChecker<Dtype> checker(1e-2, 1e-2);
+      PoolingLayer<Dtype,Mtype> layer(layer_param);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -607,19 +617,22 @@ TYPED_TEST(PoolingLayerTest, TestGradientAvePadded) {
 }
 
 #ifdef USE_CUDNN
-template <typename Dtype>
-class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
+template <typename TypeParam>
+class CuDNNPoolingLayerTest : public GPUDeviceTest<TypeParam> {
+ public: 
+  typedef typename TypeParam::Dtype Dtype; 
+  typedef typename TypeParam::Mtype Mtype;
  protected:
   CuDNNPoolingLayerTest()
-      : blob_bottom_(new Blob<Dtype>()),
-        blob_top_(new Blob<Dtype>()),
-        blob_top_mask_(new Blob<Dtype>()) {}
+      : blob_bottom_(new Blob<Dtype,Mtype>()),
+        blob_top_(new Blob<Dtype,Mtype>()),
+        blob_top_mask_(new Blob<Dtype,Mtype>()) {}
   virtual void SetUp() {
     Caffe::set_random_seed(1701);
     blob_bottom_->Reshape(2, 3, 6, 5);
     // fill the values
     FillerParameter filler_param;
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
     blob_bottom_vec_.push_back(blob_bottom_);
     blob_top_vec_.push_back(blob_top_);
@@ -629,11 +642,11 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
     delete blob_top_;
     delete blob_top_mask_;
   }
-  Blob<Dtype>* const blob_bottom_;
-  Blob<Dtype>* const blob_top_;
-  Blob<Dtype>* const blob_top_mask_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const blob_bottom_;
+  Blob<Dtype,Mtype>* const blob_top_;
+  Blob<Dtype,Mtype>* const blob_top_mask_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
   // Test for 2x 2 square pooling layer
   void TestForwardSquare() {
     LayerParameter layer_param;
@@ -648,23 +661,23 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
     //     [9 4 1 4 8]
     //     [1 2 5 2 3]
     for (int i = 0; i < 15 * num * channels; i += 15) {
-      blob_bottom_->mutable_cpu_data()[i +  0] = 1;
-      blob_bottom_->mutable_cpu_data()[i +  1] = 2;
-      blob_bottom_->mutable_cpu_data()[i +  2] = 5;
-      blob_bottom_->mutable_cpu_data()[i +  3] = 2;
-      blob_bottom_->mutable_cpu_data()[i +  4] = 3;
-      blob_bottom_->mutable_cpu_data()[i +  5] = 9;
-      blob_bottom_->mutable_cpu_data()[i +  6] = 4;
-      blob_bottom_->mutable_cpu_data()[i +  7] = 1;
-      blob_bottom_->mutable_cpu_data()[i +  8] = 4;
-      blob_bottom_->mutable_cpu_data()[i +  9] = 8;
-      blob_bottom_->mutable_cpu_data()[i + 10] = 1;
-      blob_bottom_->mutable_cpu_data()[i + 11] = 2;
-      blob_bottom_->mutable_cpu_data()[i + 12] = 5;
-      blob_bottom_->mutable_cpu_data()[i + 13] = 2;
-      blob_bottom_->mutable_cpu_data()[i + 14] = 3;
+      blob_bottom_->mutable_cpu_data()[i +  0] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i +  1] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i +  2] = Get<Dtype>(5);
+      blob_bottom_->mutable_cpu_data()[i +  3] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i +  4] = Get<Dtype>(3);
+      blob_bottom_->mutable_cpu_data()[i +  5] = Get<Dtype>(9);
+      blob_bottom_->mutable_cpu_data()[i +  6] = Get<Dtype>(4);
+      blob_bottom_->mutable_cpu_data()[i +  7] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i +  8] = Get<Dtype>(4);
+      blob_bottom_->mutable_cpu_data()[i +  9] = Get<Dtype>(8);
+      blob_bottom_->mutable_cpu_data()[i + 10] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i + 11] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i + 12] = Get<Dtype>(5);
+      blob_bottom_->mutable_cpu_data()[i + 13] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i + 14] = Get<Dtype>(3);
     }
-    CuDNNPoolingLayer<Dtype> layer(layer_param);
+    CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     EXPECT_EQ(blob_top_->num(), num);
     EXPECT_EQ(blob_top_->channels(), channels);
@@ -681,28 +694,28 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
     //     [9 5 5 8]
     //     [9 5 5 8]
     for (int i = 0; i < 8 * num * channels; i += 8) {
-      EXPECT_EQ(blob_top_->cpu_data()[i + 0], 9);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 1], 5);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 2], 5);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 3], 8);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 4], 9);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 5], 5);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 6], 5);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 7], 8);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 0]), 9);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 1]), 5);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 2]), 5);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 3]), 8);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 4]), 9);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 5]), 5);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 6]), 5);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 7]), 8);
     }
     if (blob_top_vec_.size() > 1) {
       // Expected mask output: 2x 2 channels of:
       //     [5  2  2 9]
       //     [5 12 12 9]
       for (int i = 0; i < 8 * num * channels; i += 8) {
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 0],  5);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 1],  2);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 2],  2);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 3],  9);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 4],  5);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 5], 12);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 6], 12);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 7],  9);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 0]),  5);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 1]),  2);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 2]),  2);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 3]),  9);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 4]),  5);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 5]), 12);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 6]), 12);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 7]),  9);
       }
     }
   }
@@ -725,44 +738,44 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
     // [ 4    36    29    13    18    11]
     // (this is generated by magic(6) in MATLAB)
     for (int i = 0; i < 36 * num * channels; i += 36) {
-      blob_bottom_->mutable_cpu_data()[i +  0] = 35;
-      blob_bottom_->mutable_cpu_data()[i +  1] = 1;
-      blob_bottom_->mutable_cpu_data()[i +  2] = 6;
-      blob_bottom_->mutable_cpu_data()[i +  3] = 26;
-      blob_bottom_->mutable_cpu_data()[i +  4] = 19;
-      blob_bottom_->mutable_cpu_data()[i +  5] = 24;
-      blob_bottom_->mutable_cpu_data()[i +  6] = 3;
-      blob_bottom_->mutable_cpu_data()[i +  7] = 32;
-      blob_bottom_->mutable_cpu_data()[i +  8] = 7;
-      blob_bottom_->mutable_cpu_data()[i +  9] = 21;
-      blob_bottom_->mutable_cpu_data()[i + 10] = 23;
-      blob_bottom_->mutable_cpu_data()[i + 11] = 25;
-      blob_bottom_->mutable_cpu_data()[i + 12] = 31;
-      blob_bottom_->mutable_cpu_data()[i + 13] = 9;
-      blob_bottom_->mutable_cpu_data()[i + 14] = 2;
-      blob_bottom_->mutable_cpu_data()[i + 15] = 22;
-      blob_bottom_->mutable_cpu_data()[i + 16] = 27;
-      blob_bottom_->mutable_cpu_data()[i + 17] = 20;
-      blob_bottom_->mutable_cpu_data()[i + 18] = 8;
-      blob_bottom_->mutable_cpu_data()[i + 19] = 28;
-      blob_bottom_->mutable_cpu_data()[i + 20] = 33;
-      blob_bottom_->mutable_cpu_data()[i + 21] = 17;
-      blob_bottom_->mutable_cpu_data()[i + 22] = 10;
-      blob_bottom_->mutable_cpu_data()[i + 23] = 15;
-      blob_bottom_->mutable_cpu_data()[i + 24] = 30;
-      blob_bottom_->mutable_cpu_data()[i + 25] = 5;
-      blob_bottom_->mutable_cpu_data()[i + 26] = 34;
-      blob_bottom_->mutable_cpu_data()[i + 27] = 12;
-      blob_bottom_->mutable_cpu_data()[i + 28] = 14;
-      blob_bottom_->mutable_cpu_data()[i + 29] = 16;
-      blob_bottom_->mutable_cpu_data()[i + 30] = 4;
-      blob_bottom_->mutable_cpu_data()[i + 31] = 36;
-      blob_bottom_->mutable_cpu_data()[i + 32] = 29;
-      blob_bottom_->mutable_cpu_data()[i + 33] = 13;
-      blob_bottom_->mutable_cpu_data()[i + 34] = 18;
-      blob_bottom_->mutable_cpu_data()[i + 35] = 11;
+      blob_bottom_->mutable_cpu_data()[i +  0] = Get<Dtype>(35);
+      blob_bottom_->mutable_cpu_data()[i +  1] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i +  2] = Get<Dtype>(6);
+      blob_bottom_->mutable_cpu_data()[i +  3] = Get<Dtype>(26);
+      blob_bottom_->mutable_cpu_data()[i +  4] = Get<Dtype>(19);
+      blob_bottom_->mutable_cpu_data()[i +  5] = Get<Dtype>(24);
+      blob_bottom_->mutable_cpu_data()[i +  6] = Get<Dtype>(3);
+      blob_bottom_->mutable_cpu_data()[i +  7] = Get<Dtype>(32);
+      blob_bottom_->mutable_cpu_data()[i +  8] = Get<Dtype>(7);
+      blob_bottom_->mutable_cpu_data()[i +  9] = Get<Dtype>(21);
+      blob_bottom_->mutable_cpu_data()[i + 10] = Get<Dtype>(23);
+      blob_bottom_->mutable_cpu_data()[i + 11] = Get<Dtype>(25);
+      blob_bottom_->mutable_cpu_data()[i + 12] = Get<Dtype>(31);
+      blob_bottom_->mutable_cpu_data()[i + 13] = Get<Dtype>(9);
+      blob_bottom_->mutable_cpu_data()[i + 14] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i + 15] = Get<Dtype>(22);
+      blob_bottom_->mutable_cpu_data()[i + 16] = Get<Dtype>(27);
+      blob_bottom_->mutable_cpu_data()[i + 17] = Get<Dtype>(20);
+      blob_bottom_->mutable_cpu_data()[i + 18] = Get<Dtype>(8);
+      blob_bottom_->mutable_cpu_data()[i + 19] = Get<Dtype>(28);
+      blob_bottom_->mutable_cpu_data()[i + 20] = Get<Dtype>(33);
+      blob_bottom_->mutable_cpu_data()[i + 21] = Get<Dtype>(17);
+      blob_bottom_->mutable_cpu_data()[i + 22] = Get<Dtype>(10);
+      blob_bottom_->mutable_cpu_data()[i + 23] = Get<Dtype>(15);
+      blob_bottom_->mutable_cpu_data()[i + 24] = Get<Dtype>(30);
+      blob_bottom_->mutable_cpu_data()[i + 25] = Get<Dtype>(5);
+      blob_bottom_->mutable_cpu_data()[i + 26] = Get<Dtype>(34);
+      blob_bottom_->mutable_cpu_data()[i + 27] = Get<Dtype>(12);
+      blob_bottom_->mutable_cpu_data()[i + 28] = Get<Dtype>(14);
+      blob_bottom_->mutable_cpu_data()[i + 29] = Get<Dtype>(16);
+      blob_bottom_->mutable_cpu_data()[i + 30] = Get<Dtype>(4);
+      blob_bottom_->mutable_cpu_data()[i + 31] = Get<Dtype>(36);
+      blob_bottom_->mutable_cpu_data()[i + 32] = Get<Dtype>(29);
+      blob_bottom_->mutable_cpu_data()[i + 33] = Get<Dtype>(13);
+      blob_bottom_->mutable_cpu_data()[i + 34] = Get<Dtype>(18);
+      blob_bottom_->mutable_cpu_data()[i + 35] = Get<Dtype>(11);
     }
-    CuDNNPoolingLayer<Dtype> layer(layer_param);
+    CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     EXPECT_EQ(blob_top_->num(), num);
     EXPECT_EQ(blob_top_->channels(), channels);
@@ -781,26 +794,26 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
     // [31    34    34    27    27]
     // [36    36    34    18    18]
     for (int i = 0; i < 20 * num * channels; i += 20) {
-      EXPECT_EQ(blob_top_->cpu_data()[i +  0], 35);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  1], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  2], 26);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  3], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  4], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  5], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  6], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  7], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  8], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  9], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 10], 31);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 11], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 12], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 13], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 14], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 15], 36);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 16], 36);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 17], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 18], 18);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 19], 18);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  0]), 35);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  1]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  2]), 26);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  3]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  4]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  5]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  6]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  7]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  8]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  9]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 10]), 31);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 11]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 12]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 13]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 14]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 15]), 36);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 16]), 36);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 17]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 18]), 18);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 19]), 18);
     }
     if (blob_top_vec_.size() > 1) {
         // [ 1     8     4    17    17]
@@ -808,26 +821,26 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
         // [13    27    27    17    17]
         // [32    32    27    35    35]
       for (int i = 0; i < 20 * num * channels; i += 20) {
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  0],  0);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  1],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  2],  3);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  3], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  4], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  5],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  6], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  7], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  8], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  9], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 10], 12);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 11], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 12], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 13], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 14], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 15], 31);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 16], 31);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 17], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 18], 34);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 19], 34);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  0]),  0);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  1]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  2]),  3);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  3]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  4]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  5]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  6]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  7]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  8]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  9]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 10]), 12);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 11]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 12]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 13]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 14]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 15]), 31);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 16]), 31);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 17]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 18]), 34);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 19]), 34);
       }
     }
   }
@@ -850,44 +863,44 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
     // [ 4    36    29    13    18    11]
     // (this is generated by magic(6) in MATLAB)
     for (int i = 0; i < 36 * num * channels; i += 36) {
-      blob_bottom_->mutable_cpu_data()[i +  0] = 35;
-      blob_bottom_->mutable_cpu_data()[i +  1] = 1;
-      blob_bottom_->mutable_cpu_data()[i +  2] = 6;
-      blob_bottom_->mutable_cpu_data()[i +  3] = 26;
-      blob_bottom_->mutable_cpu_data()[i +  4] = 19;
-      blob_bottom_->mutable_cpu_data()[i +  5] = 24;
-      blob_bottom_->mutable_cpu_data()[i +  6] = 3;
-      blob_bottom_->mutable_cpu_data()[i +  7] = 32;
-      blob_bottom_->mutable_cpu_data()[i +  8] = 7;
-      blob_bottom_->mutable_cpu_data()[i +  9] = 21;
-      blob_bottom_->mutable_cpu_data()[i + 10] = 23;
-      blob_bottom_->mutable_cpu_data()[i + 11] = 25;
-      blob_bottom_->mutable_cpu_data()[i + 12] = 31;
-      blob_bottom_->mutable_cpu_data()[i + 13] = 9;
-      blob_bottom_->mutable_cpu_data()[i + 14] = 2;
-      blob_bottom_->mutable_cpu_data()[i + 15] = 22;
-      blob_bottom_->mutable_cpu_data()[i + 16] = 27;
-      blob_bottom_->mutable_cpu_data()[i + 17] = 20;
-      blob_bottom_->mutable_cpu_data()[i + 18] = 8;
-      blob_bottom_->mutable_cpu_data()[i + 19] = 28;
-      blob_bottom_->mutable_cpu_data()[i + 20] = 33;
-      blob_bottom_->mutable_cpu_data()[i + 21] = 17;
-      blob_bottom_->mutable_cpu_data()[i + 22] = 10;
-      blob_bottom_->mutable_cpu_data()[i + 23] = 15;
-      blob_bottom_->mutable_cpu_data()[i + 24] = 30;
-      blob_bottom_->mutable_cpu_data()[i + 25] = 5;
-      blob_bottom_->mutable_cpu_data()[i + 26] = 34;
-      blob_bottom_->mutable_cpu_data()[i + 27] = 12;
-      blob_bottom_->mutable_cpu_data()[i + 28] = 14;
-      blob_bottom_->mutable_cpu_data()[i + 29] = 16;
-      blob_bottom_->mutable_cpu_data()[i + 30] = 4;
-      blob_bottom_->mutable_cpu_data()[i + 31] = 36;
-      blob_bottom_->mutable_cpu_data()[i + 32] = 29;
-      blob_bottom_->mutable_cpu_data()[i + 33] = 13;
-      blob_bottom_->mutable_cpu_data()[i + 34] = 18;
-      blob_bottom_->mutable_cpu_data()[i + 35] = 11;
+      blob_bottom_->mutable_cpu_data()[i +  0] = Get<Dtype>(35);
+      blob_bottom_->mutable_cpu_data()[i +  1] = Get<Dtype>(1);
+      blob_bottom_->mutable_cpu_data()[i +  2] = Get<Dtype>(6);
+      blob_bottom_->mutable_cpu_data()[i +  3] = Get<Dtype>(26);
+      blob_bottom_->mutable_cpu_data()[i +  4] = Get<Dtype>(19);
+      blob_bottom_->mutable_cpu_data()[i +  5] = Get<Dtype>(24);
+      blob_bottom_->mutable_cpu_data()[i +  6] = Get<Dtype>(3);
+      blob_bottom_->mutable_cpu_data()[i +  7] = Get<Dtype>(32);
+      blob_bottom_->mutable_cpu_data()[i +  8] = Get<Dtype>(7);
+      blob_bottom_->mutable_cpu_data()[i +  9] = Get<Dtype>(21);
+      blob_bottom_->mutable_cpu_data()[i + 10] = Get<Dtype>(23);
+      blob_bottom_->mutable_cpu_data()[i + 11] = Get<Dtype>(25);
+      blob_bottom_->mutable_cpu_data()[i + 12] = Get<Dtype>(31);
+      blob_bottom_->mutable_cpu_data()[i + 13] = Get<Dtype>(9);
+      blob_bottom_->mutable_cpu_data()[i + 14] = Get<Dtype>(2);
+      blob_bottom_->mutable_cpu_data()[i + 15] = Get<Dtype>(22);
+      blob_bottom_->mutable_cpu_data()[i + 16] = Get<Dtype>(27);
+      blob_bottom_->mutable_cpu_data()[i + 17] = Get<Dtype>(20);
+      blob_bottom_->mutable_cpu_data()[i + 18] = Get<Dtype>(8);
+      blob_bottom_->mutable_cpu_data()[i + 19] = Get<Dtype>(28);
+      blob_bottom_->mutable_cpu_data()[i + 20] = Get<Dtype>(33);
+      blob_bottom_->mutable_cpu_data()[i + 21] = Get<Dtype>(17);
+      blob_bottom_->mutable_cpu_data()[i + 22] = Get<Dtype>(10);
+      blob_bottom_->mutable_cpu_data()[i + 23] = Get<Dtype>(15);
+      blob_bottom_->mutable_cpu_data()[i + 24] = Get<Dtype>(30);
+      blob_bottom_->mutable_cpu_data()[i + 25] = Get<Dtype>(5);
+      blob_bottom_->mutable_cpu_data()[i + 26] = Get<Dtype>(34);
+      blob_bottom_->mutable_cpu_data()[i + 27] = Get<Dtype>(12);
+      blob_bottom_->mutable_cpu_data()[i + 28] = Get<Dtype>(14);
+      blob_bottom_->mutable_cpu_data()[i + 29] = Get<Dtype>(16);
+      blob_bottom_->mutable_cpu_data()[i + 30] = Get<Dtype>(4);
+      blob_bottom_->mutable_cpu_data()[i + 31] = Get<Dtype>(36);
+      blob_bottom_->mutable_cpu_data()[i + 32] = Get<Dtype>(29);
+      blob_bottom_->mutable_cpu_data()[i + 33] = Get<Dtype>(13);
+      blob_bottom_->mutable_cpu_data()[i + 34] = Get<Dtype>(18);
+      blob_bottom_->mutable_cpu_data()[i + 35] = Get<Dtype>(11);
     }
-    CuDNNPoolingLayer<Dtype> layer(layer_param);
+    CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     EXPECT_EQ(blob_top_->num(), num);
     EXPECT_EQ(blob_top_->channels(), channels);
@@ -907,26 +920,26 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
     // [34    34    34    17]
     // [36    36    34    18]
     for (int i = 0; i < 20 * num * channels; i += 20) {
-      EXPECT_EQ(blob_top_->cpu_data()[i +  0], 35);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  1], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  2], 26);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  3], 26);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  4], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  5], 32);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  6], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  7], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  8], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i +  9], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 10], 33);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 11], 27);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 12], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 13], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 14], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 15], 17);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 16], 36);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 17], 36);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 18], 34);
-      EXPECT_EQ(blob_top_->cpu_data()[i + 19], 18);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  0]), 35);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  1]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  2]), 26);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  3]), 26);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  4]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  5]), 32);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  6]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  7]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  8]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i +  9]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 10]), 33);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 11]), 27);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 12]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 13]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 14]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 15]), 17);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 16]), 36);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 17]), 36);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 18]), 34);
+      EXPECT_EQ(Get<Mtype>(blob_top_->cpu_data()[i + 19]), 18);
     }
     if (blob_top_vec_.size() > 1) {
         // [ 1     8     4     4]
@@ -935,26 +948,26 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
         // [27    27    27    22]
         // [32    32    27    35]
       for (int i = 0; i < 20 * num * channels; i += 20) {
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  0],  0);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  1],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  2],  3);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  3],  3);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  4],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  5],  7);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  6], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  7], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  8], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i +  9], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 10], 20);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 11], 16);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 12], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 13], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 14], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 15], 21);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 16], 31);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 17], 31);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 18], 26);
-        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 19], 34);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  0]),  0);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  1]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  2]),  3);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  3]),  3);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  4]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  5]),  7);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  6]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  7]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  8]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i +  9]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 10]), 20);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 11]), 16);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 12]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 13]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 14]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 15]), 21);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 16]), 31);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 17]), 31);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 18]), 26);
+        EXPECT_EQ(Get<Mtype>(blob_top_mask_->cpu_data()[i + 19]), 34);
       }
     }
   }
@@ -963,11 +976,13 @@ class CuDNNPoolingLayerTest : public GPUDeviceTest<Dtype> {
 TYPED_TEST_CASE(CuDNNPoolingLayerTest, TestDtypes);
 
 TYPED_TEST(CuDNNPoolingLayerTest, TestSetupCuDNN) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
   pooling_param->set_kernel_size(3);
   pooling_param->set_stride(2);
-  CuDNNPoolingLayer<TypeParam> layer(layer_param);
+  CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
   EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
@@ -976,13 +991,15 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestSetupCuDNN) {
 }
 
 TYPED_TEST(CuDNNPoolingLayerTest, TestSetupPaddedCuDNN) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
   pooling_param->set_kernel_size(3);
   pooling_param->set_stride(2);
   pooling_param->set_pad(1);
   pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
-  CuDNNPoolingLayer<TypeParam> layer(layer_param);
+  CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
   EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
@@ -1034,6 +1051,8 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestForwardMaxTopMaskCuDNN) {
 */
 
 TYPED_TEST(CuDNNPoolingLayerTest, TestGradientMaxCuDNN) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   for (int kernel_h = 3; kernel_h <= 4; kernel_h++) {
     for (int kernel_w = 3; kernel_w <= 4; kernel_w++) {
       LayerParameter layer_param;
@@ -1044,8 +1063,8 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestGradientMaxCuDNN) {
       // currenty, cuDNN pooling does not support padding
       pooling_param->set_pad(0);
       pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
-      CuDNNPoolingLayer<TypeParam> layer(layer_param);
-      GradientChecker<TypeParam> checker(1e-4, 1e-2);
+      CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-4), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -1053,6 +1072,8 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestGradientMaxCuDNN) {
 }
 
 TYPED_TEST(CuDNNPoolingLayerTest, TestForwardMaxPaddedCuDNN) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
   pooling_param->set_kernel_size(3);
@@ -1064,36 +1085,36 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestForwardMaxPaddedCuDNN) {
   //     [ 1 2 4 ]
   //     [ 2 3 2 ]
   //     [ 4 2 1 ]
-  this->blob_bottom_->mutable_cpu_data()[0] = 1;
-  this->blob_bottom_->mutable_cpu_data()[1] = 2;
-  this->blob_bottom_->mutable_cpu_data()[2] = 4;
-  this->blob_bottom_->mutable_cpu_data()[3] = 2;
-  this->blob_bottom_->mutable_cpu_data()[4] = 3;
-  this->blob_bottom_->mutable_cpu_data()[5] = 2;
-  this->blob_bottom_->mutable_cpu_data()[6] = 4;
-  this->blob_bottom_->mutable_cpu_data()[7] = 2;
-  this->blob_bottom_->mutable_cpu_data()[8] = 1;
-  CuDNNPoolingLayer<TypeParam> layer(layer_param);
+  this->blob_bottom_->mutable_cpu_data()[0] = Get<Dtype>(1);
+  this->blob_bottom_->mutable_cpu_data()[1] = Get<Dtype>(2);
+  this->blob_bottom_->mutable_cpu_data()[2] = Get<Dtype>(4);
+  this->blob_bottom_->mutable_cpu_data()[3] = Get<Dtype>(2);
+  this->blob_bottom_->mutable_cpu_data()[4] = Get<Dtype>(3);
+  this->blob_bottom_->mutable_cpu_data()[5] = Get<Dtype>(2);
+  this->blob_bottom_->mutable_cpu_data()[6] = Get<Dtype>(4);
+  this->blob_bottom_->mutable_cpu_data()[7] = Get<Dtype>(2);
+  this->blob_bottom_->mutable_cpu_data()[8] = Get<Dtype>(1);
+  CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), 1);
   EXPECT_EQ(this->blob_top_->channels(), 1);
   EXPECT_EQ(this->blob_top_->height(), 3);
   EXPECT_EQ(this->blob_top_->width(), 3);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-  TypeParam epsilon = 1e-8;
+  Mtype epsilon = 1e-8;
   // Output:
   //     [ 1 4 4 ]
   //     [ 4 4 4 ]
   //     [ 4 4 1 ]
-  EXPECT_NEAR(this->blob_top_->cpu_data()[0], 1, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[1], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[2], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[3], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[4], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[5], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[6], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[7], 4, epsilon);
-  EXPECT_NEAR(this->blob_top_->cpu_data()[8], 1, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[0]), 1, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[1]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[2]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[3]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[4]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[5]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[6]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[7]), 4, epsilon);
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[8]), 1, epsilon);
 }
 
 /*
@@ -1118,6 +1139,8 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestGradientMaxTopMaskCuDNN) {
 */
 
 TYPED_TEST(CuDNNPoolingLayerTest, TestForwardAveCuDNN) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
   pooling_param->set_kernel_size(3);
@@ -1128,21 +1151,23 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestForwardAveCuDNN) {
   pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
   this->blob_bottom_->Reshape(1, 1, 3, 3);
   FillerParameter filler_param;
-  filler_param.set_value(TypeParam(2));
-  ConstantFiller<TypeParam> filler(filler_param);
+  filler_param.set_value(Mtype(2));
+  ConstantFiller<Dtype,Mtype> filler(filler_param);
   filler.Fill(this->blob_bottom_);
-  CuDNNPoolingLayer<TypeParam> layer(layer_param);
+  CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), 1);
   EXPECT_EQ(this->blob_top_->channels(), 1);
   EXPECT_EQ(this->blob_top_->height(), 1);
   EXPECT_EQ(this->blob_top_->width(), 1);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-  TypeParam epsilon = 1e-5;
-  EXPECT_NEAR(this->blob_top_->cpu_data()[0], 2.0, epsilon);
+  Mtype epsilon = 1e-5;
+  EXPECT_NEAR(Get<Mtype>(this->blob_top_->cpu_data()[0]), 2.0, epsilon);
 }
 
 TYPED_TEST(CuDNNPoolingLayerTest, TestGradientAveCuDNN) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   for (int kernel_h = 3; kernel_h <= 4; kernel_h++) {
     for (int kernel_w = 3; kernel_w <= 4; kernel_w++) {
       LayerParameter layer_param;
@@ -1151,8 +1176,8 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestGradientAveCuDNN) {
       pooling_param->set_kernel_w(kernel_w);
       pooling_param->set_stride(2);
       pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
-      CuDNNPoolingLayer<TypeParam> layer(layer_param);
-      GradientChecker<TypeParam> checker(1e-2, 1e-2);
+      CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }
@@ -1160,6 +1185,8 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestGradientAveCuDNN) {
 }
 
 TYPED_TEST(CuDNNPoolingLayerTest, TestGradientAvePaddedCuDNN) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   for (int kernel_h = 3; kernel_h <= 4; kernel_h++) {
     for (int kernel_w = 3; kernel_w <= 4; kernel_w++) {
       LayerParameter layer_param;
@@ -1169,8 +1196,8 @@ TYPED_TEST(CuDNNPoolingLayerTest, TestGradientAvePaddedCuDNN) {
       pooling_param->set_stride(2);
       pooling_param->set_pad(2);
       pooling_param->set_pool(PoolingParameter_PoolMethod_AVE);
-      CuDNNPoolingLayer<TypeParam> layer(layer_param);
-      GradientChecker<TypeParam> checker(1e-2, 1e-2);
+      CuDNNPoolingLayer<Dtype,Mtype> layer(layer_param);
+      GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
     }

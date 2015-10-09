@@ -17,29 +17,29 @@ namespace caffe {
 template <typename TypeParam>
 class FilterLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
-
+  typedef typename TypeParam::Mtype Mtype;
  protected:
   FilterLayerTest()
-      : blob_bottom_data_(new Blob<Dtype>(4, 3, 6, 4)),
-        blob_bottom_labels_(new Blob<Dtype>(4, 1, 1, 1)),
-        blob_bottom_selector_(new Blob<Dtype>(4, 1, 1, 1)),
-        blob_top_data_(new Blob<Dtype>()),
-        blob_top_labels_(new Blob<Dtype>()) {}
+      : blob_bottom_data_(new Blob<Dtype,Mtype>(4, 3, 6, 4)),
+        blob_bottom_labels_(new Blob<Dtype,Mtype>(4, 1, 1, 1)),
+        blob_bottom_selector_(new Blob<Dtype,Mtype>(4, 1, 1, 1)),
+        blob_top_data_(new Blob<Dtype,Mtype>()),
+        blob_top_labels_(new Blob<Dtype,Mtype>()) {}
   virtual void SetUp() {
     // fill the values
     Caffe::set_random_seed(1890);
     FillerParameter filler_param;
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     // fill the selector blob
     Dtype* bottom_data_selector_ = blob_bottom_selector_->mutable_cpu_data();
-    bottom_data_selector_[0] = 0;
-    bottom_data_selector_[1] = 1;
-    bottom_data_selector_[2] = 1;
-    bottom_data_selector_[3] = 0;
+    bottom_data_selector_[0] = Get<Dtype>(0);
+    bottom_data_selector_[1] = Get<Dtype>(1);
+    bottom_data_selector_[2] = Get<Dtype>(1);
+    bottom_data_selector_[3] = Get<Dtype>(0);
     // fill the other bottom blobs
     filler.Fill(blob_bottom_data_);
     for (int i = 0; i < blob_bottom_labels_->count(); ++i) {
-      blob_bottom_labels_->mutable_cpu_data()[i] = caffe_rng_rand() % 5;
+      blob_bottom_labels_->mutable_cpu_data()[i] = Get<Dtype>(caffe_rng_rand() % 5);
     }
     blob_bottom_vec_.push_back(blob_bottom_data_);
     blob_bottom_vec_.push_back(blob_bottom_labels_);
@@ -54,22 +54,23 @@ class FilterLayerTest : public MultiDeviceTest<TypeParam> {
     delete blob_top_data_;
     delete blob_top_labels_;
   }
-  Blob<Dtype>* const blob_bottom_data_;
-  Blob<Dtype>* const blob_bottom_labels_;
-  Blob<Dtype>* const blob_bottom_selector_;
+  Blob<Dtype,Mtype>* const blob_bottom_data_;
+  Blob<Dtype,Mtype>* const blob_bottom_labels_;
+  Blob<Dtype,Mtype>* const blob_bottom_selector_;
   // blobs for the top of FilterLayer
-  Blob<Dtype>* const blob_top_data_;
-  Blob<Dtype>* const blob_top_labels_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const blob_top_data_;
+  Blob<Dtype,Mtype>* const blob_top_labels_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
 };
 
 TYPED_TEST_CASE(FilterLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(FilterLayerTest, TestReshape) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  FilterLayer<Dtype> layer(layer_param);
+  FilterLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Reshape(this->blob_bottom_vec_, this->blob_top_vec_);
   // In the test first and last items should have been filtered
@@ -88,8 +89,9 @@ TYPED_TEST(FilterLayerTest, TestReshape) {
 
 TYPED_TEST(FilterLayerTest, TestForward) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  FilterLayer<Dtype> layer(layer_param);
+  FilterLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Reshape(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
@@ -116,9 +118,10 @@ TYPED_TEST(FilterLayerTest, TestForward) {
 
 TYPED_TEST(FilterLayerTest, TestGradient) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  FilterLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-3);
+  FilterLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-3));
   // check only input 0 (data) because labels and selector
   // don't need backpropagation
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,

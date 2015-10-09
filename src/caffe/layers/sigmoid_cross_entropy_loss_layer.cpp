@@ -8,10 +8,10 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void SigmoidCrossEntropyLossLayer<Dtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  LossLayer<Dtype>::LayerSetUp(bottom, top);
+template <typename Dtype, typename Mtype>
+void SigmoidCrossEntropyLossLayer<Dtype,Mtype>::LayerSetUp(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
+  LossLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
   sigmoid_bottom_vec_.clear();
   sigmoid_bottom_vec_.push_back(bottom[0]);
   sigmoid_top_vec_.clear();
@@ -19,18 +19,18 @@ void SigmoidCrossEntropyLossLayer<Dtype>::LayerSetUp(
   sigmoid_layer_->SetUp(sigmoid_bottom_vec_, sigmoid_top_vec_);
 }
 
-template <typename Dtype>
-void SigmoidCrossEntropyLossLayer<Dtype>::Reshape(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  LossLayer<Dtype>::Reshape(bottom, top);
+template <typename Dtype, typename Mtype>
+void SigmoidCrossEntropyLossLayer<Dtype,Mtype>::Reshape(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
+  LossLayer<Dtype,Mtype>::Reshape(bottom, top);
   CHECK_EQ(bottom[0]->count(), bottom[1]->count()) <<
       "SIGMOID_CROSS_ENTROPY_LOSS layer inputs must have the same count.";
   sigmoid_layer_->Reshape(sigmoid_bottom_vec_, sigmoid_top_vec_);
 }
 
-template <typename Dtype>
-void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void SigmoidCrossEntropyLossLayer<Dtype,Mtype>::Forward_cpu(
+    const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
   // The forward pass computes the sigmoid outputs.
   sigmoid_bottom_vec_[0] = bottom[0];
   sigmoid_layer_->Forward(sigmoid_bottom_vec_, sigmoid_top_vec_);
@@ -40,18 +40,19 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Forward_cpu(
   // Stable version of loss computation from input data
   const Dtype* input_data = bottom[0]->cpu_data();
   const Dtype* target = bottom[1]->cpu_data();
-  Dtype loss = 0;
+  Mtype loss = 0;
   for (int i = 0; i < count; ++i) {
-    loss -= input_data[i] * (target[i] - (input_data[i] >= 0)) -
-        log(1 + exp(input_data[i] - 2 * input_data[i] * (input_data[i] >= 0)));
+    Mtype input_val = Get<Mtype>(input_data[i]);
+    loss -= input_val * (Get<Mtype>(target[i]) - (input_val >= 0)) -
+        log(1 + exp(input_val - 2 * input_val * (input_val >= 0)));
   }
-  top[0]->mutable_cpu_data()[0] = loss / num;
+  top[0]->mutable_cpu_data()[0] = Get<Dtype>(loss / num);
 }
 
-template <typename Dtype>
-void SigmoidCrossEntropyLossLayer<Dtype>::Backward_cpu(
-    const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void SigmoidCrossEntropyLossLayer<Dtype,Mtype>::Backward_cpu(
+    const vector<Blob<Dtype,Mtype>*>& top, const vector<bool>& propagate_down,
+    const vector<Blob<Dtype,Mtype>*>& bottom) {
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
@@ -63,10 +64,10 @@ void SigmoidCrossEntropyLossLayer<Dtype>::Backward_cpu(
     const Dtype* sigmoid_output_data = sigmoid_output_->cpu_data();
     const Dtype* target = bottom[1]->cpu_data();
     Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
-    caffe_sub(count, sigmoid_output_data, target, bottom_diff);
+    caffe_sub<Dtype,Mtype>(count, sigmoid_output_data, target, bottom_diff);
     // Scale down gradient
-    const Dtype loss_weight = top[0]->cpu_diff()[0];
-    caffe_scal(count, loss_weight / num, bottom_diff);
+    const Mtype loss_weight = Get<Mtype>(top[0]->cpu_diff()[0]);
+    caffe_scal<Dtype,Mtype>(count, loss_weight / num, bottom_diff);
   }
 }
 

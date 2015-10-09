@@ -10,14 +10,14 @@ namespace bp = boost::python;
 
 namespace caffe {
 
-template <typename Dtype>
-class PythonLayer : public Layer<Dtype> {
+template <typename Dtype, typename Mtype>
+class PythonLayer : public Layer<Dtype,Mtype> {
  public:
   PythonLayer(PyObject* self, const LayerParameter& param)
-      : Layer<Dtype>(param), self_(bp::handle<>(bp::borrowed(self))) { }
+      : Layer<Dtype,Mtype>(param), self_(bp::handle<>(bp::borrowed(self))) { }
 
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
     // Disallow PythonLayer in MultiGPU training stage, due to GIL issues
     // Details: https://github.com/BVLC/caffe/issues/2936
     if (this->phase_ == TRAIN && Caffe::solver_count() > 1
@@ -28,8 +28,8 @@ class PythonLayer : public Layer<Dtype> {
         this->layer_param_.python_param().param_str());
     self_.attr("setup")(bottom, top);
   }
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
     self_.attr("reshape")(bottom, top);
   }
 
@@ -40,12 +40,12 @@ class PythonLayer : public Layer<Dtype> {
   virtual inline const char* type() const { return "Python"; }
 
  protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
     self_.attr("forward")(bottom, top);
   }
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
     self_.attr("backward")(top, propagate_down, bottom);
   }
 

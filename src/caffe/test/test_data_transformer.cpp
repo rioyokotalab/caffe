@@ -30,8 +30,11 @@ void FillDatum(const int label, const int channels, const int height,
   }
 }
 
-template <typename Dtype>
+template <typename TypeParam>
 class DataTransformTest : public ::testing::Test {
+ public: 
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
  protected:
   DataTransformTest()
       : seed_(1701),
@@ -40,13 +43,13 @@ class DataTransformTest : public ::testing::Test {
   int NumSequenceMatches(const TransformationParameter transform_param,
       const Datum& datum, Phase phase) {
     // Get crop sequence with Caffe seed 1701.
-    DataTransformer<Dtype>* transformer =
-        new DataTransformer<Dtype>(transform_param, phase);
+    DataTransformer<Dtype,Mtype>* transformer =
+        new DataTransformer<Dtype,Mtype>(transform_param, phase);
     const int crop_size = transform_param.crop_size();
     Caffe::set_random_seed(seed_);
     transformer->InitRand();
-    Blob<Dtype>* blob =
-        new Blob<Dtype>(1, datum.channels(), datum.height(), datum.width());
+    Blob<Dtype,Mtype>* blob =
+        new Blob<Dtype,Mtype>(1, datum.channels(), datum.height(), datum.width());
     if (transform_param.crop_size() > 0) {
       blob->Reshape(1, datum.channels(), crop_size, crop_size);
     }
@@ -67,7 +70,7 @@ class DataTransformTest : public ::testing::Test {
       transformer->Transform(datum, blob);
       for (int j = 0; j < blob->count(); ++j) {
         num_sequence_matches +=
-            (crop_sequence[iter][j] == blob->cpu_data()[j]);
+            (Get<Mtype>(crop_sequence[iter][j]) == Get<Mtype>(blob->cpu_data()[j]));
       }
     }
     return num_sequence_matches;
@@ -82,6 +85,8 @@ class DataTransformTest : public ::testing::Test {
 TYPED_TEST_CASE(DataTransformTest, TestDtypes);
 
 TYPED_TEST(DataTransformTest, TestEmptyTransform) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = false;  // all pixels the same equal to label
   const int label = 0;
@@ -91,9 +96,9 @@ TYPED_TEST(DataTransformTest, TestEmptyTransform) {
 
   Datum datum;
   FillDatum(label, channels, height, width, unique_pixels, &datum);
-  Blob<TypeParam>* blob = new Blob<TypeParam>(1, channels, height, width);
-  DataTransformer<TypeParam>* transformer =
-      new DataTransformer<TypeParam>(transform_param, TEST);
+  Blob<Dtype,Mtype>* blob = new Blob<Dtype,Mtype>(1, channels, height, width);
+  DataTransformer<Dtype,Mtype>* transformer =
+      new DataTransformer<Dtype,Mtype>(transform_param, TEST);
   transformer->InitRand();
   transformer->Transform(datum, blob);
   EXPECT_EQ(blob->num(), 1);
@@ -101,11 +106,13 @@ TYPED_TEST(DataTransformTest, TestEmptyTransform) {
   EXPECT_EQ(blob->height(), datum.height());
   EXPECT_EQ(blob->width(), datum.width());
   for (int j = 0; j < blob->count(); ++j) {
-    EXPECT_EQ(blob->cpu_data()[j], label);
+    EXPECT_EQ(Get<int>(blob->cpu_data()[j]), label);
   }
 }
 
 TYPED_TEST(DataTransformTest, TestEmptyTransformUniquePixels) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = true;  // pixels are consecutive ints [0,size]
   const int label = 0;
@@ -115,9 +122,9 @@ TYPED_TEST(DataTransformTest, TestEmptyTransformUniquePixels) {
 
   Datum datum;
   FillDatum(label, channels, height, width, unique_pixels, &datum);
-  Blob<TypeParam>* blob = new Blob<TypeParam>(1, 3, 4, 5);
-  DataTransformer<TypeParam>* transformer =
-      new DataTransformer<TypeParam>(transform_param, TEST);
+  Blob<Dtype,Mtype>* blob = new Blob<Dtype,Mtype>(1, 3, 4, 5);
+  DataTransformer<Dtype,Mtype>* transformer =
+      new DataTransformer<Dtype,Mtype>(transform_param, TEST);
   transformer->InitRand();
   transformer->Transform(datum, blob);
   EXPECT_EQ(blob->num(), 1);
@@ -125,11 +132,13 @@ TYPED_TEST(DataTransformTest, TestEmptyTransformUniquePixels) {
   EXPECT_EQ(blob->height(), datum.height());
   EXPECT_EQ(blob->width(), datum.width());
   for (int j = 0; j < blob->count(); ++j) {
-    EXPECT_EQ(blob->cpu_data()[j], j);
+    EXPECT_EQ(Get<int>(blob->cpu_data()[j]), j);
   }
 }
 
 TYPED_TEST(DataTransformTest, TestCropSize) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = false;  // all pixels the same equal to label
   const int label = 0;
@@ -141,11 +150,11 @@ TYPED_TEST(DataTransformTest, TestCropSize) {
   transform_param.set_crop_size(crop_size);
   Datum datum;
   FillDatum(label, channels, height, width, unique_pixels, &datum);
-  DataTransformer<TypeParam>* transformer =
-      new DataTransformer<TypeParam>(transform_param, TEST);
+  DataTransformer<Dtype,Mtype>* transformer =
+      new DataTransformer<Dtype,Mtype>(transform_param, TEST);
   transformer->InitRand();
-  Blob<TypeParam>* blob =
-      new Blob<TypeParam>(1, channels, crop_size, crop_size);
+  Blob<Dtype,Mtype>* blob =
+      new Blob<Dtype,Mtype>(1, channels, crop_size, crop_size);
   for (int iter = 0; iter < this->num_iter_; ++iter) {
     transformer->Transform(datum, blob);
     EXPECT_EQ(blob->num(), 1);
@@ -153,7 +162,7 @@ TYPED_TEST(DataTransformTest, TestCropSize) {
     EXPECT_EQ(blob->height(), crop_size);
     EXPECT_EQ(blob->width(), crop_size);
     for (int j = 0; j < blob->count(); ++j) {
-      EXPECT_EQ(blob->cpu_data()[j], label);
+      EXPECT_EQ(Get<int>(blob->cpu_data()[j]), label);
     }
   }
 }
@@ -269,6 +278,8 @@ TYPED_TEST(DataTransformTest, TestCropMirrorTest) {
 
 
 TYPED_TEST(DataTransformTest, TestMeanValue) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = false;  // pixels are equal to label
   const int label = 0;
@@ -280,17 +291,19 @@ TYPED_TEST(DataTransformTest, TestMeanValue) {
   transform_param.add_mean_value(mean_value);
   Datum datum;
   FillDatum(label, channels, height, width, unique_pixels, &datum);
-  Blob<TypeParam>* blob = new Blob<TypeParam>(1, channels, height, width);
-  DataTransformer<TypeParam>* transformer =
-      new DataTransformer<TypeParam>(transform_param, TEST);
+  Blob<Dtype,Mtype>* blob = new Blob<Dtype,Mtype>(1, channels, height, width);
+  DataTransformer<Dtype,Mtype>* transformer =
+      new DataTransformer<Dtype,Mtype>(transform_param, TEST);
   transformer->InitRand();
   transformer->Transform(datum, blob);
   for (int j = 0; j < blob->count(); ++j) {
-    EXPECT_EQ(blob->cpu_data()[j], label - mean_value);
+    EXPECT_EQ(Get<int>(blob->cpu_data()[j]), label - mean_value);
   }
 }
 
 TYPED_TEST(DataTransformTest, TestMeanValues) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = false;  // pixels are equal to label
   const int label = 0;
@@ -303,19 +316,21 @@ TYPED_TEST(DataTransformTest, TestMeanValues) {
   transform_param.add_mean_value(2);
   Datum datum;
   FillDatum(label, channels, height, width, unique_pixels, &datum);
-  Blob<TypeParam>* blob = new Blob<TypeParam>(1, channels, height, width);
-  DataTransformer<TypeParam>* transformer =
-      new DataTransformer<TypeParam>(transform_param, TEST);
+  Blob<Dtype,Mtype>* blob = new Blob<Dtype,Mtype>(1, channels, height, width);
+  DataTransformer<Dtype,Mtype>* transformer =
+      new DataTransformer<Dtype,Mtype>(transform_param, TEST);
   transformer->InitRand();
   transformer->Transform(datum, blob);
   for (int c = 0; c < channels; ++c) {
     for (int j = 0; j < height * width; ++j) {
-      EXPECT_EQ(blob->cpu_data()[blob->offset(0, c) + j], label - c);
+      EXPECT_EQ(Get<int>(blob->cpu_data()[blob->offset(0, c) + j]), label - c);
     }
   }
 }
 
 TYPED_TEST(DataTransformTest, TestMeanFile) {
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   TransformationParameter transform_param;
   const bool unique_pixels = true;  // pixels are consecutive ints [0,size]
   const int label = 0;
@@ -343,13 +358,13 @@ TYPED_TEST(DataTransformTest, TestMeanFile) {
   transform_param.set_mean_file(*mean_file);
   Datum datum;
   FillDatum(label, channels, height, width, unique_pixels, &datum);
-  Blob<TypeParam>* blob = new Blob<TypeParam>(1, channels, height, width);
-  DataTransformer<TypeParam>* transformer =
-      new DataTransformer<TypeParam>(transform_param, TEST);
+  Blob<Dtype,Mtype>* blob = new Blob<Dtype,Mtype>(1, channels, height, width);
+  DataTransformer<Dtype,Mtype>* transformer =
+      new DataTransformer<Dtype,Mtype>(transform_param, TEST);
   transformer->InitRand();
   transformer->Transform(datum, blob);
   for (int j = 0; j < blob->count(); ++j) {
-      EXPECT_EQ(blob->cpu_data()[j], 0);
+      EXPECT_EQ(Get<int>(blob->cpu_data()[j]), 0);
   }
 }
 

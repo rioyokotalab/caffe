@@ -29,6 +29,10 @@ extern "C" {
   inline void vd##name( \
       const int n, const double* a, double* y) { \
     v##name<double>(n, a, y); \
+  } \
+  inline void vh##name( \
+      const int n, const half* a, half* y) { \
+    v##name<half>(n, a, y); \
   }
 
 DEFINE_VSL_UNARY_FUNC(Sqr, y[i] = a[i] * a[i]);

@@ -27,10 +27,18 @@ int main(int argc, char** argv);
 
 namespace caffe {
 
+template <typename S, typename M>
+struct MultiPrecision
+{
+  typedef S Dtype;
+  typedef M Mtype;
+};
+
 template <typename TypeParam>
 class MultiDeviceTest : public ::testing::Test {
  public:
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
  protected:
   MultiDeviceTest() {
     Caffe::set_mode(TypeParam::device);
@@ -38,39 +46,48 @@ class MultiDeviceTest : public ::testing::Test {
   virtual ~MultiDeviceTest() {}
 };
 
-typedef ::testing::Types<float, double> TestDtypes;
+#ifdef CPU_ONLY
+typedef ::testing::Types<MultiPrecision<float,float>,
+                         MultiPrecision<double,double> > TestDtypes;
+#else
+typedef ::testing::Types<MultiPrecision<float,float>,
+                         MultiPrecision<double,double>,
+                         MultiPrecision<half,float> > TestDtypes;
+#endif
 
 template <typename TypeParam>
 struct CPUDevice {
-  typedef TypeParam Dtype;
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   static const Caffe::Brew device = Caffe::CPU;
 };
 
-template <typename Dtype>
-class CPUDeviceTest : public MultiDeviceTest<CPUDevice<Dtype> > {
+template <typename TypeParam>
+class CPUDeviceTest : public MultiDeviceTest<CPUDevice<TypeParam> > {
 };
 
 #ifdef CPU_ONLY
-
-typedef ::testing::Types<CPUDevice<float>,
-                         CPUDevice<double> > TestDtypesAndDevices;
-
+typedef ::testing::Types<CPUDevice<MultiPrecision<float,float> >,
+                         CPUDevice<MultiPrecision<double,double> > > TestDtypesAndDevices;
 #else
 
 template <typename TypeParam>
 struct GPUDevice {
-  typedef TypeParam Dtype;
+  typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   static const Caffe::Brew device = Caffe::GPU;
 };
 
-template <typename Dtype>
-class GPUDeviceTest : public MultiDeviceTest<GPUDevice<Dtype> > {
+template <typename TypeParam>
+class GPUDeviceTest : public MultiDeviceTest<GPUDevice<TypeParam> > {
 };
 
-typedef ::testing::Types<CPUDevice<float>, CPUDevice<double>,
-                         GPUDevice<float>, GPUDevice<double> >
-                         TestDtypesAndDevices;
-
+typedef ::testing::Types<CPUDevice<MultiPrecision<float,float> >,
+                         CPUDevice<MultiPrecision<double,double> >,
+                         CPUDevice<MultiPrecision<half,float> >,
+                         GPUDevice<MultiPrecision<float,float> >,
+                         GPUDevice<MultiPrecision<double, double> >,
+                         GPUDevice<MultiPrecision<half,float> > > TestDtypesAndDevices;
 #endif
 
 }  // namespace caffe

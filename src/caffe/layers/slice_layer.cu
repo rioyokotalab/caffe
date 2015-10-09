@@ -6,7 +6,7 @@
 
 namespace caffe {
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void Slice(const int nthreads, const Dtype* in_data,
     const bool forward, const int num_slices, const int slice_size,
     const int bottom_slice_axis, const int top_slice_axis,
@@ -25,9 +25,9 @@ __global__ void Slice(const int nthreads, const Dtype* in_data,
   }
 }
 
-template <typename Dtype>
-void SliceLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void SliceLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+	      const vector<Blob<Dtype,Mtype>*>& top) {
   if (top.size() == 1) { return; }
   int offset_slice_axis = 0;
   const Dtype* bottom_data = bottom[0]->gpu_data();
@@ -38,7 +38,7 @@ void SliceLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const int top_slice_axis = top[i]->shape(slice_axis_);
     const int top_slice_size = top_slice_axis * slice_size_;
     const int nthreads = top_slice_size * num_slices_;
-    Slice<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
+    Slice<Dtype,Mtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(nthreads), CAFFE_CUDA_NUM_THREADS>>>(
         nthreads, bottom_data, kForward, num_slices_, slice_size_,
         bottom_slice_axis, top_slice_axis, offset_slice_axis, top_data);
@@ -46,9 +46,9 @@ void SliceLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
-template <typename Dtype>
-void SliceLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void SliceLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   if (!propagate_down[0] || top.size() == 1) { return; }
   int offset_slice_axis = 0;
   Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
@@ -59,7 +59,7 @@ void SliceLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const int top_slice_axis = top[i]->shape(slice_axis_);
     const int top_slice_size = top_slice_axis * slice_size_;
     const int nthreads = top_slice_size * num_slices_;
-    Slice<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
+    Slice<Dtype,Mtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(nthreads), CAFFE_CUDA_NUM_THREADS>>>(
         nthreads, top_diff, kForward, num_slices_, slice_size_,
         bottom_slice_axis, top_slice_axis, offset_slice_axis, bottom_diff);

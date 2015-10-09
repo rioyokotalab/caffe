@@ -59,6 +59,12 @@ template<> class dataType<double> {
   static double oneval, zeroval;
   static const void *one, *zero;
 };
+template<> class dataType<half> {
+ public:
+  static const cudnnDataType_t type = CUDNN_DATA_HALF;
+  static float oneval, zeroval;
+  static const void *one, *zero;
+};
 
 template <typename Dtype>
 inline void createTensor4dDesc(cudnnTensorDescriptor_t* desc) {

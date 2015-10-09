@@ -21,7 +21,7 @@ namespace caffe {
  *
  * TODO(dox): more thorough description.
  */
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 class Blob {
  public:
   Blob()
@@ -186,7 +186,7 @@ class Blob {
    *        of other (and die otherwise); if true, Reshape this Blob to other's
    *        shape if necessary
    */
-  void CopyFrom(const Blob<Dtype>& source, bool copy_diff = false,
+  void CopyFrom(const Blob<Dtype,Mtype>& source, bool copy_diff = false,
       bool reshape = false);
 
   inline Dtype data_at(const int n, const int c, const int h,
@@ -232,18 +232,18 @@ class Blob {
   void ToProto(BlobProto* proto, bool write_diff = false) const;
 
   /// @brief Compute the sum of absolute values (L1 norm) of the data.
-  Dtype asum_data() const;
+  Mtype asum_data() const;
   /// @brief Compute the sum of absolute values (L1 norm) of the diff.
-  Dtype asum_diff() const;
+  Mtype asum_diff() const;
   /// @brief Compute the sum of squares (L2 norm squared) of the data.
-  Dtype sumsq_data() const;
+  Mtype sumsq_data() const;
   /// @brief Compute the sum of squares (L2 norm squared) of the diff.
-  Dtype sumsq_diff() const;
+  Mtype sumsq_diff() const;
 
   /// @brief Scale the blob data by a constant factor.
-  void scale_data(Dtype scale_factor);
+  void scale_data(Mtype scale_factor);
   /// @brief Scale the blob diff by a constant factor.
-  void scale_diff(Dtype scale_factor);
+  void scale_diff(Mtype scale_factor);
 
   /**
    * @brief Set the data_ shared_ptr to point to the SyncedMemory holding the

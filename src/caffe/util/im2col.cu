@@ -5,6 +5,7 @@
 
 #include "caffe/common.hpp"
 #include "caffe/util/im2col.hpp"
+#include "caffe/util/get.hpp"
 
 namespace caffe {
 
@@ -32,7 +33,7 @@ __global__ void im2col_gpu_kernel(const int n, const Dtype* data_im,
         int h = h_in + i;
         int w = w_in + j;
         *data_col_ptr = (h >= 0 && w >= 0 && h < height && w < width) ?
-            data_im_ptr[i * width + j] : 0;
+            data_im_ptr[i * width + j] : Get<Dtype>(0);
         data_col_ptr += height_col * width_col;
       }
     }
@@ -68,6 +69,10 @@ template void im2col_gpu<double>(const double* data_im, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h, const int stride_w,
     double* data_col);
+template void im2col_gpu<half>(const half* data_im, const int channels,
+    const int height, const int width, const int kernel_h, const int kernel_w,
+    const int pad_h, const int pad_w, const int stride_h, const int stride_w,
+    half* data_col);
 
 template <typename Dtype, int num_axes>
 __global__ void im2col_nd_gpu_kernel(const int n, const Dtype* data_im,
@@ -116,7 +121,7 @@ __global__ void im2col_nd_gpu_kernel(const int n, const Dtype* data_im,
         }
         *data_col_ptr = data_im_ptr[data_im_offset];
       } else {
-        *data_col_ptr = 0;
+        *data_col_ptr = Get<Dtype>(0);
       }
       data_col_ptr += data_col_inc;
       incremented = false;
@@ -218,8 +223,13 @@ template void im2col_nd_gpu<double>(const double* data_im,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     double* data_col);
+template void im2col_nd_gpu<half>(const half* data_im,
+    const int num_spatial_axes, const int col_size,
+    const int* im_shape, const int* col_shape,
+    const int* kernel_shape, const int* pad, const int* stride,
+	half* data_col);
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 __global__ void col2im_gpu_kernel(const int n, const Dtype* data_col,
     const int height, const int width, const int channels,
     const int patch_h, const int patch_w,
@@ -228,7 +238,7 @@ __global__ void col2im_gpu_kernel(const int n, const Dtype* data_col,
     const int height_col, const int width_col,
     Dtype* data_im) {
   CUDA_KERNEL_LOOP(index, n) {
-    Dtype val = 0;
+    Mtype val = 0;
     int w = index % width + pad_w;
     int h = (index / width) % height + pad_h;
     int c = index / (width * height);
@@ -254,14 +264,14 @@ __global__ void col2im_gpu_kernel(const int n, const Dtype* data_col,
     int coeff_w_col = (1 - stride_w * height_col * width_col);
     for (int h_col = h_col_start; h_col < h_col_end; ++h_col) {
       for (int w_col = w_col_start; w_col < w_col_end; ++w_col) {
-        val += data_col[offset + h_col * coeff_h_col + w_col * coeff_w_col];
+        val += Get<Mtype>(data_col[offset + h_col * coeff_h_col + w_col * coeff_w_col]);
       }
     }
-    data_im[index] = val;
+    data_im[index] = Get<Dtype>(val);
   }
 }
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 void col2im_gpu(const Dtype* data_col, const int channels,
     const int height, const int width, const int patch_h, const int patch_w,
     const int pad_h, const int pad_w, const int stride_h,
@@ -272,7 +282,7 @@ void col2im_gpu(const Dtype* data_col, const int channels,
   // To avoid involving atomic operations, we will launch one kernel per
   // bottom dimension, and then in the kernel add up the top dimensions.
   // NOLINT_NEXT_LINE(whitespace/operators)
-  col2im_gpu_kernel<Dtype><<<CAFFE_GET_BLOCKS(num_kernels),
+  col2im_gpu_kernel<Dtype,Mtype><<<CAFFE_GET_BLOCKS(num_kernels),
                              CAFFE_CUDA_NUM_THREADS>>>(
       num_kernels, data_col, height, width, channels, patch_h, patch_w,
       pad_h, pad_w, stride_h, stride_w,
@@ -281,15 +291,20 @@ void col2im_gpu(const Dtype* data_col, const int channels,
 }
 
 // Explicit instantiation
-template void col2im_gpu<float>(const float* data_col, const int channels,
+template void col2im_gpu<float,float>(const float* data_col, const int channels,
     const int height, const int width, const int patch_h, const int patch_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, float* data_im);
-template void col2im_gpu<double>(const double* data_col, const int channels,
+template void col2im_gpu<double,double>(const double* data_col, const int channels,
     const int height, const int width, const int patch_h, const int patch_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, double* data_im);
 
+template void col2im_gpu<half,float>(const half* data_col, const int channels,
+    const int height, const int width, const int patch_h, const int patch_w,
+    const int pad_h, const int pad_w, const int stride_h,
+    const int stride_w, half* data_im);
+    
 template <typename Dtype, int num_axes>
 __global__ void col2im_nd_gpu_kernel(const int n, const Dtype* data_col,
     const int* im_shape, const int* col_shape,
@@ -318,7 +333,7 @@ __global__ void col2im_nd_gpu_kernel(const int n, const Dtype* data_col,
       if (d_col_start[i] >= d_col_end[i]) {
         // Skip computation if the dimension is 0 at any spatial axis --
         // final val will be 0.
-        data_im[index] = 0;
+        data_im[index] = Get<Dtype>(0);
         done = true;
         break;  // for (int i = 0; i < num_axes; ++i)
       }
@@ -327,7 +342,7 @@ __global__ void col2im_nd_gpu_kernel(const int n, const Dtype* data_col,
       continue;  // CUDA_KERNEL_LOOP(index, n)
     }
     // Loop over the col to compute the output val.
-    Dtype val = 0;
+    Dtype val = Get<Dtype>(0);
     bool incremented = true;
     do {
       // Compute the final offset.
@@ -444,5 +459,10 @@ template void col2im_nd_gpu<double>(const double* data_col,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     double* data_im);
+template void col2im_nd_gpu<half>(const half* data_col,
+    const int num_spatial_axes, const int im_size,
+    const int* im_shape, const int* col_shape,
+    const int* kernel_shape, const int* pad, const int* stride,
+	half* data_im);
 
 }  // namespace caffe

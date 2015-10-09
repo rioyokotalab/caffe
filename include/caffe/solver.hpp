@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "caffe/net.hpp"
+#include "caffe/util/benchmark.hpp"
 
 namespace caffe {
 
@@ -36,7 +37,7 @@ typedef boost::function<SolverAction::Enum()> ActionCallback;
  * Requires implementation of ApplyUpdate to compute a parameter update
  * given the current state of the Net parameters.
  */
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 class Solver {
  public:
   explicit Solver(const SolverParameter& param,
@@ -62,8 +63,8 @@ class Solver {
   void Restore(const char* resume_file);
   virtual ~Solver() {}
   inline const SolverParameter& param() const { return param_; }
-  inline shared_ptr<Net<Dtype> > net() { return net_; }
-  inline const vector<shared_ptr<Net<Dtype> > >& test_nets() {
+  inline shared_ptr<Net<Dtype,Mtype> > net() { return net_; }
+  inline const vector<shared_ptr<Net<Dtype,Mtype> > >& test_nets() {
     return test_nets_;
   }
   int iter() { return iter_; }
@@ -74,7 +75,7 @@ class Solver {
     virtual void on_start() = 0;
     virtual void on_gradients_ready() = 0;
 
-    template <typename T>
+    template <typename T, typename M>
     friend class Solver;
   };
   const vector<Callback*>& callbacks() const { return callbacks_; }
@@ -101,14 +102,23 @@ class Solver {
   virtual void SnapshotSolverState(const string& model_filename) = 0;
   virtual void RestoreSolverStateFromHDF5(const string& state_file) = 0;
   virtual void RestoreSolverStateFromBinaryProto(const string& state_file) = 0;
+  virtual void SnapshotSolverState(SolverState* state) {
+    CHECK(false) << "Should be overriden";
+  }
+  virtual void RestoreSolverState(const SolverState& state) {
+    CHECK(false) << "Should be overriden";
+  }
   void DisplayOutputBlobs(const int net_id);
 
   SolverParameter param_;
   int iter_;
   int current_step_;
-  shared_ptr<Net<Dtype> > net_;
-  vector<shared_ptr<Net<Dtype> > > test_nets_;
+  shared_ptr<Net<Dtype,Mtype> > net_;
+  vector<shared_ptr<Net<Dtype,Mtype> > > test_nets_;
   vector<Callback*> callbacks_;
+
+  Timer iteration_timer_;
+  float iterations_last_;
 
   // The root solver that holds root nets (actually containing shared layers)
   // in data parallelism
@@ -128,12 +138,12 @@ class Solver {
  * @brief Solver that only computes gradients, used as worker
  *        for multi-GPU training.
  */
-template <typename Dtype>
-class WorkerSolver : public Solver<Dtype> {
+template <typename Dtype, typename Mtype>
+class WorkerSolver : public Solver<Dtype,Mtype> {
  public:
   explicit WorkerSolver(const SolverParameter& param,
-      const Solver<Dtype>* root_solver = NULL)
-      : Solver<Dtype>(param, root_solver) {}
+      const Solver<Dtype,Mtype>* root_solver = NULL)
+      : Solver<Dtype,Mtype>(param, root_solver) {}
 
  protected:
   void ApplyUpdate() {}
@@ -152,23 +162,23 @@ class WorkerSolver : public Solver<Dtype> {
  * @brief Optimizes the parameters of a Net using
  *        stochastic gradient descent (SGD) with momentum.
  */
-template <typename Dtype>
-class SGDSolver : public Solver<Dtype> {
+template <typename Dtype, typename Mtype>
+class SGDSolver : public Solver<Dtype,Mtype> {
  public:
   explicit SGDSolver(const SolverParameter& param)
-      : Solver<Dtype>(param) { PreSolve(); }
+      : Solver<Dtype,Mtype>(param) { PreSolve(); }
   explicit SGDSolver(const string& param_file)
-      : Solver<Dtype>(param_file) { PreSolve(); }
+      : Solver<Dtype,Mtype>(param_file) { PreSolve(); }
 
-  const vector<shared_ptr<Blob<Dtype> > >& history() { return history_; }
+  const vector<shared_ptr<Blob<Dtype,Mtype> > >& history() { return history_; }
 
  protected:
   void PreSolve();
-  Dtype GetLearningRate();
+  Mtype GetLearningRate();
   virtual void ApplyUpdate();
   virtual void Normalize(int param_id);
   virtual void Regularize(int param_id);
-  virtual void ComputeUpdateValue(int param_id, Dtype rate);
+  virtual void ComputeUpdateValue(int param_id, Mtype rate);
   virtual void ClipGradients();
   virtual void SnapshotSolverState(const string& model_filename);
   virtual void SnapshotSolverStateToBinaryProto(const string& model_filename);
@@ -179,35 +189,38 @@ class SGDSolver : public Solver<Dtype> {
   // update maintains update related data and is not needed in snapshots.
   // temp maintains other information that might be needed in computation
   //   of gradients/updates and is not needed in snapshots
-  vector<shared_ptr<Blob<Dtype> > > history_, update_, temp_;
+  vector<shared_ptr<Blob<Dtype,Mtype> > > history_, update_, temp_;
+
+  using Solver<Dtype,Mtype>::iteration_timer_;
+  using Solver<Dtype,Mtype>::iterations_last_;
 
   DISABLE_COPY_AND_ASSIGN(SGDSolver);
 };
 
-template <typename Dtype>
-class NesterovSolver : public SGDSolver<Dtype> {
+template <typename Dtype, typename Mtype>
+class NesterovSolver : public SGDSolver<Dtype,Mtype> {
  public:
   explicit NesterovSolver(const SolverParameter& param)
-      : SGDSolver<Dtype>(param) {}
+      : SGDSolver<Dtype,Mtype>(param) {}
   explicit NesterovSolver(const string& param_file)
-      : SGDSolver<Dtype>(param_file) {}
+      : SGDSolver<Dtype,Mtype>(param_file) {}
 
  protected:
-  virtual void ComputeUpdateValue(int param_id, Dtype rate);
+  virtual void ComputeUpdateValue(int param_id, Mtype rate);
 
   DISABLE_COPY_AND_ASSIGN(NesterovSolver);
 };
 
-template <typename Dtype>
-class AdaGradSolver : public SGDSolver<Dtype> {
+template <typename Dtype, typename Mtype>
+class AdaGradSolver : public SGDSolver<Dtype,Mtype> {
  public:
   explicit AdaGradSolver(const SolverParameter& param)
-      : SGDSolver<Dtype>(param) { constructor_sanity_check(); }
+      : SGDSolver<Dtype,Mtype>(param) { constructor_sanity_check(); }
   explicit AdaGradSolver(const string& param_file)
-      : SGDSolver<Dtype>(param_file) { constructor_sanity_check(); }
+      : SGDSolver<Dtype,Mtype>(param_file) { constructor_sanity_check(); }
 
  protected:
-  virtual void ComputeUpdateValue(int param_id, Dtype rate);
+  virtual void ComputeUpdateValue(int param_id, Mtype rate);
   void constructor_sanity_check() {
     CHECK_EQ(0, this->param_.momentum())
         << "Momentum cannot be used with AdaGrad.";
@@ -217,16 +230,16 @@ class AdaGradSolver : public SGDSolver<Dtype> {
 };
 
 
-template <typename Dtype>
-class RMSPropSolver : public SGDSolver<Dtype> {
+template <typename Dtype, typename Mtype>
+class RMSPropSolver : public SGDSolver<Dtype,Mtype> {
  public:
   explicit RMSPropSolver(const SolverParameter& param)
-      : SGDSolver<Dtype>(param) { constructor_sanity_check(); }
+      : SGDSolver<Dtype,Mtype>(param) { constructor_sanity_check(); }
   explicit RMSPropSolver(const string& param_file)
-      : SGDSolver<Dtype>(param_file) { constructor_sanity_check(); }
+      : SGDSolver<Dtype,Mtype>(param_file) { constructor_sanity_check(); }
 
  protected:
-  virtual void ComputeUpdateValue(int param_id, Dtype rate);
+  virtual void ComputeUpdateValue(int param_id, Mtype rate);
   void constructor_sanity_check() {
     CHECK_EQ(0, this->param_.momentum())
         << "Momentum cannot be used with RMSProp.";
@@ -239,13 +252,13 @@ class RMSPropSolver : public SGDSolver<Dtype> {
   DISABLE_COPY_AND_ASSIGN(RMSPropSolver);
 };
 
-template <typename Dtype>
-class AdaDeltaSolver : public SGDSolver<Dtype> {
+template <typename Dtype, typename Mtype>
+class AdaDeltaSolver : public SGDSolver<Dtype,Mtype> {
  public:
   explicit AdaDeltaSolver(const SolverParameter& param)
-      : SGDSolver<Dtype>(param) { AdaDeltaPreSolve(); }
+      : SGDSolver<Dtype,Mtype>(param) { AdaDeltaPreSolve(); }
   explicit AdaDeltaSolver(const string& param_file)
-      : SGDSolver<Dtype>(param_file) { AdaDeltaPreSolve(); }
+      : SGDSolver<Dtype,Mtype>(param_file) { AdaDeltaPreSolve(); }
 
  protected:
   void AdaDeltaPreSolve();
@@ -262,13 +275,13 @@ class AdaDeltaSolver : public SGDSolver<Dtype> {
  * [1] D. P. Kingma and J. L. Ba, "ADAM: A Method for Stochastic Optimization."
  *     arXiv preprint arXiv:1412.6980v8 (2014).
  */
-template <typename Dtype>
-class AdamSolver : public SGDSolver<Dtype> {
+template <typename Dtype, typename Mtype>
+class AdamSolver : public SGDSolver<Dtype,Mtype> {
  public:
   explicit AdamSolver(const SolverParameter& param)
-      : SGDSolver<Dtype>(param) { AdamPreSolve();}
+      : SGDSolver<Dtype,Mtype>(param) { AdamPreSolve();}
   explicit AdamSolver(const string& param_file)
-      : SGDSolver<Dtype>(param_file) { AdamPreSolve(); }
+      : SGDSolver<Dtype,Mtype>(param_file) { AdamPreSolve(); }
 
  protected:
   void AdamPreSolve();
@@ -277,27 +290,27 @@ class AdamSolver : public SGDSolver<Dtype> {
   DISABLE_COPY_AND_ASSIGN(AdamSolver);
 };
 
-template <typename Dtype>
-Solver<Dtype>* GetSolver(const SolverParameter& param) {
+template <typename Dtype, typename Mtype>
+Solver<Dtype, Mtype>* GetSolver(const SolverParameter& param) {
   SolverParameter_SolverType type = param.solver_type();
 
   switch (type) {
   case SolverParameter_SolverType_SGD:
-    return new SGDSolver<Dtype>(param);
+      return new SGDSolver<Dtype,Mtype>(param);
   case SolverParameter_SolverType_NESTEROV:
-    return new NesterovSolver<Dtype>(param);
+      return new NesterovSolver<Dtype,Mtype>(param);
   case SolverParameter_SolverType_ADAGRAD:
-    return new AdaGradSolver<Dtype>(param);
+      return new AdaGradSolver<Dtype,Mtype>(param);
   case SolverParameter_SolverType_RMSPROP:
-    return new RMSPropSolver<Dtype>(param);
+    return new RMSPropSolver<Dtype,Mtype>(param);
   case SolverParameter_SolverType_ADADELTA:
-    return new AdaDeltaSolver<Dtype>(param);
+    return new AdaDeltaSolver<Dtype,Mtype>(param);
   case SolverParameter_SolverType_ADAM:
-    return new AdamSolver<Dtype>(param);
+    return new AdamSolver<Dtype,Mtype>(param);
   default:
     LOG(FATAL) << "Unknown SolverType: " << type;
   }
-  return (Solver<Dtype>*) NULL;
+  return (Solver<Dtype,Mtype>*) NULL;
 }
 
 }  // namespace caffe

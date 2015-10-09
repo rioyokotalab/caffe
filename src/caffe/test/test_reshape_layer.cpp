@@ -16,13 +16,14 @@ namespace caffe {
 template <typename TypeParam>
 class ReshapeLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
  protected:
   ReshapeLayerTest()
-    : blob_bottom_(new Blob<Dtype>(2, 3, 6, 5)),
-      blob_top_(new Blob<Dtype>()) {
+    : blob_bottom_(new Blob<Dtype,Mtype>(2, 3, 6, 5)),
+      blob_top_(new Blob<Dtype,Mtype>()) {
     // fill the values
     FillerParameter filler_param;
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
     blob_bottom_vec_.push_back(blob_bottom_);
     blob_top_vec_.push_back(blob_top_);
@@ -30,16 +31,17 @@ class ReshapeLayerTest : public MultiDeviceTest<TypeParam> {
 
   virtual ~ReshapeLayerTest() { delete blob_bottom_; delete blob_top_; }
 
-  Blob<Dtype>* const blob_bottom_;
-  Blob<Dtype>* const blob_top_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const blob_bottom_;
+  Blob<Dtype,Mtype>* const blob_top_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
 };
 
 TYPED_TEST_CASE(ReshapeLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(ReshapeLayerTest, TestFlattenOutputSizes) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   BlobShape* blob_shape = layer_param.mutable_reshape_param()->mutable_shape();
   blob_shape->add_dim(0);
@@ -47,7 +49,7 @@ TYPED_TEST(ReshapeLayerTest, TestFlattenOutputSizes) {
   blob_shape->add_dim(1);
   blob_shape->add_dim(1);
 
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), 2);
   EXPECT_EQ(this->blob_top_->channels(), 3 * 6 * 5);
@@ -57,20 +59,21 @@ TYPED_TEST(ReshapeLayerTest, TestFlattenOutputSizes) {
 
 TYPED_TEST(ReshapeLayerTest, TestFlattenValues) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   BlobShape* blob_shape = layer_param.mutable_reshape_param()->mutable_shape();
   blob_shape->add_dim(0);
   blob_shape->add_dim(-1);
   blob_shape->add_dim(1);
   blob_shape->add_dim(1);
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   for (int c = 0; c < 3 * 6 * 5; ++c) {
-    EXPECT_EQ(this->blob_top_->data_at(0, c, 0, 0),
-        this->blob_bottom_->data_at(0, c / (6 * 5), (c / 5) % 6, c % 5));
-    EXPECT_EQ(this->blob_top_->data_at(1, c, 0, 0),
-        this->blob_bottom_->data_at(1, c / (6 * 5), (c / 5) % 6, c % 5));
+    EXPECT_EQ(Get<Mtype>(this->blob_top_->data_at(0, c, 0, 0)),
+        Get<Mtype>(this->blob_bottom_->data_at(0, c / (6 * 5), (c / 5) % 6, c % 5)));
+    EXPECT_EQ(Get<Mtype>(this->blob_top_->data_at(1, c, 0, 0)),
+        Get<Mtype>(this->blob_bottom_->data_at(1, c / (6 * 5), (c / 5) % 6, c % 5)));
   }
 }
 
@@ -78,13 +81,14 @@ TYPED_TEST(ReshapeLayerTest, TestFlattenValues) {
 // copies the respective dimension of the input layer.
 TYPED_TEST(ReshapeLayerTest, TestCopyDimensions) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   BlobShape* blob_shape = layer_param.mutable_reshape_param()->mutable_shape();
   blob_shape->add_dim(0);
   blob_shape->add_dim(0);
   blob_shape->add_dim(0);
   blob_shape->add_dim(0);
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   EXPECT_EQ(this->blob_top_->num(), 2);
@@ -97,6 +101,7 @@ TYPED_TEST(ReshapeLayerTest, TestCopyDimensions) {
 // dimensions (including those that get copied from below).
 TYPED_TEST(ReshapeLayerTest, TestInferenceOfUnspecified) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   BlobShape* blob_shape = layer_param.mutable_reshape_param()->mutable_shape();
   blob_shape->add_dim(0);
@@ -106,7 +111,7 @@ TYPED_TEST(ReshapeLayerTest, TestInferenceOfUnspecified) {
 
   // Count is 180, thus height should be 180 / (2*3*10) = 3.
 
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   EXPECT_EQ(this->blob_top_->num(), 2);
@@ -117,6 +122,7 @@ TYPED_TEST(ReshapeLayerTest, TestInferenceOfUnspecified) {
 
 TYPED_TEST(ReshapeLayerTest, TestInferenceOfUnspecifiedWithStartAxis) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_reshape_param()->set_axis(1);
   BlobShape* blob_shape = layer_param.mutable_reshape_param()->mutable_shape();
@@ -124,7 +130,7 @@ TYPED_TEST(ReshapeLayerTest, TestInferenceOfUnspecifiedWithStartAxis) {
   blob_shape->add_dim(10);
   blob_shape->add_dim(-1);
 
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   ASSERT_EQ(this->blob_top_->num_axes(), 4);
@@ -136,6 +142,7 @@ TYPED_TEST(ReshapeLayerTest, TestInferenceOfUnspecifiedWithStartAxis) {
 
 TYPED_TEST(ReshapeLayerTest, TestInsertSingletonAxesStart) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_reshape_param()->set_axis(0);
   layer_param.mutable_reshape_param()->set_num_axes(0);
@@ -144,7 +151,7 @@ TYPED_TEST(ReshapeLayerTest, TestInsertSingletonAxesStart) {
   blob_shape->add_dim(1);
   blob_shape->add_dim(1);
 
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   ASSERT_EQ(this->blob_top_->num_axes(), 7);
@@ -159,6 +166,7 @@ TYPED_TEST(ReshapeLayerTest, TestInsertSingletonAxesStart) {
 
 TYPED_TEST(ReshapeLayerTest, TestInsertSingletonAxesMiddle) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_reshape_param()->set_axis(2);
   layer_param.mutable_reshape_param()->set_num_axes(0);
@@ -167,7 +175,7 @@ TYPED_TEST(ReshapeLayerTest, TestInsertSingletonAxesMiddle) {
   blob_shape->add_dim(1);
   blob_shape->add_dim(1);
 
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   ASSERT_EQ(this->blob_top_->num_axes(), 7);
@@ -182,6 +190,7 @@ TYPED_TEST(ReshapeLayerTest, TestInsertSingletonAxesMiddle) {
 
 TYPED_TEST(ReshapeLayerTest, TestInsertSingletonAxesEnd) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_reshape_param()->set_axis(-1);
   layer_param.mutable_reshape_param()->set_num_axes(0);
@@ -190,7 +199,7 @@ TYPED_TEST(ReshapeLayerTest, TestInsertSingletonAxesEnd) {
   blob_shape->add_dim(1);
   blob_shape->add_dim(1);
 
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   ASSERT_EQ(this->blob_top_->num_axes(), 7);
@@ -205,13 +214,14 @@ TYPED_TEST(ReshapeLayerTest, TestInsertSingletonAxesEnd) {
 
 TYPED_TEST(ReshapeLayerTest, TestFlattenMiddle) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_reshape_param()->set_axis(1);
   layer_param.mutable_reshape_param()->set_num_axes(2);
   BlobShape* blob_shape = layer_param.mutable_reshape_param()->mutable_shape();
   blob_shape->add_dim(-1);
 
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
 
   ASSERT_EQ(this->blob_top_->num_axes(), 3);
@@ -222,30 +232,32 @@ TYPED_TEST(ReshapeLayerTest, TestFlattenMiddle) {
 
 TYPED_TEST(ReshapeLayerTest, TestForward) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   BlobShape* shape = layer_param.mutable_reshape_param()->mutable_shape();
   shape->add_dim(6);
   shape->add_dim(2);
   shape->add_dim(3);
   shape->add_dim(5);
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   for (int i = 0; i < this->blob_bottom_->count(); ++i) {
-    EXPECT_EQ(this->blob_top_->cpu_data()[i],
-              this->blob_bottom_->cpu_data()[i]);
+    EXPECT_EQ(Get<Mtype>(this->blob_top_->cpu_data()[i]),
+              Get<Mtype>(this->blob_bottom_->cpu_data()[i]));
   }
 }
 
 TYPED_TEST(ReshapeLayerTest, TestForwardAfterReshape) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   BlobShape* shape = layer_param.mutable_reshape_param()->mutable_shape();
   shape->add_dim(6);
   shape->add_dim(2);
   shape->add_dim(3);
   shape->add_dim(5);
-  ReshapeLayer<Dtype> layer(layer_param);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   // We know the above produced the correct result from TestForward.
@@ -254,25 +266,26 @@ TYPED_TEST(ReshapeLayerTest, TestForwardAfterReshape) {
   this->blob_bottom_->Reshape(new_bottom_shape);
   layer.Reshape(this->blob_bottom_vec_, this->blob_top_vec_);
   FillerParameter filler_param;
-  GaussianFiller<Dtype> filler(filler_param);
+  GaussianFiller<Dtype,Mtype> filler(filler_param);
   filler.Fill(this->blob_bottom_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   for (int i = 0; i < this->blob_bottom_->count(); ++i) {
-    EXPECT_EQ(this->blob_top_->cpu_data()[i],
-              this->blob_bottom_->cpu_data()[i]);
+    EXPECT_EQ(Get<Mtype>(this->blob_top_->cpu_data()[i]),
+              Get<Mtype>(this->blob_bottom_->cpu_data()[i]));
   }
 }
 
 TYPED_TEST(ReshapeLayerTest, TestGradient) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   BlobShape* shape = layer_param.mutable_reshape_param()->mutable_shape();
   shape->add_dim(6);
   shape->add_dim(2);
   shape->add_dim(3);
   shape->add_dim(5);
-  ReshapeLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-2);
+  ReshapeLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

@@ -18,6 +18,13 @@ const void* dataType<double>::one =
 const void* dataType<double>::zero =
     static_cast<void *>(&dataType<double>::zeroval);
 
+float dataType<half>::oneval = 1.0f;
+float dataType<half>::zeroval = 0.0f;
+const void* dataType<half>::one =
+    static_cast<void *>(&dataType<half>::oneval);
+const void* dataType<half>::zero =
+    static_cast<void *>(&dataType<half>::zeroval);
+
 }  // namespace cudnn
 }  // namespace caffe
 #endif

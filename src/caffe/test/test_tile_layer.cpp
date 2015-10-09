@@ -16,18 +16,18 @@ namespace caffe {
 template <typename TypeParam>
 class TileLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
-
+  typedef typename TypeParam::Mtype Mtype;
  protected:
   TileLayerTest()
-      : blob_bottom_(new Blob<Dtype>(2, 3, 4, 5)),
-        blob_top_(new Blob<Dtype>()) {}
+      : blob_bottom_(new Blob<Dtype,Mtype>(2, 3, 4, 5)),
+        blob_top_(new Blob<Dtype,Mtype>()) {}
   virtual void SetUp() {
     blob_bottom_vec_.push_back(blob_bottom_);
     blob_top_vec_.push_back(blob_top_);
     FillerParameter filler_param;
     filler_param.set_mean(0.0);
     filler_param.set_std(1.0);
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(blob_bottom_);
   }
 
@@ -36,22 +36,23 @@ class TileLayerTest : public MultiDeviceTest<TypeParam> {
     delete blob_top_;
   }
 
-  Blob<Dtype>* const blob_bottom_;
-  Blob<Dtype>* const blob_top_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const blob_bottom_;
+  Blob<Dtype,Mtype>* const blob_top_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
 };
 
 TYPED_TEST_CASE(TileLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(TileLayerTest, TestTrivialSetup) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   const int kNumTiles = 1;
   layer_param.mutable_tile_param()->set_tiles(kNumTiles);
   for (int i = 0; i < this->blob_bottom_->num_axes(); ++i) {
     layer_param.mutable_tile_param()->set_axis(i);
-    TileLayer<Dtype> layer(layer_param);
+    TileLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     ASSERT_EQ(this->blob_top_->num_axes(), this->blob_bottom_->num_axes());
     for (int j = 0; j < this->blob_bottom_->num_axes(); ++j) {
@@ -62,12 +63,13 @@ TYPED_TEST(TileLayerTest, TestTrivialSetup) {
 
 TYPED_TEST(TileLayerTest, TestSetup) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   const int kNumTiles = 3;
   layer_param.mutable_tile_param()->set_tiles(kNumTiles);
   for (int i = 0; i < this->blob_bottom_->num_axes(); ++i) {
     layer_param.mutable_tile_param()->set_axis(i);
-    TileLayer<Dtype> layer(layer_param);
+    TileLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     ASSERT_EQ(this->blob_top_->num_axes(), this->blob_bottom_->num_axes());
     for (int j = 0; j < this->blob_bottom_->num_axes(); ++j) {
@@ -80,12 +82,13 @@ TYPED_TEST(TileLayerTest, TestSetup) {
 
 TYPED_TEST(TileLayerTest, TestForwardNum) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   const int kTileAxis = 0;
   const int kNumTiles = 3;
   layer_param.mutable_tile_param()->set_axis(kTileAxis);
   layer_param.mutable_tile_param()->set_tiles(kNumTiles);
-  TileLayer<Dtype> layer(layer_param);
+  TileLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   for (int n = 0; n < this->blob_top_->num(); ++n) {
@@ -103,10 +106,11 @@ TYPED_TEST(TileLayerTest, TestForwardNum) {
 
 TYPED_TEST(TileLayerTest, TestForwardChannels) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   const int kNumTiles = 3;
   layer_param.mutable_tile_param()->set_tiles(kNumTiles);
-  TileLayer<Dtype> layer(layer_param);
+  TileLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   for (int n = 0; n < this->blob_top_->num(); ++n) {
@@ -124,37 +128,40 @@ TYPED_TEST(TileLayerTest, TestForwardChannels) {
 
 TYPED_TEST(TileLayerTest, TestTrivialGradient) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   const int kNumTiles = 1;
   layer_param.mutable_tile_param()->set_tiles(kNumTiles);
-  TileLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-2);
+  TileLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
 
 TYPED_TEST(TileLayerTest, TestGradientNum) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   const int kTileAxis = 0;
   const int kNumTiles = 3;
   layer_param.mutable_tile_param()->set_axis(kTileAxis);
   layer_param.mutable_tile_param()->set_tiles(kNumTiles);
-  TileLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-2);
+  TileLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
 
 TYPED_TEST(TileLayerTest, TestGradientChannels) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   const int kTileAxis = 1;
   const int kNumTiles = 3;
   layer_param.mutable_tile_param()->set_axis(kTileAxis);
   layer_param.mutable_tile_param()->set_tiles(kNumTiles);
-  TileLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-2);
+  TileLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }

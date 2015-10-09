@@ -8,7 +8,7 @@
 
 namespace caffe {
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 void im2col_cpu(const Dtype* data_im, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w,
@@ -29,23 +29,29 @@ void im2col_cpu(const Dtype* data_im, const int channels,
           data_col[(c * height_col + h) * width_col + w] =
             data_im[(c_im * height + h_pad) * width + w_pad];
         else
-          data_col[(c * height_col + h) * width_col + w] = 0;
+          data_col[(c * height_col + h) * width_col + w] = Get<Dtype>(0);
       }
     }
   }
 }
 
 // Explicit instantiation
-template void im2col_cpu<float>(const float* data_im, const int channels,
+template void im2col_cpu<float,float>(const float* data_im, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, float* data_col);
-template void im2col_cpu<double>(const double* data_im, const int channels,
+template void im2col_cpu<double,double>(const double* data_im, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, double* data_col);
+#ifndef CPU_ONLY
+template void im2col_cpu<half,float>(const half* data_im, const int channels,
+    const int height, const int width, const int kernel_h, const int kernel_w,
+    const int pad_h, const int pad_w, const int stride_h,
+    const int stride_w, half* data_col);
+#endif
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 inline void im2col_nd_core_cpu(const Dtype* data_input, const bool im2col,
     const int num_spatial_axes, const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
@@ -55,7 +61,7 @@ inline void im2col_nd_core_cpu(const Dtype* data_input, const bool im2col,
     for (int i = 0; i < num_spatial_axes; ++i) {
       im_size *= im_shape[1 + i];
     }
-    caffe_set(im_size, Dtype(0), data_output);
+    caffe_set<Dtype,Mtype>(im_size, Get<Mtype>(0), data_output);
   }
   int kernel_size = 1;
   for (int i = 0; i < num_spatial_axes; ++i) {
@@ -90,7 +96,7 @@ inline void im2col_nd_core_cpu(const Dtype* data_input, const bool im2col,
       }
       if (im2col) {
         if (is_padding) {
-          data_output[index_col] = 0;
+          data_output[index_col] = Get<Dtype>(0);
         } else {
           data_output[index_col] = data_input[index_im];
         }
@@ -115,35 +121,40 @@ inline void im2col_nd_core_cpu(const Dtype* data_input, const bool im2col,
   }  // for (int c = 0; c < channels_col; ++c) {
 }
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 void im2col_nd_cpu(const Dtype* data_im, const int num_spatial_axes,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     Dtype* data_col) {
   const bool kIm2Col = true;
-  im2col_nd_core_cpu(data_im, kIm2Col, num_spatial_axes, im_shape, col_shape,
+  im2col_nd_core_cpu<Dtype,Mtype>(data_im, kIm2Col, num_spatial_axes, im_shape, col_shape,
                   kernel_shape, pad, stride, data_col);
 }
 
 // Explicit instantiation
-template void im2col_nd_cpu<float>(const float* data_im,
+template void im2col_nd_cpu<float,float>(const float* data_im,
     const int num_spatial_axes,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     float* data_col);
-template void im2col_nd_cpu<double>(const double* data_im,
+template void im2col_nd_cpu<double,double>(const double* data_im,
     const int num_spatial_axes,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     double* data_col);
+template void im2col_nd_cpu<half,float>(const half* data_im,
+    const int num_spatial_axes,
+    const int* im_shape, const int* col_shape,
+    const int* kernel_shape, const int* pad, const int* stride,
+	half* data_col);
 
-template <typename Dtype>
+template <typename Dtype, typename Mtype>
 void col2im_cpu(const Dtype* data_col, const int channels,
     const int height, const int width, const int patch_h, const int patch_w,
     const int pad_h, const int pad_w,
     const int stride_h, const int stride_w,
     Dtype* data_im) {
-  caffe_set(height * width * channels, Dtype(0), data_im);
+  caffe_set<Dtype,Mtype>(height * width * channels, Get<Mtype>(0), data_im);
   int height_col = (height + 2 * pad_h - patch_h) / stride_h + 1;
   int width_col = (width + 2 * pad_w - patch_w) / stride_w + 1;
   int channels_col = channels * patch_h * patch_w;
@@ -156,44 +167,56 @@ void col2im_cpu(const Dtype* data_col, const int channels,
         int h_pad = h * stride_h - pad_h + h_offset;
         int w_pad = w * stride_w - pad_w + w_offset;
         if (h_pad >= 0 && h_pad < height && w_pad >= 0 && w_pad < width)
-          data_im[(c_im * height + h_pad) * width + w_pad] +=
-              data_col[(c * height_col + h) * width_col + w];
+          data_im[(c_im * height + h_pad) * width + w_pad] = Get<Dtype>(
+              Get<Mtype>(data_col[(c * height_col + h) * width_col + w]) +
+              Get<Mtype>(data_im[(c_im * height + h_pad) * width + w_pad]));
       }
     }
   }
 }
 
 // Explicit instantiation
-template void col2im_cpu<float>(const float* data_col, const int channels,
+template void col2im_cpu<float,float>(const float* data_col, const int channels,
     const int height, const int width, const int patch_h, const int patch_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, float* data_im);
-template void col2im_cpu<double>(const double* data_col, const int channels,
+template void col2im_cpu<double,double>(const double* data_col, const int channels,
     const int height, const int width, const int patch_h, const int patch_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, double* data_im);
 
-template <typename Dtype>
+#ifndef CPU_ONLY
+template void col2im_cpu<half,float>(const half* data_col, const int channels,
+    const int height, const int width, const int patch_h, const int patch_w,
+    const int pad_h, const int pad_w, const int stride_h,
+    const int stride_w, half* data_im);
+#endif
+
+template <typename Dtype, typename Mtype>
 void col2im_nd_cpu(const Dtype* data_col, const int num_spatial_axes,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     Dtype* data_im) {
   const bool kIm2Col = false;
-  im2col_nd_core_cpu(data_col, kIm2Col, num_spatial_axes, im_shape, col_shape,
+  im2col_nd_core_cpu<Dtype,Mtype>(data_col, kIm2Col, num_spatial_axes, im_shape, col_shape,
                      kernel_shape, pad, stride, data_im);
 }
 
 // Explicit instantiation
-template void col2im_nd_cpu<float>(const float* data_col,
+template void col2im_nd_cpu<float,float>(const float* data_col,
     const int num_spatial_axes,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     float* data_im);
-template void col2im_nd_cpu<double>(const double* data_col,
+template void col2im_nd_cpu<double,double>(const double* data_col,
     const int num_spatial_axes,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     double* data_im);
-
+template void col2im_nd_cpu<half,float>(const half* data_col,
+    const int num_spatial_axes,
+    const int* im_shape, const int* col_shape,
+    const int* kernel_shape, const int* pad, const int* stride,
+	half* data_im);
 
 }  // namespace caffe

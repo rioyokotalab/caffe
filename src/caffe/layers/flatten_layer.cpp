@@ -6,9 +6,9 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void FlattenLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void FlattenLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   const int start_axis = bottom[0]->CanonicalAxisIndex(
       this->layer_param_.flatten_param().axis());
   const int end_axis = bottom[0]->CanonicalAxisIndex(
@@ -26,15 +26,15 @@ void FlattenLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   CHECK_EQ(top[0]->count(), bottom[0]->count());
 }
 
-template <typename Dtype>
-void FlattenLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void FlattenLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   top[0]->ShareData(*bottom[0]);
 }
 
-template <typename Dtype>
-void FlattenLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void FlattenLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   bottom[0]->ShareDiff(*top[0]);
 }
 

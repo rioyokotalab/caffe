@@ -16,14 +16,14 @@
 
 namespace caffe {
 
-template <typename Dtype>
-ImageDataLayer<Dtype>::~ImageDataLayer<Dtype>() {
+template <typename Dtype, typename Mtype>
+ImageDataLayer<Dtype,Mtype>::~ImageDataLayer<Dtype,Mtype>() {
   this->StopInternalThread();
 }
 
-template <typename Dtype>
-void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void ImageDataLayer<Dtype,Mtype>::DataLayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   const int new_height = this->layer_param_.image_data_param().new_height();
   const int new_width  = this->layer_param_.image_data_param().new_width();
   const bool is_color  = this->layer_param_.image_data_param().is_color();
@@ -87,16 +87,16 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
-template <typename Dtype>
-void ImageDataLayer<Dtype>::ShuffleImages() {
+template <typename Dtype, typename Mtype>
+void ImageDataLayer<Dtype,Mtype>::ShuffleImages() {
   caffe::rng_t* prefetch_rng =
       static_cast<caffe::rng_t*>(prefetch_rng_->generator());
   shuffle(lines_.begin(), lines_.end(), prefetch_rng);
 }
 
 // This function is called on prefetch thread
-template <typename Dtype>
-void ImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
+template <typename Dtype, typename Mtype>
+void ImageDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
   CPUTimer batch_timer;
   batch_timer.Start();
   double read_time = 0;
@@ -143,7 +143,7 @@ void ImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     this->data_transformer_->Transform(cv_img, &(this->transformed_data_));
     trans_time += timer.MicroSeconds();
 
-    prefetch_label[item_id] = lines_[lines_id_].second;
+    prefetch_label[item_id] = Get<Dtype>(lines_[lines_id_].second);
     // go to the next iter
     lines_id_++;
     if (lines_id_ >= lines_size) {

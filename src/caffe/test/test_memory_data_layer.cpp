@@ -15,13 +15,14 @@ namespace caffe {
 template <typename TypeParam>
 class MemoryDataLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
  protected:
   MemoryDataLayerTest()
-    : data_(new Blob<Dtype>()),
-      labels_(new Blob<Dtype>()),
-      data_blob_(new Blob<Dtype>()),
-      label_blob_(new Blob<Dtype>()) {}
+    : data_(new Blob<Dtype,Mtype>()),
+      labels_(new Blob<Dtype,Mtype>()),
+      data_blob_(new Blob<Dtype,Mtype>()),
+      label_blob_(new Blob<Dtype,Mtype>()) {}
   virtual void SetUp() {
     batch_size_ = 8;
     batches_ = 12;
@@ -32,7 +33,7 @@ class MemoryDataLayerTest : public MultiDeviceTest<TypeParam> {
     blob_top_vec_.push_back(label_blob_);
     // pick random input data
     FillerParameter filler_param;
-    GaussianFiller<Dtype> filler(filler_param);
+    GaussianFiller<Dtype,Mtype> filler(filler_param);
     data_->Reshape(batches_ * batch_size_, channels_, height_, width_);
     labels_->Reshape(batches_ * batch_size_, 1, 1, 1);
     filler.Fill(this->data_);
@@ -52,19 +53,20 @@ class MemoryDataLayerTest : public MultiDeviceTest<TypeParam> {
   int width_;
   // we don't really need blobs for the input data, but it makes it
   //  easier to call Filler
-  Blob<Dtype>* const data_;
-  Blob<Dtype>* const labels_;
+  Blob<Dtype,Mtype>* const data_;
+  Blob<Dtype,Mtype>* const labels_;
   // blobs for the top of MemoryDataLayer
-  Blob<Dtype>* const data_blob_;
-  Blob<Dtype>* const label_blob_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const data_blob_;
+  Blob<Dtype,Mtype>* const label_blob_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
 };
 
 TYPED_TEST_CASE(MemoryDataLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(MemoryDataLayerTest, TestSetup) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
   LayerParameter layer_param;
   MemoryDataParameter* md_param = layer_param.mutable_memory_data_param();
@@ -72,8 +74,8 @@ TYPED_TEST(MemoryDataLayerTest, TestSetup) {
   md_param->set_channels(this->channels_);
   md_param->set_height(this->height_);
   md_param->set_width(this->width_);
-  shared_ptr<Layer<Dtype> > layer(
-      new MemoryDataLayer<Dtype>(layer_param));
+  shared_ptr<Layer<Dtype,Mtype> > layer(
+      new MemoryDataLayer<Dtype,Mtype>(layer_param));
   layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->data_blob_->num(), this->batch_size_);
   EXPECT_EQ(this->data_blob_->channels(), this->channels_);
@@ -88,6 +90,7 @@ TYPED_TEST(MemoryDataLayerTest, TestSetup) {
 // run through a few batches and check that the right data appears
 TYPED_TEST(MemoryDataLayerTest, TestForward) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
   LayerParameter layer_param;
   MemoryDataParameter* md_param = layer_param.mutable_memory_data_param();
@@ -95,8 +98,8 @@ TYPED_TEST(MemoryDataLayerTest, TestForward) {
   md_param->set_channels(this->channels_);
   md_param->set_height(this->height_);
   md_param->set_width(this->width_);
-  shared_ptr<MemoryDataLayer<Dtype> > layer(
-      new MemoryDataLayer<Dtype>(layer_param));
+  shared_ptr<MemoryDataLayer<Dtype,Mtype> > layer(
+      new MemoryDataLayer<Dtype,Mtype>(layer_param));
   layer->DataLayerSetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer->Reset(this->data_->mutable_cpu_data(),
       this->labels_->mutable_cpu_data(), this->data_->num());
@@ -104,13 +107,13 @@ TYPED_TEST(MemoryDataLayerTest, TestForward) {
     int batch_num = i % this->batches_;
     layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     for (int j = 0; j < this->data_blob_->count(); ++j) {
-      EXPECT_EQ(this->data_blob_->cpu_data()[j],
-          this->data_->cpu_data()[
-              this->data_->offset(1) * this->batch_size_ * batch_num + j]);
+      EXPECT_EQ(Get<Mtype>(this->data_blob_->cpu_data()[j]),
+          Get<Mtype>(this->data_->cpu_data()[
+              this->data_->offset(1) * this->batch_size_ * batch_num + j]));
     }
     for (int j = 0; j < this->label_blob_->count(); ++j) {
-      EXPECT_EQ(this->label_blob_->cpu_data()[j],
-          this->labels_->cpu_data()[this->batch_size_ * batch_num + j]);
+      EXPECT_EQ(Get<Mtype>(this->label_blob_->cpu_data()[j]),
+          Get<Mtype>(this->labels_->cpu_data()[this->batch_size_ * batch_num + j]));
     }
   }
 }
@@ -118,6 +121,7 @@ TYPED_TEST(MemoryDataLayerTest, TestForward) {
 #ifdef USE_OPENCV
 TYPED_TEST(MemoryDataLayerTest, AddDatumVectorDefaultTransform) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
   LayerParameter param;
   MemoryDataParameter* memory_data_param = param.mutable_memory_data_param();
@@ -125,7 +129,7 @@ TYPED_TEST(MemoryDataLayerTest, AddDatumVectorDefaultTransform) {
   memory_data_param->set_channels(this->channels_);
   memory_data_param->set_height(this->height_);
   memory_data_param->set_width(this->width_);
-  MemoryDataLayer<Dtype> layer(param);
+  MemoryDataLayer<Dtype,Mtype> layer(param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   // We add batch_size*num_iter items, then for each iteration
   // we forward batch_size elements
@@ -155,14 +159,14 @@ TYPED_TEST(MemoryDataLayerTest, AddDatumVectorDefaultTransform) {
     size_t index = 0;
     for (int i = 0; i < this->batch_size_; ++i) {
       const string& data_string = datum_vector[offset + i].data();
-      EXPECT_EQ(offset + i, this->label_blob_->cpu_data()[i]);
+      EXPECT_EQ(offset + i, Get<int>(this->label_blob_->cpu_data()[i]));
       for (int c = 0; c < this->channels_; ++c) {
         for (int h = 0; h < this->height_; ++h) {
           for (int w = 0; w < this->width_; ++w) {
             data_index = (c * this->height_ + h) * this->width_ + w;
-            EXPECT_EQ(static_cast<Dtype>(
+            EXPECT_EQ(Get<Mtype>(
                 static_cast<uint8_t>(data_string[data_index])),
-                      data[index++]);
+                      Get<Mtype>(data[index++]));
           }
         }
       }
@@ -172,13 +176,14 @@ TYPED_TEST(MemoryDataLayerTest, AddDatumVectorDefaultTransform) {
 
 TYPED_TEST(MemoryDataLayerTest, AddMatVectorDefaultTransform) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter param;
   MemoryDataParameter* memory_data_param = param.mutable_memory_data_param();
   memory_data_param->set_batch_size(this->batch_size_);
   memory_data_param->set_channels(this->channels_);
   memory_data_param->set_height(this->height_);
   memory_data_param->set_width(this->width_);
-  MemoryDataLayer<Dtype> layer(param);
+  MemoryDataLayer<Dtype,Mtype> layer(param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   // We add batch_size*num_iter items, then for each iteration
   // we forward batch_size elements
@@ -199,16 +204,16 @@ TYPED_TEST(MemoryDataLayerTest, AddMatVectorDefaultTransform) {
     layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype* data = this->data_blob_->cpu_data();
     for (int i = 0; i < this->batch_size_; ++i) {
-      EXPECT_EQ(offset + i, this->label_blob_->cpu_data()[i]);
+      EXPECT_EQ(offset + i, Get<int>(this->label_blob_->cpu_data()[i]));
       for (int h = 0; h < this->height_; ++h) {
         const unsigned char* ptr_mat = mat_vector[offset + i].ptr<uchar>(h);
         int index = 0;
         for (int w = 0; w < this->width_; ++w) {
           for (int c = 0; c < this->channels_; ++c) {
             data_index = (i*count) + (c * this->height_ + h) * this->width_ + w;
-            Dtype pixel = static_cast<Dtype>(ptr_mat[index++]);
+            Mtype pixel = Get<Mtype>(ptr_mat[index++]);
             EXPECT_EQ(static_cast<int>(pixel),
-                      data[data_index]);
+                      Get<int>(data[data_index]));
           }
         }
       }
@@ -218,13 +223,14 @@ TYPED_TEST(MemoryDataLayerTest, AddMatVectorDefaultTransform) {
 
 TYPED_TEST(MemoryDataLayerTest, TestSetBatchSize) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter param;
   MemoryDataParameter* memory_data_param = param.mutable_memory_data_param();
   memory_data_param->set_batch_size(this->batch_size_);
   memory_data_param->set_channels(this->channels_);
   memory_data_param->set_height(this->height_);
   memory_data_param->set_width(this->width_);
-  MemoryDataLayer<Dtype> layer(param);
+  MemoryDataLayer<Dtype,Mtype> layer(param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   // first add data as usual
   int num_iter = 5;
@@ -244,15 +250,15 @@ TYPED_TEST(MemoryDataLayerTest, TestSetBatchSize) {
     layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype* data = this->data_blob_->cpu_data();
     for (int i = 0; i < this->batch_size_; ++i) {
-      EXPECT_EQ(offset + i, this->label_blob_->cpu_data()[i]);
+      EXPECT_EQ(offset + i, Get<int>(this->label_blob_->cpu_data()[i]));
       for (int h = 0; h < this->height_; ++h) {
         const unsigned char* ptr_mat = mat_vector[offset + i].ptr<uchar>(h);
         int index = 0;
         for (int w = 0; w < this->width_; ++w) {
           for (int c = 0; c < this->channels_; ++c) {
             data_index = (i*count) + (c * this->height_ + h) * this->width_ + w;
-            Dtype pixel = static_cast<Dtype>(ptr_mat[index++]);
-            EXPECT_EQ(static_cast<int>(pixel), data[data_index]);
+            Mtype pixel = Get<Mtype>(ptr_mat[index++]);
+            EXPECT_EQ(static_cast<int>(pixel), Get<int>(data[data_index]));
           }
         }
       }
@@ -280,15 +286,15 @@ TYPED_TEST(MemoryDataLayerTest, TestSetBatchSize) {
     EXPECT_EQ(new_batch_size, this->blob_top_vec_[1]->num());
     const Dtype* data = this->data_blob_->cpu_data();
     for (int i = 0; i < new_batch_size; ++i) {
-      EXPECT_EQ(offset + i, this->label_blob_->cpu_data()[i]);
+      EXPECT_EQ(offset + i, Get<int>(this->label_blob_->cpu_data()[i]));
       for (int h = 0; h < this->height_; ++h) {
         const unsigned char* ptr_mat = mat_vector[offset + i].ptr<uchar>(h);
         int index = 0;
         for (int w = 0; w < this->width_; ++w) {
           for (int c = 0; c < this->channels_; ++c) {
             data_index = (i*count) + (c * this->height_ + h) * this->width_ + w;
-            Dtype pixel = static_cast<Dtype>(ptr_mat[index++]);
-            EXPECT_EQ(static_cast<int>(pixel), data[data_index]);
+            Mtype pixel = Get<Mtype>(ptr_mat[index++]);
+            EXPECT_EQ(static_cast<int>(pixel), Get<int>(data[data_index]));
           }
         }
       }

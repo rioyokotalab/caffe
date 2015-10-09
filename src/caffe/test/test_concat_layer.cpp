@@ -16,25 +16,26 @@ namespace caffe {
 template <typename TypeParam>
 class ConcatLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
 
  protected:
   ConcatLayerTest()
-      : blob_bottom_0_(new Blob<Dtype>(2, 3, 6, 5)),
-        blob_bottom_1_(new Blob<Dtype>(2, 5, 6, 5)),
-        blob_bottom_2_(new Blob<Dtype>(5, 3, 6, 5)),
-        blob_top_(new Blob<Dtype>()) {}
+      : blob_bottom_0_(new Blob<Dtype,Mtype>(2, 3, 6, 5)),
+        blob_bottom_1_(new Blob<Dtype,Mtype>(2, 5, 6, 5)),
+        blob_bottom_2_(new Blob<Dtype,Mtype>(5, 3, 6, 5)),
+        blob_top_(new Blob<Dtype,Mtype>()) {}
   virtual void SetUp() {
     // fill the values
-    shared_ptr<ConstantFiller<Dtype> > filler;
+    shared_ptr<ConstantFiller<Dtype,Mtype> > filler;
     FillerParameter filler_param;
     filler_param.set_value(1.);
-    filler.reset(new ConstantFiller<Dtype>(filler_param));
+    filler.reset(new ConstantFiller<Dtype,Mtype>(filler_param));
     filler->Fill(this->blob_bottom_0_);
     filler_param.set_value(2.);
-    filler.reset(new ConstantFiller<Dtype>(filler_param));
+    filler.reset(new ConstantFiller<Dtype,Mtype>(filler_param));
     filler->Fill(this->blob_bottom_1_);
     filler_param.set_value(3.);
-    filler.reset(new ConstantFiller<Dtype>(filler_param));
+    filler.reset(new ConstantFiller<Dtype,Mtype>(filler_param));
     filler->Fill(this->blob_bottom_2_);
     blob_bottom_vec_0_.push_back(blob_bottom_0_);
     blob_bottom_vec_0_.push_back(blob_bottom_1_);
@@ -48,21 +49,22 @@ class ConcatLayerTest : public MultiDeviceTest<TypeParam> {
     delete blob_bottom_2_; delete blob_top_;
   }
 
-  Blob<Dtype>* const blob_bottom_0_;
-  Blob<Dtype>* const blob_bottom_1_;
-  Blob<Dtype>* const blob_bottom_2_;
-  Blob<Dtype>* const blob_top_;
-  vector<Blob<Dtype>*> blob_bottom_vec_0_, blob_bottom_vec_1_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const blob_bottom_0_;
+  Blob<Dtype,Mtype>* const blob_bottom_1_;
+  Blob<Dtype,Mtype>* const blob_bottom_2_;
+  Blob<Dtype,Mtype>* const blob_top_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_0_, blob_bottom_vec_1_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
 };
 
 TYPED_TEST_CASE(ConcatLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(ConcatLayerTest, TestSetupNum) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_concat_param()->set_axis(0);
-  ConcatLayer<Dtype> layer(layer_param);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_1_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(),
       this->blob_bottom_0_->num() + this->blob_bottom_2_->num());
@@ -73,8 +75,9 @@ TYPED_TEST(ConcatLayerTest, TestSetupNum) {
 
 TYPED_TEST(ConcatLayerTest, TestSetupChannels) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  ConcatLayer<Dtype> layer(layer_param);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_0_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_0_->num());
   EXPECT_EQ(this->blob_top_->channels(),
@@ -85,8 +88,9 @@ TYPED_TEST(ConcatLayerTest, TestSetupChannels) {
 
 TYPED_TEST(ConcatLayerTest, TestSetupChannelsNegativeIndexing) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  ConcatLayer<Dtype> layer(layer_param);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
   // "channels" index is the third one from the end -- test negative indexing
   // by setting axis to -3 and checking that we get the same results as above in
   // TestSetupChannels.
@@ -101,8 +105,9 @@ TYPED_TEST(ConcatLayerTest, TestSetupChannelsNegativeIndexing) {
 
 TYPED_TEST(ConcatLayerTest, TestForwardTrivial) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  ConcatLayer<Dtype> layer(layer_param);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
   this->blob_bottom_vec_0_.resize(1);
   layer.SetUp(this->blob_bottom_vec_0_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_0_, this->blob_top_vec_);
@@ -114,17 +119,18 @@ TYPED_TEST(ConcatLayerTest, TestForwardTrivial) {
 
 TYPED_TEST(ConcatLayerTest, TestForwardNum) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_concat_param()->set_axis(0);
-  ConcatLayer<Dtype> layer(layer_param);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_1_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_1_, this->blob_top_vec_);
   for (int n = 0; n < this->blob_bottom_vec_1_[0]->num(); ++n) {
     for (int c = 0; c < this->blob_top_->channels(); ++c) {
       for (int h = 0; h < this->blob_top_->height(); ++h) {
         for (int w = 0; w < this->blob_top_->width(); ++w) {
-          EXPECT_EQ(this->blob_top_->data_at(n, c, h, w),
-              this->blob_bottom_vec_1_[0]->data_at(n, c, h, w));
+          EXPECT_EQ(Get<Mtype>(this->blob_top_->data_at(n, c, h, w)),
+              Get<Mtype>(this->blob_bottom_vec_1_[0]->data_at(n, c, h, w)));
         }
       }
     }
@@ -133,8 +139,8 @@ TYPED_TEST(ConcatLayerTest, TestForwardNum) {
     for (int c = 0; c < this->blob_top_->channels(); ++c) {
       for (int h = 0; h < this->blob_top_->height(); ++h) {
         for (int w = 0; w < this->blob_top_->width(); ++w) {
-          EXPECT_EQ(this->blob_top_->data_at(n + 2, c, h, w),
-              this->blob_bottom_vec_1_[1]->data_at(n, c, h, w));
+          EXPECT_EQ(Get<Mtype>(this->blob_top_->data_at(n + 2, c, h, w)),
+              Get<Mtype>(this->blob_bottom_vec_1_[1]->data_at(n, c, h, w)));
         }
       }
     }
@@ -143,24 +149,25 @@ TYPED_TEST(ConcatLayerTest, TestForwardNum) {
 
 TYPED_TEST(ConcatLayerTest, TestForwardChannels) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  ConcatLayer<Dtype> layer(layer_param);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_0_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_0_, this->blob_top_vec_);
   for (int n = 0; n < this->blob_top_->num(); ++n) {
     for (int c = 0; c < this->blob_bottom_0_->channels(); ++c) {
       for (int h = 0; h < this->blob_top_->height(); ++h) {
         for (int w = 0; w < this->blob_top_->width(); ++w) {
-          EXPECT_EQ(this->blob_top_->data_at(n, c, h, w),
-              this->blob_bottom_vec_0_[0]->data_at(n, c, h, w));
+          EXPECT_EQ(Get<Mtype>(this->blob_top_->data_at(n, c, h, w)),
+              Get<Mtype>(this->blob_bottom_vec_0_[0]->data_at(n, c, h, w)));
         }
       }
     }
     for (int c = 0; c < this->blob_bottom_1_->channels(); ++c) {
       for (int h = 0; h < this->blob_top_->height(); ++h) {
         for (int w = 0; w < this->blob_top_->width(); ++w) {
-          EXPECT_EQ(this->blob_top_->data_at(n, c + 3, h, w),
-              this->blob_bottom_vec_0_[1]->data_at(n, c, h, w));
+          EXPECT_EQ(Get<Mtype>(this->blob_top_->data_at(n, c + 3, h, w)),
+              Get<Mtype>(this->blob_bottom_vec_0_[1]->data_at(n, c, h, w)));
         }
       }
     }
@@ -169,9 +176,10 @@ TYPED_TEST(ConcatLayerTest, TestForwardChannels) {
 
 TYPED_TEST(ConcatLayerTest, TestGradientTrivial) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  ConcatLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-2);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   this->blob_bottom_vec_0_.resize(1);
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_0_,
       this->blob_top_vec_);
@@ -179,28 +187,31 @@ TYPED_TEST(ConcatLayerTest, TestGradientTrivial) {
 
 TYPED_TEST(ConcatLayerTest, TestGradientNum) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
   layer_param.mutable_concat_param()->set_axis(0);
-  ConcatLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-2);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradient(&layer, this->blob_bottom_vec_1_,
     this->blob_top_vec_);
 }
 
 TYPED_TEST(ConcatLayerTest, TestGradientChannels) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  ConcatLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-2);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradient(&layer, this->blob_bottom_vec_0_,
     this->blob_top_vec_);
 }
 
 TYPED_TEST(ConcatLayerTest, TestGradientChannelsBottomOneOnly) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   LayerParameter layer_param;
-  ConcatLayer<Dtype> layer(layer_param);
-  GradientChecker<Dtype> checker(1e-2, 1e-2);
+  ConcatLayer<Dtype,Mtype> layer(layer_param);
+  GradientChecker<Dtype,Mtype> checker(Get<Dtype>(1e-2), Get<Dtype>(1e-2));
   checker.CheckGradient(&layer, this->blob_bottom_vec_0_,
     this->blob_top_vec_, 1);
 }

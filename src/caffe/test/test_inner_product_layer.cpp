@@ -20,14 +20,15 @@ extern cudaDeviceProp CAFFE_TEST_CUDA_PROP;
 template <typename TypeParam>
 class InnerProductLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
  protected:
   InnerProductLayerTest()
-      : blob_bottom_(new Blob<Dtype>(2, 3, 4, 5)),
-        blob_bottom_nobatch_(new Blob<Dtype>(1, 2, 3, 4)),
-        blob_top_(new Blob<Dtype>()) {
+      : blob_bottom_(new Blob<Dtype,Mtype>(2, 3, 4, 5)),
+        blob_bottom_nobatch_(new Blob<Dtype,Mtype>(1, 2, 3, 4)),
+        blob_top_(new Blob<Dtype,Mtype>()) {
     // fill the values
     FillerParameter filler_param;
-    UniformFiller<Dtype> filler(filler_param);
+    UniformFiller<Dtype,Mtype> filler(filler_param);
     filler.Fill(this->blob_bottom_);
     blob_top_vec_.push_back(blob_top_);
   }
@@ -36,24 +37,25 @@ class InnerProductLayerTest : public MultiDeviceTest<TypeParam> {
     delete blob_bottom_nobatch_;
     delete blob_top_;
   }
-  Blob<Dtype>* const blob_bottom_;
-  Blob<Dtype>* const blob_bottom_nobatch_;
-  Blob<Dtype>* const blob_top_;
-  vector<Blob<Dtype>*> blob_bottom_vec_;
-  vector<Blob<Dtype>*> blob_top_vec_;
+  Blob<Dtype,Mtype>* const blob_bottom_;
+  Blob<Dtype,Mtype>* const blob_bottom_nobatch_;
+  Blob<Dtype,Mtype>* const blob_top_;
+  vector<Blob<Dtype,Mtype>*> blob_bottom_vec_;
+  vector<Blob<Dtype,Mtype>*> blob_top_vec_;
 };
 
 TYPED_TEST_CASE(InnerProductLayerTest, TestDtypesAndDevices);
 
 TYPED_TEST(InnerProductLayerTest, TestSetUp) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   this->blob_bottom_vec_.push_back(this->blob_bottom_);
   LayerParameter layer_param;
   InnerProductParameter* inner_product_param =
       layer_param.mutable_inner_product_param();
   inner_product_param->set_num_output(10);
-  shared_ptr<InnerProductLayer<Dtype> > layer(
-      new InnerProductLayer<Dtype>(layer_param));
+  shared_ptr<InnerProductLayer<Dtype,Mtype> > layer(
+      new InnerProductLayer<Dtype,Mtype>(layer_param));
   layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   EXPECT_EQ(this->blob_top_->num(), 2);
   EXPECT_EQ(this->blob_top_->height(), 1);
@@ -63,6 +65,7 @@ TYPED_TEST(InnerProductLayerTest, TestSetUp) {
 
 TYPED_TEST(InnerProductLayerTest, TestForward) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   this->blob_bottom_vec_.push_back(this->blob_bottom_);
   bool IS_VALID_CUDA = false;
 #ifndef CPU_ONLY
@@ -78,8 +81,8 @@ TYPED_TEST(InnerProductLayerTest, TestForward) {
     inner_product_param->mutable_bias_filler()->set_type("uniform");
     inner_product_param->mutable_bias_filler()->set_min(1);
     inner_product_param->mutable_bias_filler()->set_max(2);
-    shared_ptr<InnerProductLayer<Dtype> > layer(
-        new InnerProductLayer<Dtype>(layer_param));
+    shared_ptr<InnerProductLayer<Dtype,Mtype> > layer(
+        new InnerProductLayer<Dtype,Mtype>(layer_param));
     layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype* data = this->blob_top_->cpu_data();
@@ -94,6 +97,7 @@ TYPED_TEST(InnerProductLayerTest, TestForward) {
 
 TYPED_TEST(InnerProductLayerTest, TestForwardNoBatch) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   this->blob_bottom_vec_.push_back(this->blob_bottom_nobatch_);
   bool IS_VALID_CUDA = false;
 #ifndef CPU_ONLY
@@ -109,14 +113,14 @@ TYPED_TEST(InnerProductLayerTest, TestForwardNoBatch) {
     inner_product_param->mutable_bias_filler()->set_type("uniform");
     inner_product_param->mutable_bias_filler()->set_min(1);
     inner_product_param->mutable_bias_filler()->set_max(2);
-    shared_ptr<InnerProductLayer<Dtype> > layer(
-        new InnerProductLayer<Dtype>(layer_param));
+    shared_ptr<InnerProductLayer<Dtype,Mtype> > layer(
+        new InnerProductLayer<Dtype,Mtype>(layer_param));
     layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     const Dtype* data = this->blob_top_->cpu_data();
     const int count = this->blob_top_->count();
     for (int i = 0; i < count; ++i) {
-      EXPECT_GE(data[i], 1.);
+      EXPECT_GE(Get<Mtype>(data[i]), 1.);
     }
   } else {
     LOG(ERROR) << "Skipping test due to old architecture.";
@@ -125,6 +129,7 @@ TYPED_TEST(InnerProductLayerTest, TestForwardNoBatch) {
 
 TYPED_TEST(InnerProductLayerTest, TestGradient) {
   typedef typename TypeParam::Dtype Dtype;
+  typedef typename TypeParam::Mtype Mtype;
   this->blob_bottom_vec_.push_back(this->blob_bottom_);
   bool IS_VALID_CUDA = false;
 #ifndef CPU_ONLY
@@ -140,8 +145,8 @@ TYPED_TEST(InnerProductLayerTest, TestGradient) {
     inner_product_param->mutable_bias_filler()->set_type("gaussian");
     inner_product_param->mutable_bias_filler()->set_min(1);
     inner_product_param->mutable_bias_filler()->set_max(2);
-    InnerProductLayer<Dtype> layer(layer_param);
-    GradientChecker<Dtype> checker(1e-2, 1e-3);
+    InnerProductLayer<Dtype,Mtype> layer(layer_param);
+    GradientChecker<Dtype,Mtype> checker(Get<Dtype>(5e-2), Get<Dtype>(1e-3));
     checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
         this->blob_top_vec_);
   } else {

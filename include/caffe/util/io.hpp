@@ -10,6 +10,8 @@
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 
+#define HDF5_NUM_DIMS 4
+
 namespace caffe {
 
 using ::google::protobuf::Message;

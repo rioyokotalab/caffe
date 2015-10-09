@@ -21,13 +21,13 @@ namespace caffe {
  *        each element of the output depends only on the corresponding input
  *        element.
  */
-template <typename Dtype>
-class NeuronLayer : public Layer<Dtype> {
+template <typename Dtype, typename Mtype>
+class NeuronLayer : public Layer<Dtype,Mtype> {
  public:
   explicit NeuronLayer(const LayerParameter& param)
-     : Layer<Dtype>(param) {}
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+     : Layer<Dtype,Mtype>(param) {}
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
@@ -43,13 +43,13 @@ class NeuronLayer : public Layer<Dtype> {
  *   -# @f$ (N \times C \times H \times W) @f$
  *      the computed outputs @f$ y = |x| @f$
  */
-template <typename Dtype>
-class AbsValLayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class AbsValLayer : public NeuronLayer<Dtype,Mtype> {
  public:
   explicit AbsValLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+      : NeuronLayer<Dtype,Mtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   virtual inline const char* type() const { return "AbsVal"; }
   virtual inline int ExactNumBottomBlobs() const { return 1; }
@@ -57,10 +57,10 @@ class AbsValLayer : public NeuronLayer<Dtype> {
 
  protected:
   /// @copydoc AbsValLayer
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the absolute value inputs.
@@ -79,10 +79,10 @@ class AbsValLayer : public NeuronLayer<Dtype> {
    *            \mathrm{sign}(x) \frac{\partial E}{\partial y}
    *      @f$ if propagate_down[0]
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 };
 
 /**
@@ -102,20 +102,20 @@ class AbsValLayer : public NeuronLayer<Dtype> {
  *         \end{array} \right.
  *      @f$
  */
-template <typename Dtype>
-class BNLLLayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class BNLLLayer : public NeuronLayer<Dtype,Mtype> {
  public:
   explicit BNLLLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
+      : NeuronLayer<Dtype,Mtype>(param) {}
 
   virtual inline const char* type() const { return "BNLL"; }
 
  protected:
   /// @copydoc BNLLLayer
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the BNLL inputs.
@@ -133,10 +133,10 @@ class BNLLLayer : public NeuronLayer<Dtype> {
    *        \frac{\partial E}{\partial x}
    *      @f$ if propagate_down[0]
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 };
 
 /**
@@ -150,8 +150,8 @@ class BNLLLayer : public NeuronLayer<Dtype> {
  *   -# @f$ (N \times C \times H \times W) @f$
  *      the computed outputs @f$ y = |x| @f$
  */
-template <typename Dtype>
-class DropoutLayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class DropoutLayer : public NeuronLayer<Dtype,Mtype> {
  public:
   /**
    * @param param provides DropoutParameter dropout_param,
@@ -160,11 +160,11 @@ class DropoutLayer : public NeuronLayer<Dtype> {
    *     Sets the probability @f$ p @f$ that any given unit is dropped.
    */
   explicit DropoutLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+      : NeuronLayer<Dtype,Mtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   virtual inline const char* type() const { return "Dropout"; }
 
@@ -185,21 +185,21 @@ class DropoutLayer : public NeuronLayer<Dtype> {
    *      input at each iteration. At test time, we simply have
    *      @f$ y_{\mbox{test}} = \mathbb{E}[y_{\mbox{train}}] = x @f$.
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
   /// when divided by UINT_MAX, the randomly generated values @f$u\sim U(0,1)@f$
-  Blob<unsigned int> rand_vec_;
+  Blob<unsigned int, unsigned int> rand_vec_;
   /// the probability @f$ p @f$ of dropping any input
-  Dtype threshold_;
+  Mtype threshold_;
   /// the scale for undropped inputs at train time @f$ 1 / (1 - p) @f$
-  Dtype scale_;
+  Mtype scale_;
   unsigned int uint_thres_;
 };
 
@@ -208,8 +208,8 @@ class DropoutLayer : public NeuronLayer<Dtype> {
  *        as specified by the scale @f$ \alpha @f$, shift @f$ \beta @f$,
  *        and base @f$ \gamma @f$.
  */
-template <typename Dtype>
-class ExpLayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class ExpLayer : public NeuronLayer<Dtype,Mtype> {
  public:
   /**
    * @param param provides ExpParameter exp_param,
@@ -220,9 +220,9 @@ class ExpLayer : public NeuronLayer<Dtype> {
    *         the base @f$ \gamma @f$
    */
   explicit ExpLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+      : NeuronLayer<Dtype,Mtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   virtual inline const char* type() const { return "Exp"; }
 
@@ -237,10 +237,10 @@ class ExpLayer : public NeuronLayer<Dtype> {
    *        y = \gamma ^ {\alpha x + \beta}
    *      @f$
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the exp inputs.
@@ -259,12 +259,12 @@ class ExpLayer : public NeuronLayer<Dtype> {
    *            \frac{\partial E}{\partial y} y \alpha \log_e(gamma)
    *      @f$ if propagate_down[0]
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
-  Dtype inner_scale_, outer_scale_;
+  Mtype inner_scale_, outer_scale_;
 };
 
 /**
@@ -272,8 +272,8 @@ class ExpLayer : public NeuronLayer<Dtype> {
  *        as specified by the scale @f$ \alpha @f$, shift @f$ \beta @f$,
  *        and base @f$ \gamma @f$.
  */
-template <typename Dtype>
-class LogLayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class LogLayer : public NeuronLayer<Dtype,Mtype> {
  public:
   /**
    * @param param provides LogParameter log_param,
@@ -284,9 +284,9 @@ class LogLayer : public NeuronLayer<Dtype> {
    *         the base @f$ \gamma @f$
    */
   explicit LogLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+      : NeuronLayer<Dtype,Mtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   virtual inline const char* type() const { return "Log"; }
 
@@ -301,10 +301,10 @@ class LogLayer : public NeuronLayer<Dtype> {
    *        y = log_{\gamma}(\alpha x + \beta)
    *      @f$
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the exp inputs.
@@ -323,10 +323,10 @@ class LogLayer : public NeuronLayer<Dtype> {
    *            \frac{\partial E}{\partial y} y \alpha \log_e(gamma)
    *      @f$ if propagate_down[0]
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
   Dtype base_scale_;
   Dtype input_scale_, input_shift_;
@@ -338,8 +338,8 @@ class LogLayer : public NeuronLayer<Dtype> {
  *        as specified by the scale @f$ \alpha @f$, shift @f$ \beta @f$,
  *        and power @f$ \gamma @f$.
  */
-template <typename Dtype>
-class PowerLayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class PowerLayer : public NeuronLayer<Dtype,Mtype> {
  public:
   /**
    * @param param provides PowerParameter power_param,
@@ -349,9 +349,9 @@ class PowerLayer : public NeuronLayer<Dtype> {
    *   - power (\b optional, default 1) the power @f$ \gamma @f$
    */
   explicit PowerLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+      : NeuronLayer<Dtype,Mtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   virtual inline const char* type() const { return "Power"; }
 
@@ -366,10 +366,10 @@ class PowerLayer : public NeuronLayer<Dtype> {
    *        y = (\alpha x + \beta) ^ \gamma
    *      @f$
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the power inputs.
@@ -391,27 +391,27 @@ class PowerLayer : public NeuronLayer<Dtype> {
    *            \frac{\alpha \gamma y}{\alpha x + \beta}
    *      @f$ if propagate_down[0]
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
   /// @brief @f$ \gamma @f$ from layer_param_.power_param()
-  Dtype power_;
+  Mtype power_;
   /// @brief @f$ \alpha @f$ from layer_param_.power_param()
-  Dtype scale_;
+  Mtype scale_;
   /// @brief @f$ \beta @f$ from layer_param_.power_param()
-  Dtype shift_;
+  Mtype shift_;
   /// @brief Result of @f$ \alpha \gamma @f$
-  Dtype diff_scale_;
+  Mtype diff_scale_;
 };
 
 /**
  * @brief Rectified Linear Unit non-linearity @f$ y = \max(0, x) @f$.
  *        The simple max is fast to compute, and the function does not saturate.
  */
-template <typename Dtype>
-class ReLULayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class ReLULayer : public NeuronLayer<Dtype,Mtype> {
  public:
   /**
    * @param param provides ReLUParameter relu_param,
@@ -420,7 +420,7 @@ class ReLULayer : public NeuronLayer<Dtype> {
    *     the value @f$ \nu @f$ by which negative values are multiplied.
    */
   explicit ReLULayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
+      : NeuronLayer<Dtype,Mtype>(param) {}
 
   virtual inline const char* type() const { return "ReLU"; }
 
@@ -436,10 +436,10 @@ class ReLULayer : public NeuronLayer<Dtype> {
    *      @f$ by default.  If a non-zero negative_slope @f$ \nu @f$ is provided,
    *      the computed outputs are @f$ y = \max(0, x) + \nu \min(0, x) @f$.
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the ReLU inputs.
@@ -469,32 +469,32 @@ class ReLULayer : public NeuronLayer<Dtype> {
    *        \end{array} \right.
    *      @f$.
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 };
 
 #ifdef USE_CUDNN
 /**
  * @brief CuDNN acceleration of ReLULayer.
  */
-template <typename Dtype>
-class CuDNNReLULayer : public ReLULayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class CuDNNReLULayer : public ReLULayer<Dtype,Mtype> {
  public:
   explicit CuDNNReLULayer(const LayerParameter& param)
-      : ReLULayer<Dtype>(param), handles_setup_(false) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+      : ReLULayer<Dtype,Mtype>(param), handles_setup_(false) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
   virtual ~CuDNNReLULayer();
 
  protected:
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
   bool handles_setup_;
   cudnnTensorDescriptor_t bottom_desc_;
@@ -510,11 +510,11 @@ class CuDNNReLULayer : public ReLULayer<Dtype> {
  * Note that the gradient vanishes as the values move away from 0.
  * The ReLULayer is often a better choice for this reason.
  */
-template <typename Dtype>
-class SigmoidLayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class SigmoidLayer : public NeuronLayer<Dtype,Mtype> {
  public:
   explicit SigmoidLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
+      : NeuronLayer<Dtype,Mtype>(param) {}
 
   virtual inline const char* type() const { return "Sigmoid"; }
 
@@ -529,10 +529,10 @@ class SigmoidLayer : public NeuronLayer<Dtype> {
    *        y = (1 + \exp(-x))^{-1}
    *      @f$
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the sigmoid inputs.
@@ -551,32 +551,32 @@ class SigmoidLayer : public NeuronLayer<Dtype> {
    *            = \frac{\partial E}{\partial y} y (1 - y)
    *      @f$ if propagate_down[0]
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 };
 
 #ifdef USE_CUDNN
 /**
  * @brief CuDNN acceleration of SigmoidLayer.
  */
-template <typename Dtype>
-class CuDNNSigmoidLayer : public SigmoidLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class CuDNNSigmoidLayer : public SigmoidLayer<Dtype,Mtype> {
  public:
   explicit CuDNNSigmoidLayer(const LayerParameter& param)
-      : SigmoidLayer<Dtype>(param), handles_setup_(false) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+      : SigmoidLayer<Dtype,Mtype>(param), handles_setup_(false) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
   virtual ~CuDNNSigmoidLayer();
 
  protected:
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
   bool handles_setup_;
   cudnnTensorDescriptor_t bottom_desc_;
@@ -592,11 +592,11 @@ class CuDNNSigmoidLayer : public SigmoidLayer<Dtype> {
  * Note that the gradient vanishes as the values move away from 0.
  * The ReLULayer is often a better choice for this reason.
  */
-template <typename Dtype>
-class TanHLayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class TanHLayer : public NeuronLayer<Dtype,Mtype> {
  public:
   explicit TanHLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
+      : NeuronLayer<Dtype,Mtype>(param) {}
 
   virtual inline const char* type() const { return "TanH"; }
 
@@ -611,10 +611,10 @@ class TanHLayer : public NeuronLayer<Dtype> {
    *        y = \frac{\exp(2x) - 1}{\exp(2x) + 1}
    *      @f$
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the sigmoid inputs.
@@ -635,32 +635,32 @@ class TanHLayer : public NeuronLayer<Dtype> {
    *            = \frac{\partial E}{\partial y} (1 - y^2)
    *      @f$ if propagate_down[0]
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 };
 
 #ifdef USE_CUDNN
 /**
  * @brief CuDNN acceleration of TanHLayer.
  */
-template <typename Dtype>
-class CuDNNTanHLayer : public TanHLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class CuDNNTanHLayer : public TanHLayer<Dtype,Mtype> {
  public:
   explicit CuDNNTanHLayer(const LayerParameter& param)
-      : TanHLayer<Dtype>(param), handles_setup_(false) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+      : TanHLayer<Dtype,Mtype>(param), handles_setup_(false) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
   virtual ~CuDNNTanHLayer();
 
  protected:
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
   bool handles_setup_;
   cudnnTensorDescriptor_t bottom_desc_;
@@ -672,8 +672,8 @@ class CuDNNTanHLayer : public TanHLayer<Dtype> {
  * @brief Tests whether the input exceeds a threshold: outputs 1 for inputs
  *        above threshold; 0 otherwise.
  */
-template <typename Dtype>
-class ThresholdLayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class ThresholdLayer : public NeuronLayer<Dtype,Mtype> {
  public:
   /**
    * @param param provides ThresholdParameter threshold_param,
@@ -682,9 +682,9 @@ class ThresholdLayer : public NeuronLayer<Dtype> {
    *     the threshold value @f$ t @f$ to which the input values are compared.
    */
   explicit ThresholdLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+      : NeuronLayer<Dtype,Mtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   virtual inline const char* type() const { return "Threshold"; }
 
@@ -703,17 +703,17 @@ class ThresholdLayer : public NeuronLayer<Dtype> {
    *       \end{array} \right.
    *      @f$
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
   /// @brief Not implemented (non-differentiable function)
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
     NOT_IMPLEMENTED;
   }
 
-  Dtype threshold_;
+  Mtype threshold_;
 };
 
 /**
@@ -724,8 +724,8 @@ class ThresholdLayer : public NeuronLayer<Dtype> {
  *        channels. The number of axes of input blob should be greater than or
  *        equal to 2. The 1st axis (0-based) is seen as channels.
  */
-template <typename Dtype>
-class PReLULayer : public NeuronLayer<Dtype> {
+template <typename Dtype, typename Mtype>
+class PReLULayer : public NeuronLayer<Dtype,Mtype> {
  public:
   /**
    * @param param provides PReLUParameter prelu_param,
@@ -736,13 +736,13 @@ class PReLULayer : public NeuronLayer<Dtype> {
    *     negative slopes are shared across channels.
    */
   explicit PReLULayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
+      : NeuronLayer<Dtype,Mtype>(param) {}
 
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   virtual inline const char* type() const { return "PReLU"; }
 
@@ -757,10 +757,10 @@ class PReLULayer : public NeuronLayer<Dtype> {
    *        y_i = \max(0, x_i) + a_i \min(0, x_i)
    *      @f$.
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the PReLU inputs.
@@ -790,15 +790,15 @@ class PReLULayer : public NeuronLayer<Dtype> {
    *        \end{array} \right.
    *      @f$.
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom);
 
   bool channel_shared_;
-  Blob<Dtype> multiplier_;  // dot multiplier for backward computation of params
-  Blob<Dtype> backward_buff_;  // temporary buffer for backward computation
-  Blob<Dtype> bottom_memory_;  // memory for in-place computation
+  Blob<Dtype,Mtype> multiplier_;  // dot multiplier for backward computation of params
+  Blob<Dtype,Mtype> backward_buff_;  // temporary buffer for backward computation
+  Blob<Dtype,Mtype> bottom_memory_;  // memory for in-place computation
 };
 
 }  // namespace caffe

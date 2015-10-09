@@ -10,9 +10,9 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void AccuracyLayer<Dtype>::LayerSetUp(
-  const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void AccuracyLayer<Dtype,Mtype>::LayerSetUp(
+  const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
   top_k_ = this->layer_param_.accuracy_param().top_k();
 
   has_ignore_label_ =
@@ -22,9 +22,9 @@ void AccuracyLayer<Dtype>::LayerSetUp(
   }
 }
 
-template <typename Dtype>
-void AccuracyLayer<Dtype>::Reshape(
-  const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void AccuracyLayer<Dtype,Mtype>::Reshape(
+  const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
   CHECK_LE(top_k_, bottom[0]->count() / bottom[1]->count())
       << "top_k must be less than or equal to the number of classes.";
   label_axis_ =
@@ -47,10 +47,10 @@ void AccuracyLayer<Dtype>::Reshape(
   }
 }
 
-template <typename Dtype>
-void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  Dtype accuracy = 0;
+template <typename Dtype, typename Mtype>
+void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+    const vector<Blob<Dtype,Mtype>*>& top) {
+  Mtype accuracy = 0;
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bottom_label = bottom[1]->cpu_data();
   const int dim = bottom[0]->count() / outer_num_;
@@ -58,14 +58,14 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   vector<Dtype> maxval(top_k_+1);
   vector<int> max_id(top_k_+1);
   if (top.size() > 1) {
-    caffe_set(nums_buffer_.count(), Dtype(0), nums_buffer_.mutable_cpu_data());
-    caffe_set(top[1]->count(), Dtype(0), top[1]->mutable_cpu_data());
+    caffe_set<Dtype,Mtype>(nums_buffer_.count(), Mtype(0), nums_buffer_.mutable_cpu_data());
+    caffe_set<Dtype,Mtype>(top[1]->count(), Mtype(0), top[1]->mutable_cpu_data());
   }
   int count = 0;
   for (int i = 0; i < outer_num_; ++i) {
     for (int j = 0; j < inner_num_; ++j) {
       const int label_value =
-          static_cast<int>(bottom_label[i * inner_num_ + j]);
+          static_cast<int>(Get<Mtype>(bottom_label[i * inner_num_ + j]));
       if (has_ignore_label_ && label_value == ignore_label_) {
         continue;
       }
@@ -73,14 +73,14 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       DCHECK_GE(label_value, 0);
       DCHECK_LT(label_value, num_labels);
       // Top-k accuracy
-      std::vector<std::pair<Dtype, int> > bottom_data_vector;
+      std::vector<std::pair<Mtype, int> > bottom_data_vector;
       for (int k = 0; k < num_labels; ++k) {
         bottom_data_vector.push_back(std::make_pair(
-            bottom_data[i * dim + k * inner_num_ + j], k));
+            Get<Mtype>(bottom_data[i * dim + k * inner_num_ + j]), k));
       }
       std::partial_sort(
           bottom_data_vector.begin(), bottom_data_vector.begin() + top_k_,
-          bottom_data_vector.end(), std::greater<std::pair<Dtype, int> >());
+          bottom_data_vector.end(), std::greater<std::pair<Mtype, int> >());
       // check if true label is in top k predictions
       for (int k = 0; k < top_k_; k++) {
         if (bottom_data_vector[k].second == label_value) {
@@ -94,11 +94,11 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
 
   // LOG(INFO) << "Accuracy: " << accuracy;
-  top[0]->mutable_cpu_data()[0] = accuracy / count;
+  top[0]->mutable_cpu_data()[0] = Get<Dtype>(accuracy / count);
   if (top.size() > 1) {
     for (int i = 0; i < top[1]->count(); ++i) {
       top[1]->mutable_cpu_data()[i] =
-          nums_buffer_.cpu_data()[i] == 0 ? 0
+          nums_buffer_.cpu_data()[i] == Get<Dtype>(0) ? Get<Dtype>(0)
           : top[1]->cpu_data()[i] / nums_buffer_.cpu_data()[i];
     }
   }

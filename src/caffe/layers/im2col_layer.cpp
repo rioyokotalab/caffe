@@ -7,9 +7,9 @@
 
 namespace caffe {
 
-template <typename Dtype>
-void Im2colLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void Im2colLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   ConvolutionParameter conv_param = this->layer_param_.convolution_param();
   force_nd_im2col_ = conv_param.force_nd_im2col();
   const int input_num_dims = bottom[0]->shape().size();
@@ -91,9 +91,9 @@ void Im2colLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
-template <typename Dtype>
-void Im2colLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void Im2colLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   vector<int> top_shape = bottom[0]->shape();
   const int* kernel_shape_data = kernel_shape_.cpu_data();
   const int* stride_data = stride_.cpu_data();
@@ -113,9 +113,9 @@ void Im2colLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   channels_ = bottom[0]->shape(channel_axis_);
 }
 
-template <typename Dtype>
-void Im2colLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+template <typename Dtype, typename Mtype>
+void Im2colLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
   for (int n = 0; n < num_; ++n) {
@@ -125,7 +125,7 @@ void Im2colLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     DCHECK_EQ(pad_.count(), num_spatial_axes_);
     DCHECK_EQ(stride_.count(), num_spatial_axes_);
     if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
-      im2col_cpu(bottom_data + n * bottom_dim_, channels_,
+      im2col_cpu<Dtype,Mtype>(bottom_data + n * bottom_dim_, channels_,
           bottom[0]->shape(channel_axis_ + 1),
           bottom[0]->shape(channel_axis_ + 2),
           kernel_shape_.cpu_data()[0], kernel_shape_.cpu_data()[1],
@@ -133,7 +133,7 @@ void Im2colLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           stride_.cpu_data()[0], stride_.cpu_data()[1],
           top_data + n * top_dim_);
     } else {
-      im2col_nd_cpu(bottom_data + n * bottom_dim_, num_spatial_axes_,
+      im2col_nd_cpu<Dtype,Mtype>(bottom_data + n * bottom_dim_, num_spatial_axes_,
           bottom[0]->shape().data() + channel_axis_,
           top[0]->shape().data() + channel_axis_,
           kernel_shape_.cpu_data(), pad_.cpu_data(), stride_.cpu_data(),
@@ -142,14 +142,14 @@ void Im2colLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
 }
 
-template <typename Dtype>
-void Im2colLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+template <typename Dtype, typename Mtype>
+void Im2colLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
   const Dtype* top_diff = top[0]->cpu_diff();
   Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
   for (int n = 0; n < num_; ++n) {
     if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
-      col2im_cpu(top_diff + n * top_dim_, channels_,
+      col2im_cpu<Dtype,Mtype>(top_diff + n * top_dim_, channels_,
           bottom[0]->shape(channel_axis_ + 1),
           bottom[0]->shape(channel_axis_ + 2),
           kernel_shape_.cpu_data()[0], kernel_shape_.cpu_data()[1],
@@ -157,7 +157,7 @@ void Im2colLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
           stride_.cpu_data()[0], stride_.cpu_data()[1],
           bottom_diff + n * bottom_dim_);
     } else {
-      col2im_nd_cpu(top_diff + n * top_dim_, num_spatial_axes_,
+      col2im_nd_cpu<Dtype,Mtype>(top_diff + n * top_dim_, num_spatial_axes_,
           bottom[0]->shape().data() + channel_axis_,
           top[0]->shape().data() + channel_axis_,
           kernel_shape_.cpu_data(), pad_.cpu_data(), stride_.cpu_data(),
