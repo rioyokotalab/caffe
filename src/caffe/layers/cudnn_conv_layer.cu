@@ -14,11 +14,6 @@ __global__ void sync_conv_groups() { }
 template <typename Dtype, typename Mtype>
 void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
     const vector<Blob<Dtype,Mtype>*>& bottom, const vector<Blob<Dtype,Mtype>*>& top) {
-  const int* kernel_shape_data = this->kernel_shape_.cpu_data();
-
-
-
-
   const Dtype* weight = this->blobs_[0]->gpu_data();
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->gpu_data();
@@ -26,10 +21,9 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
 
     // Forward through cuDNN in parallel over groups.
     for (int g = 0; g < this->group_; g++) {
-
-      if (CuMem::usingPool()) {
-        MemoryHandler::mallocGPU(&workspace[0], workspace_fwd_sizes_[i]);
-
+#ifdef USE_CNMEM
+      MemoryHandler::mallocGPU(&workspace[0], workspace_fwd_sizes_[i]);
+#endif
       // Filters.
       // CUDNN_CHECK(cudnnConvolutionForward(handle_[g],
       CUDNN_CHECK(cudnnConvolutionForward(Caffe::cudnn_handle(),
@@ -41,73 +35,14 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
             cudnn::dataType<Dtype>::zero,
             top_descs_[i], top_data + top_offset_ * g));
 
-        MemoryHandler::freeGPU(workspace[0]);
-        workspace[0] = NULL;
-      } else {
-
-    	    const int kernel_h = kernel_shape_data[0];
-    	    const int kernel_w = kernel_shape_data[1];
-    	    const size_t workspace_limit_bytes =
-    	        kernel_h * kernel_w * this->channels_ * sizeof(int) + 1;
-
-		 cudnnConvolutionFwdAlgo_t algo;
-
-		 // pick the convolution algorithm
-		 // TODO(shelhamer) this should be done during reshape
-		 // TODO(shelhamer) the choice of automatic or manual algorithm picking
-		 // should be exposed in proto
-		 CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm(Caffe::cudnn_handle(),
-		   bottom_descs_[i],
-		   filter_desc_,
-		   conv_descs_[i],
-		   top_descs_[i],
-		   CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
-		   workspace_limit_bytes,  // memoryLimitInBytes,
-		   &algo));
-
-		 // get minimum size of the workspace needed for the desired algorithm
-		 size_t workspaceSizeInBytes_temp = 0;
-
-		 CUDNN_CHECK(cudnnGetConvolutionForwardWorkspaceSize(Caffe::cudnn_handle(),
-		   bottom_descs_[i],
-		   filter_desc_,
-		   conv_descs_[i],
-		   top_descs_[i],
-		   algo,
-		   &workspaceSizeInBytes_temp));
-
-		 if (workspaceSizeInBytes_temp > workspaceSizeInBytes) {
-		   workspaceSizeInBytes = workspaceSizeInBytes_temp;
-		   // free the existing workspace and allocate a new (larger) one
-		   cudaFree(this->workspace[0]);
-		  cudaError_t err = cudaMalloc(&(this->workspace[0]), workspaceSizeInBytes);
-		   if (err != cudaSuccess) {
-			 // force zero memory path
-			 algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-			 workspace[g] = NULL;
-			 workspaceSizeInBytes = 0;
-		   }
-		 }
-
-
-
-
-		CUDNN_CHECK(cudnnConvolutionForward(Caffe::cudnn_handle(),
-			  cudnn::dataType<Dtype>::one,
-			  bottom_descs_[i], bottom_data + bottom_offset_ * g,
-			  filter_desc_, weight + this->weight_offset_ * g,
-			  conv_descs_[i],
-			  fwd_algo_[i], workspace[0], workspace_fwd_sizes_[i],
-			  cudnn::dataType<Dtype>::zero,
-			  top_descs_[i], top_data + top_offset_ * g));
-
-      }
-
+#ifdef USE_CNMEM
+      MemoryHandler::freeGPU(workspace[0]);
+      workspace[0] = NULL;
+#endif
       // Bias.
       if (this->bias_term_) {
         const Dtype* bias_data = this->blobs_[1]->gpu_data();
-        CUDNN_CHECK(cudnnAddTensor_v3
-              (Caffe::cudnn_handle(),
+        CUDNN_CHECK(cudnnAddTensor_v3(Caffe::cudnn_handle(), //CUDNN_ADD_SAME_C,
               cudnn::dataType<Dtype>::one,
               bias_desc_, bias_data + bias_offset_ * g,
               cudnn::dataType<Dtype>::one,
@@ -119,11 +54,7 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
     // Synchronize the work across groups, each of which went into its own
     // stream, by launching an empty kernel into the default (null) stream.
     // NOLINT_NEXT_LINE(whitespace/operators)
-    if (CuMem::usingPool()) {
-      CUDA_CHECK(cudaStreamSynchronize(cudaStreamLegacy));
-    } else {
-      sync_conv_groups<<<1, 1>>>();
-    }
+    CUDA_CHECK(cudaStreamSynchronize(cudaStreamLegacy));
   }
 }
 

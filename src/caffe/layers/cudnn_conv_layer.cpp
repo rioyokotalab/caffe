@@ -64,6 +64,9 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::LayerSetUp(
       this->num_output_ / this->group_, this->channels_ / this->group_,
       kernel_h, kernel_w);
 
+  this->weight_offset_ = (this->num_output_ / this->group_) *
+                         (this->channels_ / this->group_) *
+                         kernel_h * kernel_w;
   // Create tensor descriptor(s) for data and corresponding convolution(s).
   for (int i = 0; i < bottom.size(); i++) {
     cudnnTensorDescriptor_t bottom_desc;

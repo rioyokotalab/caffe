@@ -14,7 +14,6 @@ void CuDNNLCNLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bo
     const vector<Blob<Dtype,Mtype>*>& top) {
   LRNLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
 
-  CUDNN_CHECK(cudnnCreate(&handle_));
   CUDNN_CHECK(cudnnCreateLRNDescriptor(&norm_desc_));
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);
   cudnn::createTensor4dDesc<Dtype>(&top_desc_);
@@ -58,6 +57,7 @@ void CuDNNLCNLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& botto
       MemoryHandler::mallocGPU(&tempData1, totalSizeInBytes);
       MemoryHandler::mallocGPU(&tempData2, totalSizeInBytes);
     }
+#endif
 }
 
 template <typename Dtype, typename Mtype>
@@ -70,7 +70,6 @@ CuDNNLCNLayer<Dtype,Mtype>::~CuDNNLCNLayer() {
 
   // destroy LRN handle
   CUDNN_CHECK(cudnnDestroyLRNDescriptor(norm_desc_));
-  cudnnDestroy(handle_);
 
   // free temp buffers
   if (tempData1 != NULL) cudaFree(tempData1);

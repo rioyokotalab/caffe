@@ -14,7 +14,7 @@ void CuDNNLRNLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bo
     const vector<Blob<Dtype,Mtype>*>& top) {
   LRNLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
 
-  CUDNN_CHECK(cudnnCreate(&handle_));
+  // CUDNN_CHECK(cudnnCreate(&handle_));
   CUDNN_CHECK(cudnnCreateLRNDescriptor(&norm_desc_));
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);
   cudnn::createTensor4dDesc<Dtype>(&top_desc_);
@@ -49,7 +49,6 @@ CuDNNLRNLayer<Dtype,Mtype>::~CuDNNLRNLayer() {
 
   // destroy LRN handle
   CUDNN_CHECK(cudnnDestroyLRNDescriptor(norm_desc_));
-  cudnnDestroy(handle_);
 }
 
 INSTANTIATE_CLASS(CuDNNLRNLayer);

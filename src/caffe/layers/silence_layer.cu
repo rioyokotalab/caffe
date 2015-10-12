@@ -18,7 +18,7 @@ void SilenceLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& t
   for (int i = 0; i < bottom.size(); ++i) {
     if (propagate_down[i]) {
       caffe_gpu_set<Dtype,Mtype>(bottom[i]->count(), Mtype(0),
-                    bottom[i]->mutable_gpu_data());
+                    bottom[i]->mutable_gpu_diff());
     }
   }
 }

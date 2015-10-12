@@ -17,8 +17,9 @@
 #   Caffe_HAVE_CUDNN   - signals about cuDNN support
 #   Caffe_HAVE_CNMEM   - signals about CNMeM support
 # 
-# OpenCV dependency (optional)
 #
+#
+# OpenCV dependency
 
 if(@USE_OPENCV@)
   if(NOT OpenCV_FOUND)
