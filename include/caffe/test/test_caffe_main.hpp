@@ -51,8 +51,8 @@ typedef ::testing::Types<MultiPrecision<float,float>,
                          MultiPrecision<double,double> > TestDtypes;
 #else
 typedef ::testing::Types<MultiPrecision<float,float>,
-                         MultiPrecision<double,double>,
-                         MultiPrecision<half,float> > TestDtypes;
+                         MultiPrecision<double,double>/*,
+                         MultiPrecision<half,float>*/ > TestDtypes;
 #endif
 
 template <typename TypeParam>
@@ -84,10 +84,10 @@ class GPUDeviceTest : public MultiDeviceTest<GPUDevice<TypeParam> > {
 
 typedef ::testing::Types<CPUDevice<MultiPrecision<float,float> >,
                          CPUDevice<MultiPrecision<double,double> >,
-                         CPUDevice<MultiPrecision<half,float> >,
+                         /*CPUDevice<MultiPrecision<half,float> >,*/
                          GPUDevice<MultiPrecision<float,float> >,
-                         GPUDevice<MultiPrecision<double, double> >,
-                         GPUDevice<MultiPrecision<half,float> > > TestDtypesAndDevices;
+                         GPUDevice<MultiPrecision<double, double> >/*,
+                         GPUDevice<MultiPrecision<half,float> >*/ > TestDtypesAndDevices;
 #endif
 
 }  // namespace caffe

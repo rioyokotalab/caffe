@@ -56,7 +56,7 @@ static void apply_buffers(const vector<Blob<Dtype,Mtype>*>& blobs,
     ptr += size;
   }
   // total_size is at least one byte
-  CHECK_EQ(total_size, (ptr == buffer ? 1 : ptr - buffer));
+  CHECK_EQ(total_size, ptr == buffer ? 1 : ptr - buffer);
 }
 
 // Buffer size necessary to store given blobs
@@ -70,9 +70,20 @@ static size_t total_size(const vector<shared_ptr<Blob<Dtype,Mtype> > >& params) 
   return (size > 0) ? size : 1;
 }
 
+// Buffer size necessary to store given blobs
+template<typename Dtype, typename Mtype>
+static size_t total_size(const vector<Blob<Dtype,Mtype>*>& params) {
+  size_t size = 0;
+  for (int i = 0; i < params.size(); ++i)
+    size += params[i]->count();
+  // Size have at least one byte, otherwise cudaMalloc fails if net has no
+  // learnable parameters.
+  return (size > 0) ? size : 1;
+}
+
 template<typename Dtype, typename Mtype>
 Params<Dtype,Mtype>::Params(shared_ptr<Solver<Dtype,Mtype> > root_solver)
-    : size_(total_size<Dtype>(root_solver->net()->params())),
+    : size_(total_size<Dtype,Mtype>(root_solver->net()->learnable_params())),
       data_(),
       diff_() {
 }
@@ -264,25 +275,25 @@ P2PSync<Dtype,Mtype>::P2PSync(shared_ptr<Solver<Dtype,Mtype> > root_solver,
 template<typename Dtype, typename Mtype>
 P2PSync<Dtype,Mtype>::~P2PSync() {
 #ifndef CPU_ONLY
-  int initial_device;
-  CUDA_CHECK(cudaGetDevice(&initial_device));
-  const int self = solver_->param().device_id();
-  CUDA_CHECK(cudaSetDevice(self));
-
   if (parent_) {
+    int initial_device;
+    CUDA_CHECK(cudaGetDevice(&initial_device));
+    const int self = solver_->param().device_id();
     const int peer = parent_->solver_->param().device_id();
-    cudaSetDevice(peer);
+
+    CUDA_CHECK(cudaSetDevice(peer));
     MemoryHandler::freeGPU(parent_grads_);
     parent_grads_ = NULL;
-    cudaSetDevice(self);
+
+    CUDA_CHECK(cudaSetDevice(self));
     int access;
     CUDA_CHECK(cudaDeviceCanAccessPeer(&access, self, peer));
     if (access) {
       CUDA_CHECK(cudaDeviceDisablePeerAccess(peer));
     }
-  }
 
-  CUDA_CHECK(cudaSetDevice(initial_device));
+    CUDA_CHECK(cudaSetDevice(initial_device));
+  }
 #endif
 }
 
