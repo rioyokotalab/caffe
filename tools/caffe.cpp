@@ -188,9 +188,6 @@ int train() {
     Caffe::set_mode(Caffe::GPU);
     Caffe::set_solver_count(gpus.size());
   }
-#ifdef USE_CNMEM
-  MemoryHandlerActivator handler(gpus);
-#endif
 
   MemoryHandlerActivator handler(gpus, true);
 

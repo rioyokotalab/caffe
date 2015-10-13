@@ -78,17 +78,6 @@ void classname<Dtype,Mtype>::funcname##_##gpu(const vector<Blob<Dtype,Mtype>*>& 
 #define CNMEM_CHECK(condition)
 #endif
 
-#ifdef USE_CNMEM
-
-#define CNMEM_CHECK(condition) \
-  do { \
-    cnmemStatus_t status = condition; \
-    CHECK_EQ(status, CNMEM_STATUS_SUCCESS) << " " \
-      << cnmemGetErrorString(status); \
-  } while (0)
-
-#endif
-
 // CUDA: grid stride looping
 #define CUDA_KERNEL_LOOP(i, n) \
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; \

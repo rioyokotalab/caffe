@@ -38,26 +38,9 @@ void CuDNNLCNLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& botto
       this->channels_, this->height_, this->width_);
   CUDNN_CHECK(cudnnSetLRNDescriptor(norm_desc_, size_, alpha_, beta_, k_));
 
-  // allocate / reallocate tempData buffers
-  size_t totalSizeInBytes = sizeof(Dtype)*bottom[0]->num()* \
+  // size for tempData buffers
+  tempDataSize = sizeof(Dtype)*bottom[0]->num()* \
                             this->channels_*this->height_*this->width_;
-
-  if (MemoryHandler::usingPool())
-    this->tempDataSize = totalSizeInBytes;
-  else
-    if (totalSizeInBytes > tempDataSize) {
-      tempDataSize = totalSizeInBytes;
-      
-      MemoryHandler::freeGPU(tempData1);
-      MemoryHandler::freeGPU(tempData2);
-      tempData1 = NULL;
-      tempData2 = NULL;
-      
-      // allocate new buffers
-      MemoryHandler::mallocGPU(&tempData1, totalSizeInBytes);
-      MemoryHandler::mallocGPU(&tempData2, totalSizeInBytes);
-    }
-#endif
 }
 
 template <typename Dtype, typename Mtype>
@@ -70,10 +53,6 @@ CuDNNLCNLayer<Dtype,Mtype>::~CuDNNLCNLayer() {
 
   // destroy LRN handle
   CUDNN_CHECK(cudnnDestroyLRNDescriptor(norm_desc_));
-
-  // free temp buffers
-  if (tempData1 != NULL) cudaFree(tempData1);
-  if (tempData2 != NULL) cudaFree(tempData2);
 }
 
 INSTANTIATE_CLASS(CuDNNLCNLayer);
