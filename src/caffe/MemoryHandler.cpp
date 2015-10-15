@@ -1,21 +1,20 @@
 #include <vector>
-
 #include "caffe/common.hpp"
+
 #include "caffe/MemoryHandler.hpp"
+
+#ifndef CPU_ONLY  // CPU-only Caffe.
+
 #ifdef USE_CNMEM
 // CNMEM integration
 #include <cnmem.h>
+# else
+#  define CNMEM_CHECK(x)
 #endif
 
 namespace caffe {
 
   MemoryHandler::PoolMode MemoryHandler::mode_ = MemoryHandler::NoPool;
-
-#ifndef CNMEM_CHECK
-#  define CNMEM_CHECK(x)
-#endif
-
-#ifndef CPU_ONLY  // CPU-only Caffe.
 
   void MemoryHandler::mallocGPU(void **ptr, size_t size, cudaStream_t stream) {
     CHECK((ptr) != NULL);
@@ -133,6 +132,6 @@ namespace caffe {
     }
   }
 
-#endif  // CPU_ONLY
-
 }  // namespace caffe
+
+#endif  // CPU_ONLY
