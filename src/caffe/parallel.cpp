@@ -236,7 +236,6 @@ P2PSync<Dtype,Mtype>::P2PSync(shared_ptr<Solver<Dtype,Mtype> > root_solver,
 #ifndef CPU_ONLY
   int initial_device;
   CUDA_CHECK(cudaGetDevice(&initial_device));
-  
   const int self = param.device_id();
   CUDA_CHECK(cudaSetDevice(self));
 

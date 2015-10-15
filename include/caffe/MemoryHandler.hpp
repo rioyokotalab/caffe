@@ -1,12 +1,15 @@
 #ifndef CAFFE_MEMORYHANDLER_HPP_
 #define CAFFE_MEMORYHANDLER_HPP_
 
+#include <vector>
 #include "common.hpp"
 
 namespace caffe {
 
 class MemoryHandler {
  public:
+  enum PoolMode { NoPool, CnMemPool, CubPool };
+
 #ifndef CPU_ONLY
   static void mallocGPU(void **ptr, size_t size,
                         cudaStream_t stream = cudaStreamDefault);
@@ -14,29 +17,31 @@ class MemoryHandler {
   static void registerStream(cudaStream_t stream);
 #endif
 
+  static const char* getName();
   static bool usingPool() {
-    return using_pool_;
+    return mode_ != NoPool;
   }
 
   static void getInfo(size_t *free_mem, size_t *used_mem);
 
  private:
-  static void init(const std::vector<int>& gpus, bool use_pool=true);
+  static void initCNMEM(const std::vector<int>& gpus);
+  static void init(const std::vector<int>&, PoolMode);
   static void destroy();
 
   friend class MemoryHandlerActivator;
   static bool using_pool_;
   static bool initialized_;
-
-
+  static PoolMode mode_;
 };
 
 class MemoryHandlerActivator {
  public:
-  MemoryHandlerActivator(const std::vector<int>& gpus, 
-			 bool use_pool = true) {
-    MemoryHandler::init(gpus, use_pool && gpus.size() > 0);
+  MemoryHandlerActivator(const std::vector<int>& gpus,
+                         MemoryHandler::PoolMode m = MemoryHandler::CnMemPool) {
+    MemoryHandler::init(gpus, m);
   }
+
   ~MemoryHandlerActivator() {
       MemoryHandler::destroy();
   }

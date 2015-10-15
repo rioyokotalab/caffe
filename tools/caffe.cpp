@@ -189,7 +189,7 @@ int train() {
     Caffe::set_solver_count(gpus.size());
   }
 
-  MemoryHandlerActivator handler(gpus, true);
+  MemoryHandlerActivator handler(gpus);
 
   caffe::SignalHandler signal_handler(
         GetRequestedAction(FLAGS_sigint_effect),

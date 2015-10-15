@@ -378,10 +378,12 @@ void caffe_log<double>(const int n, const double* a, double* y) {
   vdLn(n, a, y);
 }
 
+#ifndef CPU_ONLY
 template <>
 void caffe_log<half>(const int n, const half* a, half* y) {
   vhLn(n, a, y);
 }
+#endif // ! CPU_ONLY
 
 template <>
 void caffe_abs<float>(const int n, const float* a, float* y) {
@@ -581,12 +583,12 @@ template
 float caffe_cpu_dot<float,float>(const int n, const float* x, const float* y);
 template
 double caffe_cpu_dot<double,double>(const int n, const double* x, const double* y);
-template
-half caffe_cpu_dot<half,half>(const int n, const half* x, const half* y);
 
 #ifndef CPU_ONLY
 template
 float caffe_cpu_dot<half,float>(const int n, const half* x, const half* y);
+template
+half caffe_cpu_dot<half,half>(const int n, const half* x, const half* y);
 #endif
 
 template <>
