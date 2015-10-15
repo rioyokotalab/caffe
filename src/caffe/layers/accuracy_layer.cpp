@@ -58,8 +58,8 @@ void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& b
   vector<Dtype> maxval(top_k_+1);
   vector<int> max_id(top_k_+1);
   if (top.size() > 1) {
-    caffe_set<Dtype,Mtype>(nums_buffer_.count(), Mtype(0), nums_buffer_.mutable_cpu_data());
-    caffe_set<Dtype,Mtype>(top[1]->count(), Mtype(0), top[1]->mutable_cpu_data());
+    caffe_set(nums_buffer_.count(), Get<Dtype>(0), nums_buffer_.mutable_cpu_data());
+    caffe_set(top[1]->count(), Get<Dtype>(0), top[1]->mutable_cpu_data());
   }
   int count = 0;
   for (int i = 0; i < outer_num_; ++i) {

@@ -73,7 +73,7 @@ void InnerProductLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& b
   if (bias_term_) {
     vector<int> bias_shape(1, M_);
     bias_multiplier_.Reshape(bias_shape);
-    caffe_set<Dtype,Mtype>(M_, Mtype(1), bias_multiplier_.mutable_cpu_data());
+    caffe_set(M_, Get<Dtype>(1), bias_multiplier_.mutable_cpu_data());
   }
 }
 

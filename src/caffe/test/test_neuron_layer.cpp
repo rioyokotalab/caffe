@@ -138,7 +138,7 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
     LogLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     layer.Forward(blob_bottom_vec_, blob_top_vec_);
-    const Dtype kDelta = Get<Dtype>(2e-4);
+    const Mtype kDelta = Get<Mtype>(2e-4);
     const Dtype* bottom_data = blob_bottom_->cpu_data();
     const Dtype* top_data = blob_top_->cpu_data();
     for (int i = 0; i < blob_bottom_->count(); ++i) {
@@ -146,10 +146,10 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
       const Dtype top_val = top_data[i];
       if (base == -1) {
         EXPECT_NEAR(Get<Mtype>(top_val), log(shift + scale * Get<Mtype>(bottom_val)),
-                Get<Mtype>(kDelta));
+                tol<Dtype>(kDelta));
       } else {
         EXPECT_NEAR(Get<Mtype>(top_val), log(shift + scale * Get<Mtype>(bottom_val)) / log(base),
-                Get<Mtype>(kDelta));
+                tol<Dtype>(kDelta));
       }
     }
   }

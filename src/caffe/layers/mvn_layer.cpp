@@ -25,7 +25,7 @@ void MVNLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
     sum_multiplier_.Reshape(1, 1, bottom[0]->height(), bottom[0]->width());
   }
   Dtype* multiplier_data = sum_multiplier_.mutable_cpu_data();
-  caffe_set(sum_multiplier_.count(), Mtype(1), multiplier_data);
+  caffe_set(sum_multiplier_.count(), Get<Dtype>(1), multiplier_data);
   eps_ = this->layer_param_.mvn_param().eps();
 }
 

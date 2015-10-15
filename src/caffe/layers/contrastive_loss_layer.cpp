@@ -103,7 +103,7 @@ void ContrastiveLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mty
                 Mtype(0.0),
                 bout + (j*channels));
           } else {
-            caffe_set<Dtype,Mtype>(channels, Mtype(0), bout + (j*channels));
+            caffe_set(channels, Get<Dtype>(0), bout + (j*channels));
           }
         }
       }

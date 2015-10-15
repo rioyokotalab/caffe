@@ -257,7 +257,7 @@ void WindowDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
   bool use_square = (crop_mode == "square") ? true : false;
 
   // zero out batch
-  caffe_set(batch->data_.count(), Mtype(0), top_data);
+  caffe_set(batch->data_.count(), Get<Dtype>(0), top_data);
 
   const int num_fg = static_cast<int>(static_cast<float>(batch_size)
       * fg_fraction);

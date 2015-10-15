@@ -353,11 +353,10 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
       }
       if (i == D) {
         updated_bias.mutable_cpu_diff()[0] = Get<Dtype>(update_value);
-        updated_bias.mutable_cpu_data()[0] = Get<Dtype>( Get<Mtype>(bias.cpu_data()[0]) - update_value);
+        updated_bias.mutable_cpu_data()[0] = bias.cpu_data()[0] - update_value;
       } else {
         updated_weights.mutable_cpu_diff()[i] = Get<Dtype>(update_value);
-        updated_weights.mutable_cpu_data()[i] = Get<Dtype>(
-            Get<Mtype>(weights.cpu_data()[i]) - update_value );
+        updated_weights.mutable_cpu_data()[i] = weights.cpu_data()[i] - update_value;
       }
     }
   }
@@ -376,7 +375,7 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
     ASSERT_EQ(2, param_blobs.size());
     const Blob<Dtype,Mtype>& solver_updated_weights = *param_blobs[0];
     ASSERT_EQ(D, solver_updated_weights.count());
-    const double kPrecision = 1e-2;
+    const double kPrecision = 5.e-1;
     const double kMinPrecision = 1e-7;
     for (int i = 0; i < D; ++i) {
       const Mtype expected_updated_weight = Get<Mtype>(updated_weights.cpu_data()[i]);
@@ -391,7 +390,7 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
     const Mtype solver_updated_bias = Get<Mtype>(solver_updated_bias_blob.cpu_data()[0]);
     const Mtype error_margin = std::max(kMinPrecision, kPrecision *
           std::min(fabs(expected_updated_bias), fabs(solver_updated_bias)));
-    EXPECT_NEAR(expected_updated_bias, solver_updated_bias, error_margin);
+    EXPECT_NEAR(expected_updated_bias, solver_updated_bias, tol<Dtype>(error_margin));
 
     // Check the solver's history -- should contain the previous update value.
     if (solver_type() == SolverParameter_SolverType_SGD) {
@@ -441,7 +440,7 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
       const float accum_param = Get<float>(accum_params[0]->cpu_data()[i]);
       const float error_margin = std::max(kMinPrecision, kPrecision *
           std::min(fabs(expected_param), fabs(accum_param)));
-      EXPECT_NEAR(expected_param, accum_param, error_margin);
+      EXPECT_NEAR(expected_param, accum_param, tol<Dtype>(error_margin));
     }
     ASSERT_EQ(1, accum_params[1]->count());
     const float expected_bias = Get<float>(noaccum_params[1]->cpu_data()[0]);

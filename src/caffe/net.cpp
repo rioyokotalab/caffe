@@ -163,7 +163,7 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
         LOG(INFO) << "Top shape: "
                   << top_vecs_[layer_id][top_id]->shape_string();
       }
-      if (Get<Mtype>(layer->loss(top_id))) {
+      if (Get<Mtype>(layer->loss(top_id)) != 0.) {
         if (Caffe::root_solver()) {
           LOG(INFO) << "    with loss weight " << Get<Mtype>(layer->loss(top_id));
         }
@@ -211,7 +211,7 @@ void Net<Dtype,Mtype>::Init(const NetParameter& in_param) {
     bool layer_skip_propagate_down = true;
     for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
       const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
-      if (Get<Mtype>(layers_[layer_id]->loss(top_id)) ||
+      if (Get<Mtype>(layers_[layer_id]->loss(top_id)) != 0. ||
           (blobs_under_loss.find(blob_name) != blobs_under_loss.end())) {
         layer_contributes_loss = true;
       }
@@ -588,7 +588,7 @@ template <typename Dtype, typename Mtype>
 Mtype Net<Dtype,Mtype>::ForwardFromTo(int start, int end) {
   CHECK_GE(start, 0);
   CHECK_LT(end, layers_.size());
-  Mtype loss = 0;
+  Mtype loss = Get<Mtype>(0);
   if (debug_info_) {
     for (int i = 0; i < net_input_blobs_.size(); ++i) {
       InputDebugInfo(i);
@@ -809,15 +809,16 @@ template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::Backward() {
   BackwardFromTo(layers_.size() - 1, 0);
   if (debug_info_) {
-    Mtype asum_data = 0, asum_diff = 0, sumsq_data = 0, sumsq_diff = 0;
+    Mtype asum_data = Get<Mtype>(0), asum_diff = Get<Mtype>(0),
+      sumsq_data = Get<Mtype>(0), sumsq_diff = Get<Mtype>(0);
     for (int i = 0; i < learnable_params_.size(); ++i) {
       asum_data += learnable_params_[i]->asum_data();
       asum_diff += learnable_params_[i]->asum_diff();
       sumsq_data += learnable_params_[i]->sumsq_data();
       sumsq_diff += learnable_params_[i]->sumsq_diff();
     }
-    const Mtype l2norm_data = std::sqrt(sumsq_data);
-    const Mtype l2norm_diff = std::sqrt(sumsq_diff);
+    const Mtype l2norm_data = sqrt(sumsq_data);
+    const Mtype l2norm_diff = sqrt(sumsq_diff);
     LOG(ERROR) << "    [Backward] All net params (data, diff): "
                << "L1 norm = (" << asum_data << ", " << asum_diff << "); "
                << "L2 norm = (" << l2norm_data << ", " << l2norm_diff << ")";
@@ -1022,12 +1023,12 @@ void Net<Dtype,Mtype>::ClearParamDiffs() {
     Blob<Dtype,Mtype>* blob = learnable_params_[i];
     switch (Caffe::mode()) {
     case Caffe::CPU:
-      caffe_set(blob->count(), Mtype(0),
+      caffe_set(blob->count(), Get<Dtype>(0),
                 blob->mutable_cpu_diff());
       break;
     case Caffe::GPU:
 #ifndef CPU_ONLY
-      caffe_gpu_set<Dtype,Mtype>(blob->count(), Mtype(0),
+      caffe_gpu_set<Dtype,Mtype>(blob->count(), Get<Mtype>(0),
                     blob->mutable_gpu_diff());
 #else
       NO_GPU;
@@ -1083,5 +1084,9 @@ const shared_ptr<Layer<Dtype,Mtype> > Net<Dtype,Mtype>::layer_by_name(
 }
 
 INSTANTIATE_CLASS(Net);
+
+#ifndef CPU_ONLY
+template class Net<half,half>;
+#endif // CPU_ONLY
 
 }  // namespace caffe

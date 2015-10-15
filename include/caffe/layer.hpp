@@ -203,11 +203,11 @@ class Layer {
   /**
    * @brief Sets the loss associated with a top blob at a given index.
    */
-  inline void set_loss(const int top_index, const Mtype value) {
+  inline void set_loss(const int top_index, const Dtype value) {
     if (loss_.size() <= top_index) {
       loss_.resize(top_index + 1, Get<Dtype>(0));
     }
-    loss_[top_index] = Get<Dtype>(value);
+    loss_[top_index] = value;
   }
 
   /**
@@ -341,7 +341,7 @@ class Layer {
   virtual void Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom,
       const vector<Blob<Dtype,Mtype>*>& top) {
     // LOG(WARNING) << "Using CPU code as backup.";
-    return Forward_cpu(bottom, top);
+    Forward_cpu(bottom, top);
   }
 
   /**
@@ -417,12 +417,12 @@ class Layer {
       CHECK_EQ(top.size(), num_loss_weights) << "loss_weight must be "
           "unspecified or specified once per top blob.";
       for (int top_id = 0; top_id < top.size(); ++top_id) {
-        const Mtype loss_weight = layer_param_.loss_weight(top_id);
-        if (loss_weight == Mtype(0)) { continue; }
+        const Dtype loss_weight = Get<Dtype>(layer_param_.loss_weight(top_id));
+        if (loss_weight == 0.) { continue; }
         this->set_loss(top_id, loss_weight);
         const int count = top[top_id]->count();
         Dtype* loss_multiplier = top[top_id]->mutable_cpu_diff();
-        caffe_set<Dtype,Mtype>(count, loss_weight, loss_multiplier);
+        caffe_set(count, loss_weight, loss_multiplier);
       }
     }
   }
@@ -452,7 +452,7 @@ inline Mtype Layer<Dtype,Mtype>::Forward(const vector<Blob<Dtype,Mtype>*>& botto
     const vector<Blob<Dtype,Mtype>*>& top) {
   // Lock during forward to ensure sequential forward
   Lock();
-  Mtype loss = 0;
+  Mtype loss = Get<Mtype>(0);
   Reshape(bottom, top);
   switch (Caffe::mode()) {
   case Caffe::CPU:

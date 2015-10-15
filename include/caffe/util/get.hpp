@@ -57,38 +57,6 @@ CAFFE_UTIL_GET_IHD float Get(double x) { return (float)x; }
 template <>
 CAFFE_UTIL_GET_IHD double Get(double x) { return x; }
 
-template <typename L, typename R>
-CAFFE_UTIL_GET_HD L& Incr(L& l, const R& r) {
-    double ld = Get<double>(l);
-    ld += Get<double>(r);
-    l = Get<L>(ld);
-    return l;
-}
-
-template <typename L, typename R>
-CAFFE_UTIL_GET_HD L& Decr(L& l, const R& r) {
-    double ld = Get<double>(l);
-    ld -= Get<double>(r);
-    l = Get<L>(ld);
-    return l;
-}
-
-template <typename L, typename R>
-CAFFE_UTIL_GET_HD L& Mult(L& l, const R& r) {
-    double ld = Get<double>(l);
-    ld *= Get<double>(r);
-    l = Get<L>(ld);
-    return l;
-}
-
-template <typename L, typename R>
-CAFFE_UTIL_GET_HD L& Div(L& l, const R& r) {
-    double ld = Get<double>(l);
-    ld /= Get<double>(r);
-    l = Get<L>(ld);
-    return l;
-}
-
 template <typename T>
 CAFFE_UTIL_GET_HD float tol(float t) {
     return t;
@@ -172,7 +140,6 @@ CAFFE_UTIL_GET_IHD double Get(const half& x) {
 template <>
 CAFFE_UTIL_GET_IHD half Get(const half& x) { return x; }
 
-
 template <typename T>
 CAFFE_UTIL_GET_IHD
 bool operator < (const half& l, const T& r) {
@@ -197,16 +164,17 @@ bool operator >= (const half& l, const T& r) {
     return Get<float>(l) >= Get<float>(r);
 }
 
+template <typename T>
 CAFFE_UTIL_GET_IHD
-bool operator == (const half& l, const half& r) {
-    return l.x == r.x;
+bool operator == (const half& l, const T& r) {
+    return Get<float>(l) == Get<float>(r);
 }
 
+template <typename T>
 CAFFE_UTIL_GET_IHD
-bool operator != (const half& l, const half& r) {
-    return l.x != r.x;
+bool operator != (const half& l, const T& r) {
+    return Get<float>(l) != Get<float>(r);
 }
-
 
 CAFFE_UTIL_GET_IHD
 half& operator ++ (half& x) {
@@ -231,7 +199,6 @@ half operator -- (half& x, int) {
     x = Get<half>(Get<float>(x) - 1.F);
 	return x;
 }
-
 
 template <typename T>
 CAFFE_UTIL_GET_IHD
@@ -292,6 +259,11 @@ std::ostream& operator << (std::ostream& os, const half& x) {
    return os;
 }
 
+CAFFE_UTIL_GET_IHD
+bool operator ! (const half& x) {
+   return !Get<float>(x);
+}
+
 template <>
 CAFFE_UTIL_GET_IHD float tol<half>(float t) {
     return t < 1.e-4 ? 2.5e-2 : t * 2.5e2;
@@ -320,6 +292,11 @@ half exp (const half& h) {
 CAFFE_UTIL_GET_IHD
 half pow (const half& b, const half& p) {
 	return Get<half>(pow(Get<float>(b), Get<float>(p)));
+}
+
+CAFFE_UTIL_GET_IHD
+half sqrt (const half& h) {
+  return Get<half>(sqrt(Get<float>(h)));
 }
 
 #endif //ifndef CPU_ONLY

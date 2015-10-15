@@ -95,32 +95,38 @@ void caffe_axpy<double,double>(const int N, const double alpha, const double* X,
     double* Y) { cblas_daxpy(N, alpha, X, 1, Y, 1); }
 
 #ifndef CPU_ONLY
+// TODO Consider CUDA
 template<>
-void caffe_axpy<half,float>(const int N, const float alpha, const half* X,
-    half* Y) {
-  for (int i=0; i<N; i++) {
-    Y[i] = Get<half>( alpha * Get<float>(X[i]) + Get<float>(Y[i]) );
+void caffe_axpy<half,float>(const int N, const float alpha, const half* X, half* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] = Get<half>(alpha * Get<float>(X[i]) + Get<float>(Y[i]));
+  }
+}
+template<>
+void caffe_axpy<half,half>(const int N, const half alpha, const half* X, half* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] = Get<half>(Get<float>(alpha) * Get<float>(X[i]) + Get<float>(Y[i]));
   }
 }
 #endif
 
-template <typename Dtype, typename Mtype>
-void caffe_set(const int N, const Mtype alpha, Dtype* Y) {
+template <typename Dtype>
+void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
   if (alpha == 0) {
     memset(Y, 0, sizeof(Dtype) * N);  // NOLINT(caffe/alt_fn)
     return;
   }
   for (int i = 0; i < N; ++i) {
-    Y[i] = Get<Dtype>(alpha);
+    Y[i] = alpha;
   }
 }
 
-template void caffe_set<int,int>(const int N, const int alpha, int* Y);
-template void caffe_set<float,float>(const int N, const float alpha, float* Y);
-template void caffe_set<double,double>(const int N, const double alpha, double* Y);
+template void caffe_set<int>(const int N, const int alpha, int* Y);
+template void caffe_set<float>(const int N, const float alpha, float* Y);
+template void caffe_set<double>(const int N, const double alpha, double* Y);
 
 #ifndef CPU_ONLY
-template void caffe_set<half,float>(const int N, const float alpha, half* Y);
+template void caffe_set<half>(const int N, const half alpha, half* Y);
 #endif
 
 template <>
@@ -170,6 +176,7 @@ template void caffe_copy<double,double>(const int N, const double* X, double* Y)
 
 #ifndef CPU_ONLY
 template void caffe_copy<half,float>(const int N, const half* X, half* Y);
+template void caffe_copy<half,half>(const int N, const half* X, half* Y);
 #endif
 
 template <>
@@ -185,8 +192,15 @@ void caffe_scal<double,double>(const int N, const double alpha, double *X) {
 #ifndef CPU_ONLY
 template <>
 void caffe_scal<half,float>(const int N, const float alpha, half *X) {
-  for (int i=0; i<N; i++) {
+  for (int i = 0; i < N; ++i) {
     X[i] = Get<half>( alpha * Get<float>(X[i]) );
+  }
+}
+
+template <>
+void caffe_scal<half,half>(const int N, const half alpha, half *X) {
+  for (int i = 0; i < N; ++i) {
+    X[i] = Get<half>(Get<float>(alpha) * Get<float>(X[i]));
   }
 }
 #endif
@@ -535,14 +549,26 @@ template <>
 float caffe_cpu_strided_dot<half,float>(const int n, const half* x,
     const int incx, const half *y, const int incy) {
   float sum = 0.0f;
-
-  for (int i=0; i<n; i++) {
-    int idx_x = i*incx;
-    int idx_y = i*incy;
-
+  int idx_x, idx_y;
+  for (int i = 0; i < n; ++i) {
+    idx_x = i*incx;
+    idx_y = i*incy;
     sum += Get<float>(x[idx_x]) * Get<float>(y[idx_y]);
   }
   return sum;
+}
+// TODO Consider CUDA
+template <>
+half caffe_cpu_strided_dot<half,half>(const int n, const half* x,
+    const int incx, const half *y, const int incy) {
+  float sum = 0.0f;
+  int idx_x, idx_y;
+  for (int i = 0; i < n; ++i) {
+    idx_x = i*incx;
+    idx_y = i*incy;
+    sum += Get<float>(x[idx_x]) * Get<float>(y[idx_y]);
+  }
+  return Get<half>(sum);
 }
 #endif
 
@@ -553,9 +579,10 @@ Mtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y) {
 
 template
 float caffe_cpu_dot<float,float>(const int n, const float* x, const float* y);
-
 template
 double caffe_cpu_dot<double,double>(const int n, const double* x, const double* y);
+template
+half caffe_cpu_dot<half,half>(const int n, const half* x, const half* y);
 
 #ifndef CPU_ONLY
 template
@@ -611,10 +638,19 @@ double caffe_cpu_asum<double,double>(const int n, const double* x) {
 template <>
 float caffe_cpu_asum<half,float>(const int n, const half *x) {
   float sum = 0.0f;
-  for (int i=0; i<n; i++) {
+  for (int i = 0; i < n; ++i) {
     sum += fabs(Get<float>(x[i]));
   }
   return sum;
+}
+
+template <>
+half caffe_cpu_asum<half,half>(const int n, const half *x) {
+  float sum = 0.0f;
+  for (int i = 0; i < n; ++i) {
+    sum += fabs(Get<float>(x[i]));
+  }
+  return Get<half>(sum);
 }
 #endif
 

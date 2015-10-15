@@ -90,7 +90,7 @@ void GradientChecker<Dtype,Mtype>::CheckGradientSingle(Layer<Dtype,Mtype>* layer
   vector<bool> propagate_down(bottom.size(), check_bottom == -1);
   for (int i = 0; i < layer->blobs().size(); ++i) {
     Blob<Dtype,Mtype>* blob = layer->blobs()[i].get();
-    caffe_set<Dtype,Mtype>(blob->count(), Get<Mtype>(0), blob->mutable_cpu_diff());
+    caffe_set(blob->count(), Get<Dtype>(0), blob->mutable_cpu_diff());
     blobs_to_check.push_back(blob);
   }
   if (check_bottom == -1) {
@@ -145,19 +145,19 @@ void GradientChecker<Dtype,Mtype>::CheckGradientSingle(Layer<Dtype,Mtype>* layer
       if (!element_wise || (feat_id == top_data_id)) {
         // Do finite differencing.
         // Compute loss with stepsize_ added to input.
-        Incr(current_blob->mutable_cpu_data()[feat_id], stepsize_);
+        current_blob->mutable_cpu_data()[feat_id] += stepsize_;
         Caffe::set_random_seed(seed_);
         layer->Forward(bottom, top);
         positive_objective =
             GetObjAndGradient(*layer, top, top_id, top_data_id);
         // Compute loss with stepsize_ subtracted from input.
-        Decr(current_blob->mutable_cpu_data()[feat_id], Get<Mtype>(stepsize_) * 2.);
+        current_blob->mutable_cpu_data()[feat_id] -= stepsize_ * 2.;
         Caffe::set_random_seed(seed_);
         layer->Forward(bottom, top);
         negative_objective =
             GetObjAndGradient(*layer, top, top_id, top_data_id);
         // Recover original input value.
-        Incr(current_blob->mutable_cpu_data()[feat_id], stepsize_);
+        current_blob->mutable_cpu_data()[feat_id] += stepsize_;
         estimated_gradient = Get<Dtype>((Get<Mtype>(positive_objective) - Get<Mtype>(negative_objective)) /
             Get<Mtype>(stepsize_) / 2.);
       }
@@ -241,18 +241,18 @@ Dtype GradientChecker<Dtype,Mtype>::GetObjAndGradient(const Layer<Dtype,Mtype>& 
       Dtype* top_blob_diff = top_blob->mutable_cpu_diff();
       int count = top_blob->count();
       for (int j = 0; j < count; ++j) {
-        Incr(loss, Get<Mtype>(top_blob_data[j]) * Get<Mtype>(top_blob_data[j]));
+        loss += top_blob_data[j] * top_blob_data[j];
       }
       // set the diff: simply the data.
       caffe_copy<Dtype,Mtype>(top_blob->count(), top_blob_data, top_blob_diff);
     }
-    Div(loss, 2.);
+    loss /= 2.;
   } else {
     // the loss will be the top_data_id-th element in the top_id-th blob.
     for (int i = 0; i < top.size(); ++i) {
       Blob<Dtype,Mtype>* top_blob = top[i];
       Dtype* top_blob_diff = top_blob->mutable_cpu_diff();
-      caffe_set<Dtype,Mtype>(top_blob->count(), Get<Mtype>(0), top_blob_diff);
+      caffe_set(top_blob->count(), Get<Dtype>(0), top_blob_diff);
     }
     const Dtype loss_weight = Get<Dtype>(2.);
     loss = Get<Dtype>(Get<Mtype>(top[top_id]->cpu_data()[top_data_id]) * Get<Mtype>(loss_weight));

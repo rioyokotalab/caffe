@@ -97,12 +97,12 @@ void FilterLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& to
         if (next_to_backward_offset >= indices_to_forward_.size()) {
           // we already visited all items that were been forwarded, so
           // just set to zero remaining ones
-          caffe_set<Dtype,Mtype>(dim, Mtype(0),
+          caffe_set(dim, Get<Dtype>(0),
               bottom[i]->mutable_cpu_diff() + data_offset_bottom);
         } else {
           batch_offset = indices_to_forward_[next_to_backward_offset];
           if (n != batch_offset) {  // this data was not been forwarded
-            caffe_set<Dtype,Mtype>(dim, Mtype(0),
+            caffe_set(dim, Get<Dtype>(0),
                 bottom[i]->mutable_cpu_diff() + data_offset_bottom);
           } else {  // this data was been forwarded
             data_offset_top = next_to_backward_offset * dim;

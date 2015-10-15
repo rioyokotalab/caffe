@@ -294,7 +294,8 @@ TYPED_TEST(ConvolutionLayerTest, Test0DConvolution) {
         value += weight->data_at(weight_offset) *
                  this->blob_bottom_->cpu_data()[n * bottom_dim + bottom_d];
       }
-      EXPECT_NEAR(Get<float>(value), Get<float>(this->blob_top_->cpu_data()[n * dim + d]), 1e-4);
+      EXPECT_NEAR(Get<float>(value),
+          Get<float>(this->blob_top_->cpu_data()[n * dim + d]),tol<Dtype>(1e-4));
     }
   }
 }
@@ -336,14 +337,14 @@ TYPED_TEST(ConvolutionLayerTest, TestSimple3DConvolution) {
   top_data = this->blob_top_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<float>(top_data[i]), Get<float>(ref_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<float>(top_data[i]), Get<float>(ref_top_data[i]), tol<Dtype>(1e-3));
   }
   caffe_conv(this->blob_bottom_2_, convolution_param, layer->blobs(),
       this->MakeReferenceTop(this->blob_top_2_));
   top_data = this->blob_top_2_->cpu_data();
   ref_top_data = this->ref_blob_top_->cpu_data();
   for (int i = 0; i < this->blob_top_->count(); ++i) {
-    EXPECT_NEAR(Get<float>(top_data[i]), Get<float>(ref_top_data[i]), 1e-4);
+    EXPECT_NEAR(Get<float>(top_data[i]), Get<float>(ref_top_data[i]), tol<Dtype>(1e-3));
   }
 }
 
@@ -543,11 +544,11 @@ TYPED_TEST(ConvolutionLayerTest, TestNDAgainst2D) {
   Blob<Dtype,Mtype> backward_weight_result_2d;
   // Test with 2D im2col
   {
-    caffe_set(this->blob_top_->count(), Get<Mtype>(0),
+    caffe_set(this->blob_top_->count(), Get<Dtype>(0),
               this->blob_top_->mutable_cpu_data());
-    caffe_set(this->blob_bottom_->count(), Get<Mtype>(0),
+    caffe_set(this->blob_bottom_->count(), Get<Dtype>(0),
               this->blob_bottom_->mutable_cpu_diff());
-    caffe_set(weights.count(), Get<Mtype>(0), weights.mutable_cpu_diff());
+    caffe_set(weights.count(), Get<Dtype>(0), weights.mutable_cpu_diff());
     // Do SetUp and Forward; save Forward result in result_2d.
     convolution_param->set_force_nd_im2col(false);
     ConvolutionLayer<Dtype,Mtype> layer_2d(layer_param);
@@ -574,11 +575,11 @@ TYPED_TEST(ConvolutionLayerTest, TestNDAgainst2D) {
   Blob<Dtype,Mtype> backward_weight_result_nd;
   // Test with ND im2col
   {
-    caffe_set<Dtype,Mtype>(this->blob_top_->count(), Get<Mtype>(0),
+    caffe_set(this->blob_top_->count(), Get<Dtype>(0),
               this->blob_top_->mutable_cpu_data());
-    caffe_set<Dtype,Mtype>(this->blob_bottom_->count(), Get<Mtype>(0),
+    caffe_set(this->blob_bottom_->count(), Get<Dtype>(0),
               this->blob_bottom_->mutable_cpu_diff());
-    caffe_set<Dtype,Mtype>(weights.count(), Get<Mtype>(0), weights.mutable_cpu_diff());
+    caffe_set(weights.count(), Get<Dtype>(0), weights.mutable_cpu_diff());
     // Do SetUp and Forward; save Forward result in result_nd.
     convolution_param->set_force_nd_im2col(true);
     ConvolutionLayer<Dtype,Mtype> layer_nd(layer_param);
@@ -606,7 +607,11 @@ TYPED_TEST(ConvolutionLayerTest, TestNDAgainst2D) {
   }
   ASSERT_EQ(backward_result_nd.count(), backward_result_2d.count());
   for (int i = 0; i < backward_result_2d.count(); ++i) {
-    EXPECT_EQ(backward_result_2d.cpu_diff()[i],
+    if (sizeof(Dtype) == 2)
+      EXPECT_NEAR(Get<float>(backward_result_2d.cpu_diff()[i]),
+          Get<float>(backward_result_nd.cpu_diff()[i]), 0.2F);
+    else
+      EXPECT_EQ(backward_result_2d.cpu_diff()[i],
               backward_result_nd.cpu_diff()[i]);
   }
   ASSERT_EQ(backward_weight_result_nd.count(),

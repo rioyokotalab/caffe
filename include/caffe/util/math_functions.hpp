@@ -45,8 +45,8 @@ void caffe_cpu_axpby(const int N, const Mtype alpha, const Dtype* X,
 template <typename Dtype, typename Mtype>
 void caffe_copy(const int N, const Dtype *X, Dtype *Y);
 
-template <typename Dtype, typename Mtype>
-void caffe_set(const int N, const Mtype alpha, Dtype *X);
+template <typename Dtype>
+void caffe_set(const int N, const Dtype alpha, Dtype *X);
 
 inline void caffe_memset(const size_t N, const int alpha, void* X) {
   memset(X, alpha, N);  // NOLINT(caffe/alt_fn)

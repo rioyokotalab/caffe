@@ -307,22 +307,22 @@ int time() {
     Caffe::set_mode(Caffe::CPU);
   }
   // Instantiate the caffe net.
-  Net<half,float> caffe_net(FLAGS_model, caffe::TRAIN);
+  Net<half,half> caffe_net(FLAGS_model, caffe::TRAIN);
 
   // Do a clean forward and backward pass, so that memory allocation are done
   // and future iterations will be more stable.
   LOG(INFO) << "Performing Forward";
   // Note that for the speed benchmark, we will assume that the network does
   // not take any input blobs.
-  float initial_loss;
-  caffe_net.Forward(vector<Blob<half,float>*>(), &initial_loss);
+  half initial_loss;
+  caffe_net.Forward(vector<Blob<half,half>*>(), &initial_loss);
   LOG(INFO) << "Initial loss: " << initial_loss;
   LOG(INFO) << "Performing Backward";
   caffe_net.Backward();
 
-  const vector<shared_ptr<Layer<half,float> > >& layers = caffe_net.layers();
-  const vector<vector<Blob<half,float>*> >& bottom_vecs = caffe_net.bottom_vecs();
-  const vector<vector<Blob<half,float>*> >& top_vecs = caffe_net.top_vecs();
+  const vector<shared_ptr<Layer<half,half> > >& layers = caffe_net.layers();
+  const vector<vector<Blob<half,half>*> >& bottom_vecs = caffe_net.bottom_vecs();
+  const vector<vector<Blob<half,half>*> >& top_vecs = caffe_net.top_vecs();
   const vector<vector<bool> >& bottom_need_backward =
       caffe_net.bottom_need_backward();
   LOG(INFO) << "*** Benchmark begins ***";

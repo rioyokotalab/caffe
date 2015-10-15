@@ -1148,11 +1148,11 @@ TYPED_TEST(NetTest, TestSharedWeightsUpdate) {
   // Make sure the diffs are non-trivial.
   for (int i = 0; i < count; ++i) {
     EXPECT_NE(0, Get<Mtype>(ip1_weights->cpu_diff()[i]));
-    EXPECT_NE(0, Get<Mtype>(ip2_weights->cpu_diff()[i]));
-    EXPECT_NE(Get<Mtype>(ip1_weights->cpu_diff()[i]), Get<Mtype>(ip2_weights->cpu_diff()[i]));
+//    EXPECT_NE(0, Get<Mtype>(ip2_weights->cpu_diff()[i]));
+//    EXPECT_NE(Get<Mtype>(ip1_weights->cpu_diff()[i]), Get<Mtype>(ip2_weights->cpu_diff()[i]));
   }
-  caffe_axpy<Dtype,Mtype>(count, Mtype(1), ip2_weights->cpu_diff(),
-             shared_params.mutable_cpu_diff());
+//  caffe_axpy<Dtype,Mtype>(count, Mtype(1), ip2_weights->cpu_diff(),
+//             shared_params.mutable_cpu_diff());
   caffe_axpy<Dtype,Mtype>(count, Mtype(-1), shared_params.cpu_diff(),
              shared_params.mutable_cpu_data());
   const Dtype* expected_updated_params = shared_params.cpu_data();
@@ -1193,7 +1193,7 @@ TYPED_TEST(NetTest, TestSharedWeightsUpdate) {
       EXPECT_NEAR(Get<Mtype>(ip1_weights->cpu_diff()[i]) + Get<Mtype>(ip2_weights->cpu_diff()[i]),
           Get<Mtype>(shared_params.cpu_diff()[i]), 1.);
     } else {
-      EXPECT_EQ(Get<Mtype>(ip1_weights->cpu_diff()[i]) + Get<Mtype>(ip2_weights->cpu_diff()[i]),
+      EXPECT_FLOAT_EQ(Get<Mtype>(ip1_weights->cpu_diff()[i]) + Get<Mtype>(ip2_weights->cpu_diff()[i]),
           Get<Mtype>(shared_params.cpu_diff()[i]));
     }
   }
@@ -1259,9 +1259,6 @@ TYPED_TEST(NetTest, TestSharedWeightsResume) {
   for (int i = 0; i < count; ++i) {
     EXPECT_FLOAT_EQ(Get<Mtype>(shared_params.cpu_data()[i]), Get<Mtype>(ip1_weights->cpu_data()[i]));
   }
-  // Check that diff blobs of shared weights are at different locations in
-  // memory.  (The diffs should be accumulated at update time.)
-  EXPECT_NE(ip1_weights->cpu_diff(), ip2_weights->cpu_diff());
 }
 
 TYPED_TEST(NetTest, TestParamPropagateDown) {
@@ -1295,10 +1292,10 @@ TYPED_TEST(NetTest, TestParamPropagateDown) {
   // Change the learning rates to different non-zero values; should see same
   // gradients.
   Caffe::set_random_seed(this->seed_);
-  Mult(blobs_lr_w1, 2.);
-  Mult(blobs_lr_w2, 2.);
-  Mult(blobs_lr_b1, 2.);
-  Mult(blobs_lr_b2, 2.);
+  blobs_lr_w1 *= 2.;
+  blobs_lr_w2 *= 2.;
+  blobs_lr_b1 *= 2.;
+  blobs_lr_b2 *= 2.;
   this->InitUnsharedWeightsNet(kLossWeight1, kLossWeight2, kForceBackward,
       kBiasTerm, blobs_lr_w1, blobs_lr_w2, blobs_lr_b1, blobs_lr_b2);
   this->net_->Forward(bottom);

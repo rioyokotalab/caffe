@@ -235,7 +235,7 @@ void BaseConvolutionLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>
   if (bias_term_) {
     vector<int> bias_multiplier_shape(1, out_spatial_dim_);
     bias_multiplier_.Reshape(bias_multiplier_shape);
-    caffe_set<Dtype,Mtype>(bias_multiplier_.count(), Mtype(1),
+    caffe_set(bias_multiplier_.count(), Get<Dtype>(1),
         bias_multiplier_.mutable_cpu_data());
   }
 }

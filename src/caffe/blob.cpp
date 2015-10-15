@@ -156,7 +156,7 @@ void Blob<Dtype,Mtype>::Update() {
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     // perform computation on CPU
-    caffe_axpy<Dtype,Mtype>(count_, Mtype(-1),
+    caffe_axpy<Dtype,Mtype>(count_, Get<Mtype>(-1),
         static_cast<const Dtype*>(diff_->cpu_data()),
         static_cast<Dtype*>(data_->mutable_cpu_data()));
     break;
@@ -164,7 +164,7 @@ void Blob<Dtype,Mtype>::Update() {
   case SyncedMemory::SYNCED:
 #ifndef CPU_ONLY
     // perform computation on GPU
-    caffe_gpu_axpy<Dtype,Mtype>(count_, Mtype(-1),
+    caffe_gpu_axpy<Dtype,Mtype>(count_, Get<Mtype>(-1),
         static_cast<const Dtype*>(diff_->gpu_data()),
         static_cast<Dtype*>(data_->mutable_gpu_data()));
 #else
@@ -188,7 +188,7 @@ template <> int Blob<int, int>::asum_data() const {
 
 template <typename Dtype, typename Mtype>
 Mtype Blob<Dtype,Mtype>::asum_data() const {
-  if (!data_) { return 0; }
+  if (!data_) { return Get<Mtype>(0); }
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     return caffe_cpu_asum<Dtype,Mtype>(count_, cpu_data());
@@ -204,11 +204,11 @@ Mtype Blob<Dtype,Mtype>::asum_data() const {
     NO_GPU;
 #endif
   case SyncedMemory::UNINITIALIZED:
-    return 0;
+    return Get<Mtype>(0);
   default:
     LOG(FATAL) << "Unknown SyncedMemory head state: " << data_->head();
   }
-  return 0;
+  return Get<Mtype>(0);
 }
 
 template <> unsigned int Blob<unsigned int, unsigned int>::asum_diff() const {
@@ -223,7 +223,7 @@ template <> int Blob<int,int>::asum_diff() const {
 
 template <typename Dtype, typename Mtype>
 Mtype Blob<Dtype,Mtype>::asum_diff() const {
-  if (!diff_) { return 0; }
+  if (!diff_) { return Get<Mtype>(0); }
   switch (diff_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     return caffe_cpu_asum<Dtype,Mtype>(count_, cpu_diff());
@@ -239,11 +239,11 @@ Mtype Blob<Dtype,Mtype>::asum_diff() const {
     NO_GPU;
 #endif
   case SyncedMemory::UNINITIALIZED:
-    return 0;
+    return Get<Mtype>(0);
   default:
     LOG(FATAL) << "Unknown SyncedMemory head state: " << diff_->head();
   }
-  return 0;
+  return Get<Mtype>(0);
 }
 
 template <> unsigned int Blob<unsigned int, unsigned int>::sumsq_data() const {
@@ -260,7 +260,7 @@ template <typename Dtype, typename Mtype>
 Mtype Blob<Dtype, Mtype>::sumsq_data() const {
   Mtype sumsq;
   const Dtype* data;
-  if (!data_) { return 0; }
+  if (!data_) { return Get<Mtype>(0); }
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     data = cpu_data();
@@ -276,7 +276,7 @@ Mtype Blob<Dtype, Mtype>::sumsq_data() const {
 #endif
     break;
   case SyncedMemory::UNINITIALIZED:
-    return 0;
+    return Get<Mtype>(0);
   default:
     LOG(FATAL) << "Unknown SyncedMemory head state: " << data_->head();
   }
@@ -297,7 +297,7 @@ template <typename Dtype, typename Mtype>
 Mtype Blob<Dtype, Mtype>::sumsq_diff() const {
   Mtype sumsq;
   const Dtype* diff;
-  if (!diff_) { return 0; }
+  if (!diff_) { return Get<Mtype>(0); }
   switch (diff_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     diff = cpu_diff();
@@ -313,7 +313,7 @@ Mtype Blob<Dtype, Mtype>::sumsq_diff() const {
     NO_GPU;
 #endif
   case SyncedMemory::UNINITIALIZED:
-    return 0;
+    return Get<Mtype>(0);
   default:
     LOG(FATAL) << "Unknown SyncedMemory head state: " << data_->head();
   }
@@ -533,6 +533,8 @@ void Blob<float,float>::ToProto(BlobProto* proto, bool write_diff) const {
   }
 }
 
+#ifndef CPU_ONLY
+
 template <>
 void Blob<half,float>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_shape();
@@ -553,9 +555,35 @@ void Blob<half,float>::ToProto(BlobProto* proto, bool write_diff) const {
   }
 }
 
+template <>
+void Blob<half,half>::ToProto(BlobProto* proto, bool write_diff) const {
+  proto->clear_shape();
+  for (int i = 0; i < shape_.size(); ++i) {
+    proto->mutable_shape()->add_dim(shape_[i]);
+  }
+  proto->clear_data();
+  proto->clear_diff();
+  const half* data_vec = cpu_data();
+  for (int i = 0; i < count_; ++i) {
+    proto->add_data(Get<float>(data_vec[i]));
+  }
+  if (write_diff) {
+    const half* diff_vec = cpu_diff();
+    for (int i = 0; i < count_; ++i) {
+      proto->add_diff(Get<float>(diff_vec[i]));
+    }
+  }
+}
+
+#endif // CPU_ONLY
+
 INSTANTIATE_CLASS(Blob);
 template class Blob<int,int>;
 template class Blob<unsigned int, unsigned int>;
+
+#ifndef CPU_ONLY
+template class Blob<half,half>;
+#endif // CPU_ONLY
 
 }  // namespace caffe
 

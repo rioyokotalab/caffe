@@ -33,7 +33,7 @@ void ReductionLayer<Dtype,Mtype>::Reshape(const vector<Blob<Dtype,Mtype>*>& bott
       op_ == ReductionParameter_ReductionOp_MEAN) {
     vector<int> sum_mult_shape(1, dim_);
     sum_multiplier_.Reshape(sum_mult_shape);
-    caffe_set<Dtype,Mtype>(dim_, Mtype(1), sum_multiplier_.mutable_cpu_data());
+    caffe_set(dim_, Get<Dtype>(1), sum_multiplier_.mutable_cpu_data());
   }
   coeff_ = Get<Dtype>(this->layer_param().reduction_param().coeff());
   if (op_ == ReductionParameter_ReductionOp_MEAN) {
@@ -103,7 +103,7 @@ void ReductionLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>&
     switch (op_) {
     case ReductionParameter_ReductionOp_SUM:
     case ReductionParameter_ReductionOp_MEAN:
-      caffe_set<Dtype,Mtype>(dim_, bottom_coeff, bottom_diff);
+      caffe_set(dim_, Get<Dtype>(bottom_coeff), bottom_diff);
       break;
     case ReductionParameter_ReductionOp_ASUM:
       caffe_cpu_sign<Dtype,Mtype>(dim_, bottom_data, bottom_diff);

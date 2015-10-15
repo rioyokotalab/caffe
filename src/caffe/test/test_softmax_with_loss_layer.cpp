@@ -83,7 +83,7 @@ TYPED_TEST(SoftmaxWithLossLayerTest, TestForwardIgnoreLabel) {
     layer.reset(new SoftmaxWithLossLayer<Dtype,Mtype>(layer_param));
     layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
     layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
-    Incr(accum_loss, this->blob_top_loss_->cpu_data()[0]);
+    accum_loss += this->blob_top_loss_->cpu_data()[0];
   }
   // Check that each label was included all but once.
   EXPECT_NEAR(4. * Get<Mtype>(full_loss), Get<Mtype>(accum_loss),

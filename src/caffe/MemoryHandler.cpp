@@ -52,7 +52,9 @@ void MemoryHandler::registerStream(cudaStream_t stream) {
 
 void MemoryHandler::destroy() {
   CHECK(initialized_);
-  CNMEM_CHECK(cnmemFinalize());
+  if (using_pool_) {
+    CNMEM_CHECK(cnmemFinalize());
+  }
   initialized_ = false;
   using_pool_ = false;
 }

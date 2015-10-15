@@ -65,7 +65,7 @@ void ArgMaxLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bot
     axis_dist = 1;
   }
   int num = bottom[0]->count() / dim;
-  std::vector<std::pair<Mtype, int> > bottom_data_vector(dim);
+  std::vector<std::pair<Dtype, int> > bottom_data_vector(dim);
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < dim; ++j) {
       bottom_data_vector[j] = std::make_pair(
@@ -73,7 +73,7 @@ void ArgMaxLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bot
     }
     std::partial_sort(
         bottom_data_vector.begin(), bottom_data_vector.begin() + top_k_,
-        bottom_data_vector.end(), std::greater<std::pair<Mtype, int> >());
+        bottom_data_vector.end(), std::greater<std::pair<Dtype, int> >());
     for (int j = 0; j < top_k_; ++j) {
       if (out_max_val_) {
         if (has_axis_) {
@@ -82,13 +82,13 @@ void ArgMaxLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bot
             = bottom_data_vector[j].first;
         } else {
           // Produces max_ind and max_val
-          top_data[2 * i * top_k_ + j] = bottom_data_vector[j].second;
-          top_data[2 * i * top_k_ + top_k_ + j] = bottom_data_vector[j].first;
+          top_data[2 * i * top_k_ + j] = Get<Dtype>(bottom_data_vector[j].second);
+          top_data[2 * i * top_k_ + top_k_ + j] = Get<Dtype>(bottom_data_vector[j].first);
         }
       } else {
         // Produces max_ind per axis
         top_data[(i / axis_dist * top_k_ + j) * axis_dist + i % axis_dist]
-          = bottom_data_vector[j].second;
+          = Get<Dtype>(bottom_data_vector[j].second);
       }
     }
   }

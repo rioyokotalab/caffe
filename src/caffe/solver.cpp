@@ -1079,7 +1079,7 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         this->history_[param_id]->mutable_cpu_data());
 
     // add delta to history to guard against dividing by zero later
-    caffe_set(net_params[param_id]->count(), delta,
+    caffe_set(net_params[param_id]->count(), Get<Dtype>(delta),
         this->temp_[param_id]->mutable_cpu_data());
 
     caffe_add<Dtype,Mtype>(net_params[param_id]->count(),

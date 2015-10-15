@@ -204,11 +204,11 @@ TYPED_TEST(DeconvolutionLayerTest, TestNDAgainst2D) {
   Blob<Dtype,Mtype> backward_weight_result_2d;
   // Test with 2D im2col
   {
-    caffe_set(this->blob_top_->count(), Mtype(0),
+    caffe_set(this->blob_top_->count(), Get<Dtype>(0),
               this->blob_top_->mutable_cpu_data());
-    caffe_set(this->blob_bottom_->count(), Mtype(0),
+    caffe_set(this->blob_bottom_->count(), Get<Dtype>(0),
               this->blob_bottom_->mutable_cpu_diff());
-    caffe_set(weights.count(), Mtype(0), weights.mutable_cpu_diff());
+    caffe_set(weights.count(), Get<Dtype>(0), weights.mutable_cpu_diff());
     // Do SetUp and Forward; save Forward result in result_2d.
     convolution_param->set_force_nd_im2col(false);
     DeconvolutionLayer<Dtype,Mtype> layer_2d(layer_param);
@@ -235,11 +235,11 @@ TYPED_TEST(DeconvolutionLayerTest, TestNDAgainst2D) {
   Blob<Dtype,Mtype> backward_weight_result_nd;
   // Test with ND im2col
   {
-    caffe_set<Dtype,Mtype>(this->blob_top_->count(), Mtype(0),
+    caffe_set(this->blob_top_->count(), Get<Dtype>(0),
               this->blob_top_->mutable_cpu_data());
-    caffe_set<Dtype,Mtype>(this->blob_bottom_->count(), Mtype(0),
+    caffe_set(this->blob_bottom_->count(), Get<Dtype>(0),
               this->blob_bottom_->mutable_cpu_diff());
-    caffe_set<Dtype,Mtype>(weights.count(), Mtype(0), weights.mutable_cpu_diff());
+    caffe_set(weights.count(), Get<Dtype>(0), weights.mutable_cpu_diff());
     // Do SetUp and Forward; save Forward result in result_nd.
     convolution_param->set_force_nd_im2col(true);
     DeconvolutionLayer<Dtype,Mtype> layer_nd(layer_param);
@@ -263,7 +263,11 @@ TYPED_TEST(DeconvolutionLayerTest, TestNDAgainst2D) {
   }
   ASSERT_EQ(result_nd.count(), result_2d.count());
   for (int i = 0; i < result_2d.count(); ++i)  {
-    EXPECT_EQ(result_2d.cpu_data()[i], result_nd.cpu_data()[i]);
+    if (sizeof(Dtype) == 2)
+      EXPECT_NEAR(Get<float>(result_2d.cpu_data()[i]),
+          Get<float>(result_nd.cpu_data()[i]), 0.5F);
+    else
+      EXPECT_EQ(result_2d.cpu_data()[i], result_nd.cpu_data()[i]);
   }
   ASSERT_EQ(backward_result_nd.count(), backward_result_2d.count());
   for (int i = 0; i < backward_result_2d.count(); ++i) {

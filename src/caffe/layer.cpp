@@ -22,6 +22,15 @@ void Layer<Dtype,Mtype>::Unlock() {
   }
 }
 
+template
+void Layer<half,half>::InitMutex();
+
+template
+void Layer<half,half>::Lock();
+
+template
+void Layer<half,half>::Unlock();
+
 INSTANTIATE_CLASS(Layer);
 
 }  // namespace caffe

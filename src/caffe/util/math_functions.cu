@@ -118,10 +118,14 @@ void axpy_kernel(const int N, const T_MATH alpha, const T_STORE *x, T_STORE *y)
 }
 
 template <>
-void caffe_gpu_axpy<half,float>(const int N, const float alpha, const half* x,
-    half *y)
-{
+void caffe_gpu_axpy<half,float>(const int N, const float alpha, const half* x, half *y) {
   axpy_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, x, y);
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template <>
+void caffe_gpu_axpy<half,half>(const int N, const half alpha, const half* x, half *y) {
+  axpy_kernel<half,half><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, x, y);
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -153,6 +157,12 @@ void scal_kernel(const int N, const T_MATH alpha, T_STORE *X)
 template <>
 void caffe_gpu_scal<half,float>(const int N, const float alpha, half *X) {
   scal_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, X);
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template <>
+void caffe_gpu_scal<half,half>(const int N, const half alpha, half *X) {
+  scal_kernel<half,half><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, X);
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -382,6 +392,7 @@ template void caffe_gpu_set<int,int>(const int N, const int alpha, int* Y);
 template void caffe_gpu_set<float,float>(const int N, const float alpha, float* Y);
 template void caffe_gpu_set<double,double>(const int N, const double alpha, double* Y);
 template void caffe_gpu_set<half,float>(const int N, const float alpha, half* Y);
+template void caffe_gpu_set<half,half>(const int N, const half alpha, half* Y);
 
 template <typename Dtype, typename Mtype>
 __global__ void add_scalar_kernel(const int n, const Mtype alpha, Dtype* y) {
