@@ -19,7 +19,7 @@
 #include "caffe/util/device_alternate.hpp"
 
 #ifndef CPU_ONLY
-#include <cuda_fp16.h>
+#include "cuda_fp16.h"
 #endif
 
 // gflags 2.1 issue: namespace google was changed to gflags without warning.
@@ -42,6 +42,8 @@ private:\
 #define INSTANTIATE_CLASS(classname) \
   char gInstantiationGuard##classname; \
   template class classname<float, float>; \
+  template class classname<float, half>; \
+  template class classname<half, half>; \
   template class classname<double, double>
 
 #define INSTANTIATE_LAYER_GPU_FORWARD(classname) \

@@ -71,7 +71,7 @@ CAFFE_UTIL_GET_HD float maxDtype() {
 #ifndef CPU_ONLY
 
 template <>
-CAFFE_UTIL_GET_IHD half Get(unsigned int x) {
+CAFFE_UTIL_GET_IHD half Get<half>(unsigned int x) {
 #ifdef __CUDA_ARCH__
   half h;
   h.x = __float2half_rn(float(x));
@@ -81,7 +81,7 @@ CAFFE_UTIL_GET_IHD half Get(unsigned int x) {
 #endif
 }
 template <>
-CAFFE_UTIL_GET_IHD half Get(int x) {
+CAFFE_UTIL_GET_IHD half Get<half>(int x) {
 #ifdef __CUDA_ARCH__
   half h;
   h.x = __float2half_rn(float(x));
@@ -91,7 +91,7 @@ CAFFE_UTIL_GET_IHD half Get(int x) {
 #endif
 }
 template <>
-CAFFE_UTIL_GET_IHD half Get(float x) {
+CAFFE_UTIL_GET_IHD half Get<half>(float x) {
 #ifdef __CUDA_ARCH__
   half h;
   h.x = __float2half_rn(x);
@@ -101,7 +101,7 @@ CAFFE_UTIL_GET_IHD half Get(float x) {
 #endif
 }
 template <>
-CAFFE_UTIL_GET_IHD half Get(double x) {
+CAFFE_UTIL_GET_IHD half Get<half>(double x) {
 #ifdef __CUDA_ARCH__
   half h;
   h.x = __float2half_rn(float(x));
@@ -114,7 +114,7 @@ CAFFE_UTIL_GET_IHD half Get(double x) {
 template <typename T>
 CAFFE_UTIL_GET_HD T Get(const half& x);
 template <>
-CAFFE_UTIL_GET_IHD int Get(const half& x) {
+CAFFE_UTIL_GET_IHD int Get<int>(const half& x) {
 #ifdef __CUDA_ARCH__
   return int(__half2float(x));
 #else
@@ -122,7 +122,7 @@ CAFFE_UTIL_GET_IHD int Get(const half& x) {
 #endif
 }
 template <>
-CAFFE_UTIL_GET_IHD float Get(const half& x) {
+CAFFE_UTIL_GET_IHD float Get<float>(const half& x) {
 #ifdef __CUDA_ARCH__
   return __half2float(x);
 #else
@@ -130,7 +130,7 @@ CAFFE_UTIL_GET_IHD float Get(const half& x) {
 #endif
 }
 template <>
-CAFFE_UTIL_GET_IHD double Get(const half& x) {
+CAFFE_UTIL_GET_IHD double Get<double>(const half& x) {
 #ifdef __CUDA_ARCH__
   return double(__half2float(x));
 #else
@@ -138,7 +138,7 @@ CAFFE_UTIL_GET_IHD double Get(const half& x) {
 #endif
 }
 template <>
-CAFFE_UTIL_GET_IHD half Get(const half& x) { return x; }
+CAFFE_UTIL_GET_IHD half Get<half>(const half& x) { return x; }
 
 template <typename T>
 CAFFE_UTIL_GET_IHD

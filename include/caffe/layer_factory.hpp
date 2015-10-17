@@ -122,22 +122,42 @@ class LayerRegisterer {
   }
 };
 
-#ifdef CPU_ONLY
-#define REGISTER_LAYER_CREATOR(type, creator)                                  \
-  static LayerRegisterer<float,float> g_creator_f_##type(#type, creator<float,float>);     \
+#define REGISTER_LAYER_CREATOR_CPU(type, creator) \
+  static LayerRegisterer<float,float> g_creator_f_##type(#type, creator<float,float>); \
   static LayerRegisterer<double,double> g_creator_d_##type(#type, creator<double,double>)
+
+#define REGISTER_LAYER_CREATOR_GPU_HOST(type, creator) \
+  REGISTER_LAYER_CREATOR_CPU(type, creator); \
+  static LayerRegisterer<half,float> g_creator_hf_##type(#type, creator<half,float>)
+
+// boris: I suppose we should be able to figure this out:
+// # define NATIVE_FP16_SUPPORTED 1
+
+#ifdef NATIVE_FP16_SUPPORTED
+# define REGISTER_LAYER_CREATOR_GPU_DEVICE(type, creator) \
+     REGISTER_LAYER_CREATOR_GPU_HOST(type, creator); \
+     static LayerRegisterer<half,half> g_creator_hh_##type(#type, creator<half, half>)
 #else
-#define REGISTER_LAYER_CREATOR(type, creator)                                  \
-  static LayerRegisterer<float,float> g_creator_f_##type(#type, creator<float,float>);     \
-  static LayerRegisterer<double,double> g_creator_d_##type(#type, creator<double,double>);    \
-  static LayerRegisterer<half,float> g_creator_h_##type(#type, creator<half,float>)
+#  define REGISTER_LAYER_CREATOR_GPU_DEVICE(type, creator) \
+     REGISTER_LAYER_CREATOR_GPU_HOST(type, creator)
+#endif
+
+// This distinction may not be needed 
+#ifdef CPU_ONLY
+#  define REGISTER_LAYER_CREATOR(type, creator) REGISTER_LAYER_CREATOR_CPU(type, creator)
+#else
+# ifdef __CUDA_ARCH__
+#  define REGISTER_LAYER_CREATOR(type, creator) REGISTER_LAYER_CREATOR_GPU_DEVICE(type, creator)
+# else
+#  define REGISTER_LAYER_CREATOR(type, creator) REGISTER_LAYER_CREATOR_GPU_HOST(type, creator)
+# endif
 #endif
 
 #define REGISTER_LAYER_CLASS(type)                                             \
-  template <typename Dtype, typename Mtype>                                                    \
+  template <typename Dtype, typename Mtype>                                          \
   shared_ptr<Layer<Dtype,Mtype> > Creator_##type##Layer(const LayerParameter& param) \
-  {                                                                            \
-    return shared_ptr<Layer<Dtype,Mtype> >(new type##Layer<Dtype,Mtype>(param));           \
+  {                                                                                  \
+    return shared_ptr<Layer<Dtype,Mtype> >(new type##Layer<Dtype,Mtype>(param));  \
   }                                                                            \
   REGISTER_LAYER_CREATOR(type, Creator_##type##Layer)
 
