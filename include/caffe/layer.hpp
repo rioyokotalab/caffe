@@ -19,6 +19,7 @@ namespace boost { class mutex; }
 
 namespace caffe {
 
+
 /**
  * @brief An interface for the units of computation which can be composed into a
  *        Net.
@@ -29,68 +30,17 @@ namespace caffe {
  * gradients with respect to their input Blob%s, given the error gradients with
  * their output Blob%s.
  */
-template <typename Dtype, typename Mtype>
-class Layer {
- public:
+class LayerBase {
+public:
   /**
    * You should not implement your own constructor. Any set up code should go
    * to SetUp(), where the dimensions of the bottom blobs are provided to the
    * layer.
    */
-  explicit Layer(const LayerParameter& param)
+  explicit LayerBase(const LayerParameter& param)
     : layer_param_(param), is_shared_(false) {
-      // Set phase and copy blobs (if there are any).
-      phase_ = param.phase();
-      if (layer_param_.blobs_size() > 0) {
-        blobs_.resize(layer_param_.blobs_size());
-        for (int i = 0; i < layer_param_.blobs_size(); ++i) {
-          blobs_[i].reset(new Blob<Dtype,Mtype>());
-          blobs_[i]->FromProto(layer_param_.blobs(i));
-        }
-      }
-    }
-  virtual ~Layer() {}
-
-  /**
-   * @brief Implements common layer setup functionality.
-   *
-   * @param bottom the preshaped input blobs
-   * @param top
-   *     the allocated but unshaped output blobs, to be shaped by Reshape
-   *
-   * Checks that the number of bottom and top blobs is correct.
-   * Calls LayerSetUp to do special layer setup for individual layer types,
-   * followed by Reshape to set up sizes of top blobs and internal buffers.
-   * Sets up the loss weight multiplier blobs for any non-zero loss weights.
-   * This method may not be overridden.
-   */
-  void SetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
-      const vector<Blob<Dtype,Mtype>*>& top) {
     InitMutex();
-    CheckBlobCounts(bottom, top);
-    LayerSetUp(bottom, top);
-    Reshape(bottom, top);
-    SetLossWeights(top);
   }
-
-  /**
-   * @brief Does layer-specific setup: your layer should implement this function
-   *        as well as Reshape.
-   *
-   * @param bottom
-   *     the preshaped input blobs, whose data fields store the input data for
-   *     this layer
-   * @param top
-   *     the allocated but unshaped output blobs
-   *
-   * This method should do one-time layer specific setup. This includes reading
-   * and processing relevent parameters from the <code>layer_param_</code>.
-   * Setting up the shapes of top blobs and internal buffers should be done in
-   * <code>Reshape</code>, which will be called before the forward pass to
-   * adjust the top blob sizes.
-   */
-  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
-      const vector<Blob<Dtype,Mtype>*>& top) {}
 
   /**
    * @brief Whether a layer should be shared by multiple nets during data
@@ -116,99 +66,12 @@ class Layer {
     is_shared_ = is_shared;
   }
 
-  /**
-   * @brief Adjust the shapes of top blobs and internal buffers to accommodate
-   *        the shapes of the bottom blobs.
-   *
-   * @param bottom the input blobs, with the requested input shapes
-   * @param top the top blobs, which should be reshaped as needed
-   *
-   * This method should reshape top blobs as needed according to the shapes
-   * of the bottom (input) blobs, as well as reshaping any internal buffers
-   * and making any other necessary adjustments so that the layer can
-   * accommodate the bottom blobs.
-   */
-  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
-      const vector<Blob<Dtype,Mtype>*>& top) = 0;
-
-  /**
-   * @brief Given the bottom blobs, compute the top blobs and the loss.
-   *
-   * @param bottom
-   *     the input blobs, whose data fields store the input data for this layer
-   * @param top
-   *     the preshaped output blobs, whose data fields will store this layers'
-   *     outputs
-   * \return The total loss from the layer.
-   *
-   * The Forward wrapper calls the relevant device wrapper function
-   * (Forward_cpu or Forward_gpu) to compute the top blob values given the
-   * bottom blobs.  If the layer has any non-zero loss_weights, the wrapper
-   * then computes and returns the loss.
-   *
-   * Your layer should implement Forward_cpu and (optionally) Forward_gpu.
-   */
-  inline Mtype Forward(const vector<Blob<Dtype,Mtype>*>& bottom,
-      const vector<Blob<Dtype,Mtype>*>& top);
-
-  /**
-   * @brief Given the top blob error gradients, compute the bottom blob error
-   *        gradients.
-   *
-   * @param top
-   *     the output blobs, whose diff fields store the gradient of the error
-   *     with respect to themselves
-   * @param propagate_down
-   *     a vector with equal length to bottom, with each index indicating
-   *     whether to propagate the error gradients down to the bottom blob at
-   *     the corresponding index
-   * @param bottom
-   *     the input blobs, whose diff fields will store the gradient of the error
-   *     with respect to themselves after Backward is run
-   *
-   * The Backward wrapper calls the relevant device wrapper function
-   * (Backward_cpu or Backward_gpu) to compute the bottom blob diffs given the
-   * top blob diffs.
-   *
-   * Your layer should implement Backward_cpu and (optionally) Backward_gpu.
-   */
-  inline void Backward(const vector<Blob<Dtype,Mtype>*>& top,
-      const vector<bool>& propagate_down,
-      const vector<Blob<Dtype,Mtype>*>& bottom);
-
-  /**
-   * @brief Returns the vector of learnable parameter blobs.
-   */
-  vector<shared_ptr<Blob<Dtype,Mtype> > >& blobs() {
-    return blobs_;
-  }
+  virtual ~LayerBase() {}
 
   /**
    * @brief Returns the layer parameter.
    */
   const LayerParameter& layer_param() const { return layer_param_; }
-
-  /**
-   * @brief Writes the layer parameter to a protocol buffer
-   */
-  virtual void ToProto(LayerParameter* param, bool write_diff = false);
-
-  /**
-   * @brief Returns the scalar loss associated with a top blob at a given index.
-   */
-  inline Dtype loss(const int top_index) const {
-    return (loss_.size() > top_index) ? loss_[top_index] : Get<Dtype>(0);
-  }
-
-  /**
-   * @brief Sets the loss associated with a top blob at a given index.
-   */
-  inline void set_loss(const int top_index, const Dtype value) {
-    if (loss_.size() <= top_index) {
-      loss_.resize(top_index + 1, Get<Dtype>(0));
-    }
-    loss_[top_index] = value;
-  }
 
   /**
    * @brief Returns the layer type.
@@ -316,16 +179,183 @@ class Layer {
     param_propagate_down_[param_id] = value;
   }
 
-
  protected:
   /** The protobuf that stores the layer parameters */
   LayerParameter layer_param_;
   /** The phase: TRAIN or TEST */
   Phase phase_;
-  /** The vector that stores the learnable parameters as a set of blobs. */
-  vector<shared_ptr<Blob<Dtype,Mtype> > > blobs_;
+
   /** Vector indicating whether to compute the diff of each param blob. */
   vector<bool> param_propagate_down_;
+
+  /** Lock forward_mutex_ if this layer is shared */
+  void Lock();
+  /** Unlock forward_mutex_ if this layer is shared */
+  void Unlock();
+
+ private:
+  /** Whether this layer is actually shared by other nets*/
+  bool is_shared_;
+
+  /** The mutex for sequential forward if this layer is shared */
+  shared_ptr<boost::mutex> forward_mutex_;
+
+  /** Initialize forward_mutex_ */
+  void InitMutex();
+
+  DISABLE_COPY_AND_ASSIGN(LayerBase);
+
+};
+
+template <typename Dtype, typename Mtype>
+class Layer: public LayerBase {
+ public:
+
+  explicit Layer(const LayerParameter& param) : LayerBase(param) {
+      // Set phase and copy blobs (if there are any).
+      phase_ = param.phase();
+      if (layer_param_.blobs_size() > 0) {
+        blobs_.resize(layer_param_.blobs_size());
+        for (int i = 0; i < layer_param_.blobs_size(); ++i) {
+          blobs_[i].reset(new Blob<Dtype,Mtype>());
+          blobs_[i]->FromProto(layer_param_.blobs(i));
+        }
+      }
+  }
+
+  /**
+   * @brief Implements common layer setup functionality.
+   *
+   * @param bottom the preshaped input blobs
+   * @param top
+   *     the allocated but unshaped output blobs, to be shaped by Reshape
+   *
+   * Checks that the number of bottom and top blobs is correct.
+   * Calls LayerSetUp to do special layer setup for individual layer types,
+   * followed by Reshape to set up sizes of top blobs and internal buffers.
+   * Sets up the loss weight multiplier blobs for any non-zero loss weights.
+   * This method may not be overridden.
+   */
+  void SetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {
+    CheckBlobCounts(bottom, top);
+    LayerSetUp(bottom, top);
+    Reshape(bottom, top);
+    SetLossWeights(top);
+  }
+
+  /**
+   * @brief Does layer-specific setup: your layer should implement this function
+   *        as well as Reshape.
+   *
+   * @param bottom
+   *     the preshaped input blobs, whose data fields store the input data for
+   *     this layer
+   * @param top
+   *     the allocated but unshaped output blobs
+   *
+   * This method should do one-time layer specific setup. This includes reading
+   * and processing relevent parameters from the <code>layer_param_</code>.
+   * Setting up the shapes of top blobs and internal buffers should be done in
+   * <code>Reshape</code>, which will be called before the forward pass to
+   * adjust the top blob sizes.
+   */
+  virtual void LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) {}
+
+
+  /**
+   * @brief Adjust the shapes of top blobs and internal buffers to accommodate
+   *        the shapes of the bottom blobs.
+   *
+   * @param bottom the input blobs, with the requested input shapes
+   * @param top the top blobs, which should be reshaped as needed
+   *
+   * This method should reshape top blobs as needed according to the shapes
+   * of the bottom (input) blobs, as well as reshaping any internal buffers
+   * and making any other necessary adjustments so that the layer can
+   * accommodate the bottom blobs.
+   */
+  virtual void Reshape(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top) = 0;
+
+  /**
+   * @brief Given the bottom blobs, compute the top blobs and the loss.
+   *
+   * @param bottom
+   *     the input blobs, whose data fields store the input data for this layer
+   * @param top
+   *     the preshaped output blobs, whose data fields will store this layers'
+   *     outputs
+   * \return The total loss from the layer.
+   *
+   * The Forward wrapper calls the relevant device wrapper function
+   * (Forward_cpu or Forward_gpu) to compute the top blob values given the
+   * bottom blobs.  If the layer has any non-zero loss_weights, the wrapper
+   * then computes and returns the loss.
+   *
+   * Your layer should implement Forward_cpu and (optionally) Forward_gpu.
+   */
+  inline Mtype Forward(const vector<Blob<Dtype,Mtype>*>& bottom,
+      const vector<Blob<Dtype,Mtype>*>& top);
+
+  /**
+   * @brief Given the top blob error gradients, compute the bottom blob error
+   *        gradients.
+   *
+   * @param top
+   *     the output blobs, whose diff fields store the gradient of the error
+   *     with respect to themselves
+   * @param propagate_down
+   *     a vector with equal length to bottom, with each index indicating
+   *     whether to propagate the error gradients down to the bottom blob at
+   *     the corresponding index
+   * @param bottom
+   *     the input blobs, whose diff fields will store the gradient of the error
+   *     with respect to themselves after Backward is run
+   *
+   * The Backward wrapper calls the relevant device wrapper function
+   * (Backward_cpu or Backward_gpu) to compute the bottom blob diffs given the
+   * top blob diffs.
+   *
+   * Your layer should implement Backward_cpu and (optionally) Backward_gpu.
+   */
+  inline void Backward(const vector<Blob<Dtype,Mtype>*>& top,
+      const vector<bool>& propagate_down,
+      const vector<Blob<Dtype,Mtype>*>& bottom);
+
+  /**
+   * @brief Returns the vector of learnable parameter blobs.
+   */
+  vector<shared_ptr<Blob<Dtype,Mtype> > >& blobs() {
+    return blobs_;
+  }
+
+  /**
+   * @brief Returns the scalar loss associated with a top blob at a given index.
+   */
+  inline Dtype loss(const int top_index) const {
+    return (loss_.size() > top_index) ? loss_[top_index] : Get<Dtype>(0);
+  }
+
+  /**
+   * @brief Sets the loss associated with a top blob at a given index.
+   */
+  inline void set_loss(const int top_index, const Dtype value) {
+    if (loss_.size() <= top_index) {
+      loss_.resize(top_index + 1, Get<Dtype>(0));
+    }
+    loss_[top_index] = value;
+  }
+
+  /**
+   * @brief Writes the layer parameter to a protocol buffer
+   */
+  virtual void ToProto(LayerParameter* param, bool write_diff = false);
+
+ protected:
+  /** The vector that stores the learnable parameters as a set of blobs. */
+  vector<shared_ptr<Blob<Dtype,Mtype> > > blobs_;
 
   /** The vector that indicates whether each top blob has a non-zero weight in
    *  the objective function. */
@@ -427,21 +457,6 @@ class Layer {
     }
   }
 
- private:
-  /** Whether this layer is actually shared by other nets*/
-  bool is_shared_;
-
-  /** The mutex for sequential forward if this layer is shared */
-  shared_ptr<boost::mutex> forward_mutex_;
-
-  /** Initialize forward_mutex_ */
-  void InitMutex();
-  /** Lock forward_mutex_ if this layer is shared */
-  void Lock();
-  /** Unlock forward_mutex_ if this layer is shared */
-  void Unlock();
-
-  DISABLE_COPY_AND_ASSIGN(Layer);
 };  // class Layer
 
 // Forward and backward wrappers. You should implement the cpu and
@@ -512,7 +527,7 @@ void Layer<Dtype,Mtype>::ToProto(LayerParameter* param, bool write_diff) {
     blobs_[i]->ToProto(param->add_blobs(), write_diff);
   }
 }
-
+  
 }  // namespace caffe
 
 #endif  // CAFFE_LAYER_H_

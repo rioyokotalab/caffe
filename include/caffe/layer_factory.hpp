@@ -126,31 +126,24 @@ class LayerRegisterer {
   static LayerRegisterer<float,float> g_creator_f_##type(#type, creator<float,float>); \
   static LayerRegisterer<double,double> g_creator_d_##type(#type, creator<double,double>)
 
-#define REGISTER_LAYER_CREATOR_GPU_HOST(type, creator) \
+
+  // boris: this should actually be selected at runtime.
+#if NATIVE_FP16_SUPPORTED
+# define REGISTER_LAYER_CREATOR_GPU(type, creator) \
   REGISTER_LAYER_CREATOR_CPU(type, creator); \
-  static LayerRegisterer<half,float> g_creator_hf_##type(#type, creator<half,float>)
-
-// boris: I suppose we should be able to figure this out:
-// # define NATIVE_FP16_SUPPORTED 1
-
-#ifdef NATIVE_FP16_SUPPORTED
-# define REGISTER_LAYER_CREATOR_GPU_DEVICE(type, creator) \
-     REGISTER_LAYER_CREATOR_GPU_HOST(type, creator); \
-     static LayerRegisterer<half,half> g_creator_hh_##type(#type, creator<half, half>)
-#else
-#  define REGISTER_LAYER_CREATOR_GPU_DEVICE(type, creator) \
-     REGISTER_LAYER_CREATOR_GPU_HOST(type, creator)
+  static LayerRegisterer<half,float> g_creator_hf_##type(#type, creator<half,float>); \
+  static LayerRegisterer<half,half> g_creator_hh_##type(#type, creator<half, half>)
+# else
+# define REGISTER_LAYER_CREATOR_GPU(type, creator) \
+     REGISTER_LAYER_CREATOR_CPU(type, creator); \
+     static LayerRegisterer<half,float> g_creator_hf_##type(#type, creator<half,float>)
 #endif
 
-// This distinction may not be needed 
+
 #ifdef CPU_ONLY
 #  define REGISTER_LAYER_CREATOR(type, creator) REGISTER_LAYER_CREATOR_CPU(type, creator)
 #else
-# ifdef __CUDA_ARCH__
-#  define REGISTER_LAYER_CREATOR(type, creator) REGISTER_LAYER_CREATOR_GPU_DEVICE(type, creator)
-# else
-#  define REGISTER_LAYER_CREATOR(type, creator) REGISTER_LAYER_CREATOR_GPU_HOST(type, creator)
-# endif
+#  define REGISTER_LAYER_CREATOR(type, creator) REGISTER_LAYER_CREATOR_GPU(type, creator)
 #endif
 
 #define REGISTER_LAYER_CLASS(type)                                             \
