@@ -36,7 +36,7 @@ class ConstantFiller : public Filler<Dtype,Mtype> {
   virtual void Fill(Blob<Dtype,Mtype>* blob) {
     Dtype* data = blob->mutable_cpu_data();
     const int count = blob->count();
-    const Mtype value = this->filler_param_.value();
+    const Mtype value(this->filler_param_.value());
     CHECK(count);
     for (int i = 0; i < count; ++i) {
       data[i] = Get<Dtype>(value);
@@ -106,13 +106,13 @@ class PositiveUnitballFiller : public Filler<Dtype,Mtype> {
   virtual void Fill(Blob<Dtype,Mtype>* blob) {
     Dtype* data = blob->mutable_cpu_data();
     DCHECK(blob->count());
-    caffe_rng_uniform<Dtype,Mtype>(blob->count(), 0, 1, blob->mutable_cpu_data());
+    caffe_rng_uniform<Dtype,Mtype>(blob->count(), Mtype(0.f), Mtype(1.f), blob->mutable_cpu_data());
     // We expect the filler to not be called very frequently, so we will
     // just use a simple implementation
     int dim = blob->count() / blob->num();
     CHECK(dim);
     for (int i = 0; i < blob->num(); ++i) {
-      Mtype sum = 0;
+      Mtype sum(0.f);
       for (int j = 0; j < dim; ++j) {
         sum += Get<Mtype>(data[i * dim + j]);
       }

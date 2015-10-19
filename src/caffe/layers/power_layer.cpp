@@ -25,7 +25,7 @@ void PowerLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bott
   const int count = bottom[0]->count();
   // Special case where we can ignore the input: scale or power is 0.
   if (diff_scale_ == Mtype(0)) {
-    Mtype value = (power_ == 0) ? Mtype(1) : pow(shift_, power_);
+    Mtype value(power_ == 0 ? Mtype(1) : pow(shift_, power_));
     caffe_set(count, Get<Dtype>(value), top_data);
     return;
   }

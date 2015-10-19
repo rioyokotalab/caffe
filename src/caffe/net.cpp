@@ -671,7 +671,7 @@ template <typename Dtype, typename Mtype>
 void Net<Dtype,Mtype>::InputDebugInfo(const int input_id) {
   const Blob<Dtype,Mtype>& blob = *net_input_blobs_[input_id];
   const string& blob_name = blob_names_[net_input_blob_indices_[input_id]];
-  const Mtype data_abs_val_mean = blob.asum_data() / blob.count();
+  const double data_abs_val_mean = blob.asum_data() / blob.count();
   if (Caffe::root_solver()) {
     LOG(INFO) << "    [Forward] "
               << "Input " << blob_name << " data: " << data_abs_val_mean;
@@ -683,7 +683,7 @@ void Net<Dtype,Mtype>::ForwardDebugInfo(const int layer_id) {
   for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
     const Blob<Dtype,Mtype>& blob = *top_vecs_[layer_id][top_id];
     const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
-    const Mtype data_abs_val_mean = blob.asum_data() / blob.count();
+    const double data_abs_val_mean = blob.asum_data() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Forward] "
                 << "Layer " << layer_names_[layer_id]
@@ -696,7 +696,7 @@ void Net<Dtype,Mtype>::ForwardDebugInfo(const int layer_id) {
     const Blob<Dtype,Mtype>& blob = *layers_[layer_id]->blobs()[param_id];
     const int net_param_id = param_id_vecs_[layer_id][param_id];
     const string& blob_name = param_display_names_[net_param_id];
-    const Mtype data_abs_val_mean = blob.asum_data() / blob.count();
+    const double data_abs_val_mean = blob.asum_data() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Forward] "
                 << "Layer " << layer_names_[layer_id]
@@ -713,7 +713,7 @@ void Net<Dtype,Mtype>::BackwardDebugInfo(const int layer_id) {
     if (!bottom_need_backward_[layer_id][bottom_id]) { continue; }
     const Blob<Dtype,Mtype>& blob = *bottom_vec[bottom_id];
     const string& blob_name = blob_names_[bottom_id_vecs_[layer_id][bottom_id]];
-    const Mtype diff_abs_val_mean = blob.asum_diff() / blob.count();
+    const double diff_abs_val_mean = blob.asum_diff() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Backward] "
                 << "Layer " << layer_names_[layer_id]
@@ -725,7 +725,7 @@ void Net<Dtype,Mtype>::BackwardDebugInfo(const int layer_id) {
        ++param_id) {
     if (!layers_[layer_id]->param_propagate_down(param_id)) { continue; }
     const Blob<Dtype,Mtype>& blob = *layers_[layer_id]->blobs()[param_id];
-    const Mtype diff_abs_val_mean = blob.asum_diff() / blob.count();
+    double diff_abs_val_mean = blob.asum_diff() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Backward] "
                 << "Layer " << layer_names_[layer_id]
@@ -741,9 +741,9 @@ void Net<Dtype,Mtype>::UpdateDebugInfo(const int param_id) {
   const int param_owner = param_owners_[param_id];
   const string& layer_name = layer_names_[param_layer_indices_[param_id].first];
   const string& param_display_name = param_display_names_[param_id];
-  const Mtype diff_abs_val_mean = blob.asum_diff() / blob.count();
+  const double diff_abs_val_mean = blob.asum_diff() / blob.count();
   if (param_owner < 0) {
-    const Mtype data_abs_val_mean = blob.asum_data() / blob.count();
+    double data_abs_val_mean = blob.asum_data() / blob.count();
     if (Caffe::root_solver()) {
       LOG(INFO) << "    [Update] Layer " << layer_name
                 << ", param " << param_display_name
@@ -817,8 +817,8 @@ void Net<Dtype,Mtype>::Backward() {
       sumsq_data += learnable_params_[i]->sumsq_data();
       sumsq_diff += learnable_params_[i]->sumsq_diff();
     }
-    const Mtype l2norm_data = sqrt(sumsq_data);
-    const Mtype l2norm_diff = sqrt(sumsq_diff);
+    const double l2norm_data = sqrt(sumsq_data);
+    const double l2norm_diff = sqrt(sumsq_diff);
     LOG(ERROR) << "    [Backward] All net params (data, diff): "
                << "L1 norm = (" << asum_data << ", " << asum_diff << "); "
                << "L2 norm = (" << l2norm_data << ", " << l2norm_diff << ")";
@@ -1086,7 +1086,7 @@ const shared_ptr<Layer<Dtype,Mtype> > Net<Dtype,Mtype>::layer_by_name(
 INSTANTIATE_CLASS(Net);
 
 #ifndef CPU_ONLY
-template class Net<half,half>;
+template class Net<float16,float16>;
 #endif // CPU_ONLY
 
 }  // namespace caffe

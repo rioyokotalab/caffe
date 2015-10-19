@@ -84,28 +84,28 @@ void hdf5_load_nd_dataset<double,double>(hid_t file_id, const char* dataset_name
 #ifndef CPU_ONLY
 
 template <>
-void hdf5_load_nd_dataset<half,float>(hid_t file_id, const char* dataset_name_,
-        int min_dim, int max_dim, Blob<half,float>* blob) {
+void hdf5_load_nd_dataset<float16,float>(hid_t file_id, const char* dataset_name_,
+        int min_dim, int max_dim, Blob<float16,float>* blob) {
   hdf5_load_nd_dataset_helper(file_id, dataset_name_, min_dim, max_dim, blob);
   std::vector<float> temp_data(blob->count());
   herr_t status = H5LTread_dataset_float(
     file_id, dataset_name_, &temp_data.front());
   CHECK_GE(status, 0) << "Failed to read float dataset " << dataset_name_;
   for (int i = 0; i < blob->count(); ++i) {
-    blob->mutable_cpu_data()[i] = Get<half>(temp_data[i]);
+    blob->mutable_cpu_data()[i] = Get<float16>(temp_data[i]);
   }
 }
 
 template <>
-void hdf5_load_nd_dataset<half,half>(hid_t file_id, const char* dataset_name_,
-        int min_dim, int max_dim, Blob<half,half>* blob) {
+void hdf5_load_nd_dataset<float16,float16>(hid_t file_id, const char* dataset_name_,
+        int min_dim, int max_dim, Blob<float16,float16>* blob) {
   hdf5_load_nd_dataset_helper(file_id, dataset_name_, min_dim, max_dim, blob);
   std::vector<float> temp_data(blob->count());
   herr_t status = H5LTread_dataset_float(
     file_id, dataset_name_, &temp_data.front());
   CHECK_GE(status, 0) << "Failed to read float dataset " << dataset_name_;
   for (int i = 0; i < blob->count(); ++i) {
-    blob->mutable_cpu_data()[i] = Get<half>(temp_data[i]);
+    blob->mutable_cpu_data()[i] = Get<float16>(temp_data[i]);
   }
 }
 
@@ -156,15 +156,15 @@ void hdf5_save_nd_dataset<double,double>(
 #ifndef CPU_ONLY
 
 template <>
-void hdf5_save_nd_dataset<half,float>(
-    const hid_t file_id, const string& dataset_name, const Blob<half,float>& blob,
+void hdf5_save_nd_dataset<float16,float>(
+    const hid_t file_id, const string& dataset_name, const Blob<float16,float>& blob,
     bool write_diff) {
   int num_axes = blob.num_axes();
   hsize_t *dims = new hsize_t[num_axes];
   for (int i = 0; i < num_axes; ++i) {
     dims[i] = blob.shape(i);
   }
-  const half* data = write_diff ? blob.cpu_diff() : blob.cpu_data();
+  const float16* data = write_diff ? blob.cpu_diff() : blob.cpu_data();
   std::vector<float> temp_data(blob.count());
   for (int i = 0; i < blob.count(); ++i) {
     temp_data[i] = Get<float>(data[i]);
@@ -176,15 +176,15 @@ void hdf5_save_nd_dataset<half,float>(
 }
 
 template <>
-void hdf5_save_nd_dataset<half,half>(
-    const hid_t file_id, const string& dataset_name, const Blob<half,half>& blob,
+void hdf5_save_nd_dataset<float16,float16>(
+    const hid_t file_id, const string& dataset_name, const Blob<float16,float16>& blob,
     bool write_diff) {
   int num_axes = blob.num_axes();
   hsize_t *dims = new hsize_t[num_axes];
   for (int i = 0; i < num_axes; ++i) {
     dims[i] = blob.shape(i);
   }
-  const half* data = write_diff ? blob.cpu_diff() : blob.cpu_data();
+  const float16* data = write_diff ? blob.cpu_diff() : blob.cpu_data();
   std::vector<float> temp_data(blob.count());
   for (int i = 0; i < blob.count(); ++i) {
     temp_data[i] = Get<float>(data[i]);

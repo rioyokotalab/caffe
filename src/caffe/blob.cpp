@@ -536,19 +536,19 @@ void Blob<float,float>::ToProto(BlobProto* proto, bool write_diff) const {
 #ifndef CPU_ONLY
 
 template <>
-void Blob<half,float>::ToProto(BlobProto* proto, bool write_diff) const {
+void Blob<float16,float>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_shape();
   for (int i = 0; i < shape_.size(); ++i) {
     proto->mutable_shape()->add_dim(shape_[i]);
   }
   proto->clear_data();
   proto->clear_diff();
-  const half* data_vec = cpu_data();
+  const float16* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
     proto->add_data(Get<float>(data_vec[i]));
   }
   if (write_diff) {
-    const half* diff_vec = cpu_diff();
+    const float16* diff_vec = cpu_diff();
     for (int i = 0; i < count_; ++i) {
       proto->add_diff(Get<float>(diff_vec[i]));
     }
@@ -556,19 +556,19 @@ void Blob<half,float>::ToProto(BlobProto* proto, bool write_diff) const {
 }
 
 template <>
-void Blob<half,half>::ToProto(BlobProto* proto, bool write_diff) const {
+void Blob<float16,float16>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_shape();
   for (int i = 0; i < shape_.size(); ++i) {
     proto->mutable_shape()->add_dim(shape_[i]);
   }
   proto->clear_data();
   proto->clear_diff();
-  const half* data_vec = cpu_data();
+  const float16* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
     proto->add_data(Get<float>(data_vec[i]));
   }
   if (write_diff) {
-    const half* diff_vec = cpu_diff();
+    const float16* diff_vec = cpu_diff();
     for (int i = 0; i < count_; ++i) {
       proto->add_diff(Get<float>(diff_vec[i]));
     }
@@ -582,7 +582,7 @@ template class Blob<int,int>;
 template class Blob<unsigned int, unsigned int>;
 
 #ifndef CPU_ONLY
-template class Blob<half,half>;
+template class Blob<float16,float16>;
 #endif // CPU_ONLY
 
 }  // namespace caffe

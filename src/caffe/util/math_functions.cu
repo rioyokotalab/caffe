@@ -46,10 +46,10 @@ void caffe_gpu_gemm<double,double>(const CBLAS_TRANSPOSE TransA,
 }
 
 template <>
-void caffe_gpu_gemm<half,float>(const CBLAS_TRANSPOSE TransA,
+void caffe_gpu_gemm<float16,float>(const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
-    const float alpha, const half* A, const half* B, const float beta,
-    half* C) {
+    const float alpha, const float16* A, const float16* B, const float beta,
+    float16* C) {
   // Note that cublas follows fortran order.
   const int lda = (TransA == CblasNoTrans) ? K : M;
   const int ldb = (TransB == CblasNoTrans) ? N : K;
@@ -83,9 +83,9 @@ void caffe_gpu_gemv<double,double>(const CBLAS_TRANSPOSE TransA, const int M,
 }
 
 template <>
-void caffe_gpu_gemv<half, float>(const CBLAS_TRANSPOSE TransA, const int M,
-    const int N, const float alpha, const half* A, const half* x,
-    const float beta, half* y) {
+void caffe_gpu_gemv<float16, float>(const CBLAS_TRANSPOSE TransA, const int M,
+    const int N, const float alpha, const float16* A, const float16* x,
+    const float beta, float16* y) {
   // Note that cublas still follows Fortran order.
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
@@ -118,14 +118,14 @@ void axpy_kernel(const int N, const T_MATH alpha, const T_STORE *x, T_STORE *y)
 }
 
 template <>
-void caffe_gpu_axpy<half,float>(const int N, const float alpha, const half* x, half *y) {
-  axpy_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, x, y);
+void caffe_gpu_axpy<float16,float>(const int N, const float alpha, const float16* x, float16 *y) {
+  axpy_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, x, y);
   CUDA_POST_KERNEL_CHECK;
 }
 
 template <>
-void caffe_gpu_axpy<half,half>(const int N, const half alpha, const half* x, half *y) {
-  axpy_kernel<half,half><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, x, y);
+void caffe_gpu_axpy<float16,float16>(const int N, const float16 alpha, const float16* x, float16 *y) {
+  axpy_kernel<float16,float16><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, x, y);
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -155,14 +155,14 @@ void scal_kernel(const int N, const T_MATH alpha, T_STORE *X)
 }
 
 template <>
-void caffe_gpu_scal<half,float>(const int N, const float alpha, half *X) {
-  scal_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, X);
+void caffe_gpu_scal<float16,float>(const int N, const float alpha, float16 *X) {
+  scal_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, X);
   CUDA_POST_KERNEL_CHECK;
 }
 
 template <>
-void caffe_gpu_scal<half,half>(const int N, const half alpha, half *X) {
-  scal_kernel<half,half><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, X);
+void caffe_gpu_scal<float16,float16>(const int N, const float16 alpha, float16 *X) {
+  scal_kernel<float16,float16><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, X);
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -191,10 +191,10 @@ void axpby_kernel(const int N, const T_MATH alpha, const T_STORE* X,
 }
 
 template <>
-void caffe_gpu_axpby<half,float>(const int N, const float alpha, const half* X,
-    const float beta, half* Y)
+void caffe_gpu_axpby<float16,float>(const int N, const float alpha, const float16* X,
+    const float beta, float16* Y)
 {
-  axpby_kernel<half,float><<<CAFFE_GET_BLOCKS(N),CAFFE_CUDA_NUM_THREADS>>>(N,alpha,X,beta,Y);
+  axpby_kernel<float16,float><<<CAFFE_GET_BLOCKS(N),CAFFE_CUDA_NUM_THREADS>>>(N,alpha,X,beta,Y);
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -210,7 +210,7 @@ void caffe_gpu_dot<double,double>(const int n, const double* x, const double* y,
   CUBLAS_CHECK(cublasDdot(Caffe::cublas_handle(), n, x, 1, y, 1, out));
 }
 
-struct half_dot_reduce {
+struct float16_dot_reduce {
   __host__ __device__
   float operator()(const float& x, const float& y)
   {
@@ -218,9 +218,9 @@ struct half_dot_reduce {
   }
 };
 
-struct half_dot_mult {
+struct float16_dot_mult {
   __host__ __device__
-  float operator()(half& x, half& y)
+  float operator()(float16& x, float16& y)
   {
     return Get<float>(x) * Get<float>(y);
   }
@@ -247,15 +247,15 @@ void gpu_dot_kernel(const int N, const Dtype *x, const Dtype *y, Mtype *out)
 }
 
 template <>
-void caffe_gpu_dot<half, float>(const int n, const half* x, const half* y,
+void caffe_gpu_dot<float16, float>(const int n, const float16* x, const float16* y,
     float *out)
 {
-  // float ret = thrust::inner_product(x, x+n, y, init, half_dot_reduce(), half_dot_mult());
+  // float ret = thrust::inner_product(x, x+n, y, init, float16_dot_reduce(), float16_dot_mult());
   // *out = ret;
 
   float *res;
   cudaMalloc(&res, sizeof(float));
-  gpu_dot_kernel<half,float><<<1,256>>>(n, x, y, res);
+  gpu_dot_kernel<float16,float><<<1,256>>>(n, x, y, res);
   CUDA_POST_KERNEL_CHECK;
   cudaMemcpy(out,res,sizeof(float), cudaMemcpyDeviceToHost);
   cudaFree(res);
@@ -263,13 +263,13 @@ void caffe_gpu_dot<half, float>(const int n, const half* x, const half* y,
 }
 
 template <>
-void caffe_gpu_dot<half, half>(const int n, const half* x, const half* y, half *out)
+void caffe_gpu_dot<float16, float16>(const int n, const float16* x, const float16* y, float16 *out)
 {
-  half *res;
-  cudaMalloc(&res, sizeof(half));
-  gpu_dot_kernel<half,half><<<1,256>>>(n, x, y, res);
+  float16 *res;
+  cudaMalloc(&res, sizeof(float16));
+  gpu_dot_kernel<float16,float16><<<1,256>>>(n, x, y, res);
   CUDA_POST_KERNEL_CHECK;
-  cudaMemcpy(out, res, sizeof(half), cudaMemcpyDeviceToHost);
+  cudaMemcpy(out, res, sizeof(float16), cudaMemcpyDeviceToHost);
   cudaFree(res);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -284,10 +284,10 @@ void caffe_gpu_asum<double,double>(const int n, const double* x, double* y) {
   CUBLAS_CHECK(cublasDasum(Caffe::cublas_handle(), n, x, 1, y));
 }
 
-struct half_asum_reduce
+struct float16_asum_reduce
 {
   __host__ __device__
-  float operator()(const float& a, const half& b)
+  float operator()(const float& a, const float16& b)
   {
     return a + fabs(Get<float>(b));
   }
@@ -314,27 +314,27 @@ void gpu_asum_kernel(const int N, const Dtype *x, Mtype *out)
 }
 
 template <>
-void caffe_gpu_asum<half,float>(const int n, const half* x, float* y)
+void caffe_gpu_asum<float16,float>(const int n, const float16* x, float* y)
 {
   // float init = 0.0f;
-  // float result = thrust::reduce(x, x+n, init, half_asum_reduce());
+  // float result = thrust::reduce(x, x+n, init, float16_asum_reduce());
   // *y = result;
   float *res;
   cudaMalloc(&res, sizeof(float));
-  gpu_asum_kernel<half,float><<<1,256>>>(n,x,res);
+  gpu_asum_kernel<float16,float><<<1,256>>>(n,x,res);
   CUDA_POST_KERNEL_CHECK;
   cudaMemcpy(y,res,sizeof(float),cudaMemcpyDeviceToHost);
   CUDA_POST_KERNEL_CHECK;
 }
 
 template <>
-void caffe_gpu_asum<half,half>(const int n, const half* x, half* y)
+void caffe_gpu_asum<float16,float16>(const int n, const float16* x, float16* y)
 {
-  half *res;
-  cudaMalloc(&res, sizeof(half));
-  gpu_asum_kernel<half,half><<<1,256>>>(n,x,res);
+  float16 *res;
+  cudaMalloc(&res, sizeof(float16));
+  gpu_asum_kernel<float16,float16><<<1,256>>>(n,x,res);
   CUDA_POST_KERNEL_CHECK;
-  cudaMemcpy(y,res,sizeof(half),cudaMemcpyDeviceToHost);
+  cudaMemcpy(y,res,sizeof(float16),cudaMemcpyDeviceToHost);
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -362,10 +362,10 @@ void scale_kernel(const int n, const T_MATH alpha, const T_STORE* x, T_STORE* y)
 }
 
 template <>
-void caffe_gpu_scale<half,float>(const int n, const float alpha, const half *x,
-    half *y)
+void caffe_gpu_scale<float16,float>(const int n, const float alpha, const float16 *x,
+    float16 *y)
 {
-  scale_kernel<half,float><<<CAFFE_GET_BLOCKS(n),CAFFE_CUDA_NUM_THREADS>>>(n,alpha,x,y);
+  scale_kernel<float16,float><<<CAFFE_GET_BLOCKS(n),CAFFE_CUDA_NUM_THREADS>>>(n,alpha,x,y);
   CUDA_POST_KERNEL_CHECK;
 }
 
@@ -378,7 +378,7 @@ __global__ void set_kernel(const int n, const Mtype alpha, Dtype* y) {
 
 template <typename Dtype, typename Mtype>
 void caffe_gpu_set(const int N, const Mtype alpha, Dtype* Y) {
-  if (alpha == 0) {
+  if (alpha == 0.) {
     CUDA_CHECK(cudaMemset(Y, 0, sizeof(Dtype) * N));  // NOLINT(caffe/alt_fn)
     return;
   }
@@ -391,8 +391,8 @@ void caffe_gpu_set(const int N, const Mtype alpha, Dtype* Y) {
 template void caffe_gpu_set<int,int>(const int N, const int alpha, int* Y);
 template void caffe_gpu_set<float,float>(const int N, const float alpha, float* Y);
 template void caffe_gpu_set<double,double>(const int N, const double alpha, double* Y);
-template void caffe_gpu_set<half,float>(const int N, const float alpha, half* Y);
-template void caffe_gpu_set<half,half>(const int N, const half alpha, half* Y);
+template void caffe_gpu_set<float16,float>(const int N, const float alpha, float16* Y);
+template void caffe_gpu_set<float16,float16>(const int N, const float16 alpha, float16* Y);
 
 template <typename Dtype, typename Mtype>
 __global__ void add_scalar_kernel(const int n, const Mtype alpha, Dtype* y) {
@@ -418,9 +418,9 @@ void caffe_gpu_add_scalar(const int N, const double alpha, double* Y) {
 }
 
 template <>
-void caffe_gpu_add_scalar(const int N, const float alpha, half* Y) {
+void caffe_gpu_add_scalar(const int N, const float alpha, float16* Y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  add_scalar_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  add_scalar_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, alpha, Y);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -452,10 +452,10 @@ void caffe_gpu_add<double,double>(const int N, const double* a, const double* b,
 }
 
 template <>
-void caffe_gpu_add<half,float>(const int N, const half* a, const half* b,
-    half* y) {
+void caffe_gpu_add<float16,float>(const int N, const float16* a, const float16* b,
+    float16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  add_kernel<half, float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  add_kernel<float16, float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, b, y);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -487,10 +487,10 @@ void caffe_gpu_sub<double,double>(const int N, const double* a, const double* b,
 }
 
 template <>
-void caffe_gpu_sub<half,float>(const int N, const half* a, const half* b,
-    half* y) {
+void caffe_gpu_sub<float16,float>(const int N, const float16* a, const float16* b,
+    float16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  sub_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  sub_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, b, y);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -522,10 +522,10 @@ void caffe_gpu_mul<double,double>(const int N, const double* a,
 }
 
 template <>
-void caffe_gpu_mul<half,float>(const int N, const half* a,
-    const half* b, half* y) {
+void caffe_gpu_mul<float16,float>(const int N, const float16* a,
+    const float16* b, float16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  mul_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  mul_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, b, y);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -557,10 +557,10 @@ void caffe_gpu_div<double,double>(const int N, const double* a,
 }
 
 template <>
-void caffe_gpu_div<half,float>(const int N, const half* a,
-    const half* b, half* y) {
+void caffe_gpu_div<float16,float>(const int N, const float16* a,
+    const float16* b, float16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  div_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  div_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, b, y);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -589,9 +589,9 @@ void caffe_gpu_abs<double,double>(const int N, const double* a, double* y) {
 }
 
 template <>
-void caffe_gpu_abs<half,float>(const int N, const half* a, half* y) {
+void caffe_gpu_abs<float16,float>(const int N, const float16* a, float16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  abs_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  abs_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, y);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -620,9 +620,9 @@ void caffe_gpu_exp<double,double>(const int N, const double* a, double* y) {
 }
 
 template <>
-void caffe_gpu_exp<half,float>(const int N, const half* a, half* y) {
+void caffe_gpu_exp<float16,float>(const int N, const float16* a, float16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  exp_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  exp_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, y);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -649,9 +649,9 @@ void caffe_gpu_log<double>(const int N, const double* a, double* y) {
 }
 
 template <>
-void caffe_gpu_log<half>(const int N, const half* a, half* y) {
+void caffe_gpu_log<float16>(const int N, const float16* a, float16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  log_kernel<half><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  log_kernel<float16><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, y);
 }
 
@@ -682,10 +682,10 @@ void caffe_gpu_powx<double,double>(const int N, const double* a,
 }
 
 template <>
-void caffe_gpu_powx<half,float>(const int N, const half* a,
-    const float alpha, half* y) {
+void caffe_gpu_powx<float16,float>(const int N, const float16* a,
+    const float alpha, float16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  powx_kernel<half,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  powx_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, alpha, y);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -710,8 +710,8 @@ __global__ void popcll_kernel(const int n, const double* a,
   }
 }
 
-__global__ void popch_kernel(const int n, const half* a,
-    const half* b, uint8_t* y) {
+__global__ void popch_kernel(const int n, const float16* a,
+    const float16* b, uint8_t* y) {
   CUDA_KERNEL_LOOP(index, n) {
     y[index] = __popc(static_cast<uint32_t>(Get<float>(a[index])) ^
                       static_cast<uint32_t>(Get<float>(b[index])));
@@ -748,8 +748,8 @@ uint32_t caffe_gpu_hamming_distance<double,double>(const int n, const double* x,
 }
 
 template <>
-uint32_t caffe_gpu_hamming_distance<half,float>(const int n, const half* x,
-                                   const half* y) {
+uint32_t caffe_gpu_hamming_distance<float16,float>(const int n, const float16* x,
+                                   const float16* y) {
   // TODO: Fix caffe_gpu_hamming_distance (see failing unit test
   // TestHammingDistanceGPU in test_math_functions.cpp).
   NOT_IMPLEMENTED;
@@ -808,8 +808,8 @@ void caffe_gpu_rng_uniform<double,double>(const int n, const double a, const dou
 }
 
 template <>
-void caffe_gpu_rng_uniform<half,float>(const int n, const float a, const float b,
-                                   half* r) {
+void caffe_gpu_rng_uniform<float16,float>(const int n, const float a, const float b,
+                                   float16* r) {
   thrust::device_vector<float> rf(n);
   CURAND_CHECK(curandGenerateUniform(Caffe::curand_generator(), thrust::raw_pointer_cast(rf.data()), n));
   const float range = b - a;
@@ -819,7 +819,7 @@ void caffe_gpu_rng_uniform<half,float>(const int n, const float a, const float b
   if (a != static_cast<float>(0)) {
     caffe_gpu_add_scalar<float,float>(n, a, thrust::raw_pointer_cast(rf.data()));
   }
-  caffe_gpu_convert<float,half>(n, thrust::raw_pointer_cast(rf.data()), r);
+  caffe_gpu_convert<float,float16>(n, thrust::raw_pointer_cast(rf.data()), r);
 }
 
 template <>
@@ -838,12 +838,12 @@ void caffe_gpu_rng_gaussian(const int n, const double mu, const double sigma,
 
 template <>
 void caffe_gpu_rng_gaussian(const int n, const float mu, const float sigma,
-                            half* r) {
+                            float16* r) {
   // TODO: call fp16-based version of curandGenerateNormal when it becomes available.
   thrust::device_vector<float> rf(n);
   CURAND_CHECK(
       curandGenerateNormal(Caffe::curand_generator(), thrust::raw_pointer_cast(rf.data()), n, mu, sigma));
-  caffe_gpu_convert<float,half>(n, thrust::raw_pointer_cast(rf.data()), r);
+  caffe_gpu_convert<float,float16>(n, thrust::raw_pointer_cast(rf.data()), r);
 }
 
 }  // namespace caffe

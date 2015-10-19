@@ -11,6 +11,7 @@ extern "C" {
 #include <cblas.h>
 }
 #include <math.h>
+#include "float16.hpp"
 
 // Functions that caffe uses but are not present if MKL is not linked.
 
@@ -51,8 +52,8 @@ extern "C" {
     v##name<double>(n, a, y); \
   } \
   inline void vh##name( \
-      const int n, const half* a, half* y) { \
-    v##name<half>(n, a, y); \
+		       const int n, const caffe::float16* a, caffe::float16* y) { \
+    v##name<caffe::float16>(n, a, y);					\
   }
 
 #endif // CPU_ONLY

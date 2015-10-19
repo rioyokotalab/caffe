@@ -50,7 +50,7 @@ void AccuracyLayer<Dtype,Mtype>::Reshape(
 template <typename Dtype, typename Mtype>
 void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bottom,
     const vector<Blob<Dtype,Mtype>*>& top) {
-  Mtype accuracy = 0;
+  Mtype accuracy(0.f);
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bottom_label = bottom[1]->cpu_data();
   const int dim = bottom[0]->count() / outer_num_;

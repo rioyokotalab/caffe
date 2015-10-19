@@ -13,19 +13,19 @@ void LogLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
   NeuronLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
   const Dtype base = Get<Dtype>(this->layer_param_.log_param().base());
   if (base != Get<Dtype>(-1)) {
-    CHECK_GT(base, 0) << "base must be strictly positive.";
+    CHECK_GT(base, 0.) << "base must be strictly positive.";
   }
   // If base == -1, interpret the base as e and set log_base = 1 exactly.
   // Otherwise, calculate its log explicitly.
   const Dtype log_base = (base == Get<Dtype>(-1)) ? Get<Dtype>(1) : Get<Dtype>(log(Get<Mtype>(base)));
-  CHECK(!isnan(log_base))
+  CHECK(!isnan((double)log_base))
       << "NaN result: log(base) = log(" << base << ") = " << log_base;
-  CHECK(!isinf(log_base))
+  CHECK(!isinf((double)log_base))
       << "Inf result: log(base) = log(" << base << ") = " << log_base;
   base_scale_ = Get<Dtype>(1) / log_base;
-  CHECK(!isnan(base_scale_))
+  CHECK(!isnan((double)base_scale_))
       << "NaN result: 1/log(base) = 1/log(" << base << ") = " << base_scale_;
-  CHECK(!isinf(base_scale_))
+  CHECK(!isinf((double)base_scale_))
       << "Inf result: 1/log(base) = 1/log(" << base << ") = " << base_scale_;
   input_scale_ = Get<Dtype>(this->layer_param_.log_param().scale());
   input_shift_ = Get<Dtype>(this->layer_param_.log_param().shift());

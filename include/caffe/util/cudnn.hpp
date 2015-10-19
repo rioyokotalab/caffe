@@ -6,6 +6,7 @@
 
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/util/float16.hpp"
 
 #define CUDNN_CHECK(condition) \
   do { \
@@ -59,7 +60,7 @@ template<> class dataType<double> {
   static double oneval, zeroval;
   static const void *one, *zero;
 };
-template<> class dataType<half> {
+template<> class dataType<float16> {
  public:
   static const cudnnDataType_t type = CUDNN_DATA_HALF;
   static float oneval, zeroval;

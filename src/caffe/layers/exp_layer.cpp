@@ -11,19 +11,19 @@ template <typename Dtype, typename Mtype>
 void ExpLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& bottom,
       const vector<Blob<Dtype,Mtype>*>& top) {
   NeuronLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
-  const Mtype base = this->layer_param_.exp_param().base();
+  const Mtype base(this->layer_param_.exp_param().base());
   if (base != Mtype(-1)) {
     CHECK_GT(base, 0) << "base must be strictly positive.";
   }
   // If base == -1, interpret the base as e and set log_base = 1 exactly.
   // Otherwise, calculate its log explicitly.
-  const Mtype log_base = (base == Mtype(-1)) ? Mtype(1) : log(base);
+  const Mtype log_base(base == Mtype(-1) ? Mtype(1) : log(base));
   CHECK(!isnan(log_base))
       << "NaN result: log(base) = log(" << base << ") = " << log_base;
   CHECK(!isinf(log_base))
       << "Inf result: log(base) = log(" << base << ") = " << log_base;
-  const Mtype input_scale = this->layer_param_.exp_param().scale();
-  const Mtype input_shift = this->layer_param_.exp_param().shift();
+  const Mtype input_scale(this->layer_param_.exp_param().scale());
+  const Mtype input_shift(this->layer_param_.exp_param().shift());
   inner_scale_ = log_base * input_scale;
   outer_scale_ = (input_shift == Mtype(0)) ? Mtype(1) : pow(base, input_shift);
 }

@@ -32,39 +32,37 @@ double caffe_gpu_atomic_add(const double val, double* address) {
   return __longlong_as_double(old);
 }
 
-// TODO check for FP16 implementation in future CUDA releases
 template <>
 inline __device__
-half caffe_gpu_atomic_add(const half val, half* address) {
-//  NOT_IMPLEMENTED;
-  return Get<half>(0.);
-}
+float16 caffe_gpu_atomic_add(const float16 val, float16* address) {
+// TODO check for FP16 implementation in future CUDA releases
+   return float16(0);
+#if 0
+   union U {
+      unsigned int i;
+      __half2 h;
+   };
+   union Up {
+      unsigned int * i;
+      __half2 * h;
+   };
 
-//__device__ __half2 atomicAdd(__half2 * address, __half2 val)                                                                                                               {
-//   union U {
-//      unsigned int i;
-//      __half2 h;
-//   };
-//   union Up {
-//      unsigned int * i;
-//      __half2 * h;
-//   };
-//
-//   Up up;
-//   up.h = address;
-//
-//   U old;
-//   old.h = *address;
-//   U assumed;
-//
-//   do {
-//      assumed.i = old.i;
-//      U temp;
-//      temp.h = __hadd2(val, assumed.h);
-//      old.i = atomicCAS( up.i, assumed.i, temp.i);
-//   } while (assumed.i != old.i );
-//   return old.h;
-//}
+   Up up;
+   up.h = address;
+
+   U old;
+   old.h = *address;
+   U assumed;
+
+   do {
+      assumed.i = old.i;
+      U temp;
+      temp.h = __hadd2(val, assumed.h);
+      old.i = atomicCAS( up.i, assumed.i, temp.i);
+   } while (assumed.i != old.i );
+   return old.h;
+# endif
+}
 
 }  // namespace caffe
 

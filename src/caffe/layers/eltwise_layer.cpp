@@ -137,7 +137,7 @@ void EltwiseLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& t
       case EltwiseParameter_EltwiseOp_MAX:
         mask = max_idx_.cpu_data();
         for (int index = 0; index < count; ++index) {
-          Mtype gradient = 0;
+          Mtype gradient(0.f);
           if (mask[index] == i) {
             gradient += Get<Mtype>(top_diff[index]);
           }

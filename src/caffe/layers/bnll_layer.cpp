@@ -15,7 +15,7 @@ void BNLLLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& botto
   Dtype* top_data = top[0]->mutable_cpu_data();
   const int count = bottom[0]->count();
   for (int i = 0; i < count; ++i) {
-    top_data[i] = Get<Dtype>( Get<Mtype>(bottom_data[i]) > 0 ?
+    top_data[i] = Get<Dtype>( Get<Mtype>(bottom_data[i]) > 0.f ?
         Get<Mtype>(bottom_data[i]) + log(1. + exp(-Get<Mtype>(bottom_data[i]))) :
         log(1. + exp(Get<Mtype>(bottom_data[i]))) );
   }

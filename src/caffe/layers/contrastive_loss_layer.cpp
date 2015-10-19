@@ -40,7 +40,7 @@ void ContrastiveLossLayer<Dtype,Mtype>::Forward_cpu(
       bottom[1]->cpu_data(),  // b
       diff_.mutable_cpu_data());  // a_i-b_i
   const int channels = bottom[0]->channels();
-  Mtype margin = this->layer_param_.contrastive_loss_param().margin();
+  Mtype margin(this->layer_param_.contrastive_loss_param().margin());
   bool legacy_version =
       this->layer_param_.contrastive_loss_param().legacy_version();
   Mtype loss(0.0);
@@ -65,12 +65,12 @@ void ContrastiveLossLayer<Dtype,Mtype>::Forward_cpu(
 template <typename Dtype, typename Mtype>
 void ContrastiveLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype,Mtype>*>& bottom) {
-  Mtype margin = this->layer_param_.contrastive_loss_param().margin();
+  Mtype margin(this->layer_param_.contrastive_loss_param().margin());
   bool legacy_version =
       this->layer_param_.contrastive_loss_param().legacy_version();
   for (int i = 0; i < 2; ++i) {
     if (propagate_down[i]) {
-      const Mtype sign = (i == 0) ? 1 : -1;
+      const Mtype sign(i == 0 ? 1 : -1);
       const Mtype alpha = sign * Get<Mtype>(top[0]->cpu_diff()[0]) /
           static_cast<Mtype>(bottom[i]->num());
       int num = bottom[i]->num();
@@ -91,7 +91,7 @@ void ContrastiveLossLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mty
             mdist = margin - Get<Mtype>(dist_sq_.cpu_data()[j]);
             beta = -alpha;
           } else {
-            Mtype dist = sqrt(Get<Mtype>(dist_sq_.cpu_data()[j]));
+            Mtype dist(sqrt(dist_sq_.cpu_data()[j]));
             mdist = margin - dist;
             beta = -alpha * mdist / (dist + Mtype(1e-4));
           }

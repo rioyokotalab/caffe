@@ -234,7 +234,7 @@ void WindowDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
   CPUTimer timer;
   Dtype* top_data = batch->data_.mutable_cpu_data();
   Dtype* top_label = batch->label_.mutable_cpu_data();
-  const Mtype scale = this->layer_param_.window_data_param().scale();
+  const Mtype scale(this->layer_param_.window_data_param().scale());
   const int batch_size = this->layer_param_.window_data_param().batch_size();
   const int context_pad = this->layer_param_.window_data_param().context_pad();
   const int crop_size = this->transform_param_.crop_size();
@@ -312,10 +312,10 @@ void WindowDataLayer<Dtype,Mtype>::load_batch(Batch<Dtype,Mtype>* batch) {
             static_cast<Mtype>(crop_size - 2*context_pad);
 
         // compute the expanded region
-        Mtype half_height = static_cast<Mtype>(y2-y1+1)/2.0;
-        Mtype half_width = static_cast<Mtype>(x2-x1+1)/2.0;
-        Mtype center_x = static_cast<Mtype>(x1) + half_width;
-        Mtype center_y = static_cast<Mtype>(y1) + half_height;
+        Mtype half_height((y2-y1+1)/2.0);
+        Mtype half_width((x2-x1+1)/2.0);
+        Mtype center_x((x1) + half_width);
+        Mtype center_y((y1) + half_height);
         if (use_square) {
           if (half_height > half_width) {
             half_width = half_height;

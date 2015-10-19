@@ -26,7 +26,7 @@ void MultinomialLogisticLossLayer<Dtype,Mtype>::Forward_cpu(
   const Dtype* bottom_label = bottom[1]->cpu_data();
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / bottom[0]->num();
-  Mtype loss = 0;
+  Mtype loss(0.f);
   for (int i = 0; i < num; ++i) {
     int label = Get<int>(bottom_label[i]);
     Mtype prob = std::max(
