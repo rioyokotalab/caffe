@@ -23,7 +23,7 @@
 #include "cuda_fp16.h"
 #endif
 
-#define NATIVE_FP16_SUPPORTED 1
+#define NATIVE_FP16_SUPPORTED 0
 
 // gflags 2.1 issue: namespace google was changed to gflags without warning.
 // Luckily we will be able to use GFLAGS_GFLAGS_H_ to detect if it is version
