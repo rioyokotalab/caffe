@@ -15,6 +15,7 @@
 #include "boost/thread.hpp"
 #include "caffe/caffe.hpp"
 #include "caffe/parallel.hpp"
+#include "caffe/util/gpu_memory.hpp"
 
 namespace caffe {
 
@@ -99,7 +100,7 @@ GPUParams<Dtype,Mtype>::GPUParams(shared_ptr<Solver<Dtype,Mtype> > root_solver, 
   CUDA_CHECK(cudaSetDevice(device));
   buffer_device_ = device;
   // CUDA_CHECK(cudaMalloc(&data_, size_ * sizeof(Dtype)));
-  MemoryHandler::mallocGPU(reinterpret_cast<void **>(&data_),
+  gpu_memory::allocate(reinterpret_cast<void **>(&data_),
                            size_ * sizeof(Dtype));
 
   // Copy blob values
@@ -108,7 +109,7 @@ GPUParams<Dtype,Mtype>::GPUParams(shared_ptr<Solver<Dtype,Mtype> > root_solver, 
   apply_buffers<Dtype,Mtype>(net, data_, size_, copy);
 
   // CUDA_CHECK(cudaMalloc(&diff_, size_ * sizeof(Dtype)));
-  MemoryHandler::mallocGPU(reinterpret_cast<void **>(&diff_),
+  gpu_memory::allocate(reinterpret_cast<void **>(&diff_),
                            size_ * sizeof(Dtype));
   caffe_gpu_set<Dtype,Mtype>(size_, Mtype(0), diff_);
 
@@ -124,8 +125,8 @@ GPUParams<Dtype,Mtype>::~GPUParams() {
   int initial_device;
   cudaGetDevice(&initial_device);
   cudaSetDevice(buffer_device_);
-  MemoryHandler::freeGPU(data_);
-  MemoryHandler::freeGPU(diff_);
+  gpu_memory::deallocate(data_);
+  gpu_memory::deallocate(diff_);
   data_ = NULL;
   diff_ = NULL;
   cudaSetDevice(initial_device);
@@ -261,7 +262,7 @@ P2PSync<Dtype,Mtype>::P2PSync(shared_ptr<Solver<Dtype,Mtype> > root_solver,
     }
     // Allocate receiving buffer on parent
     CUDA_CHECK(cudaSetDevice(peer));
-    MemoryHandler::mallocGPU(reinterpret_cast<void **>(&parent_grads_),
+    gpu_memory::allocate(reinterpret_cast<void **>(&parent_grads_),
                      size_ * sizeof(Dtype));
     CUDA_CHECK(cudaSetDevice(self));
   }
@@ -281,7 +282,7 @@ P2PSync<Dtype,Mtype>::~P2PSync() {
     const int self = solver_->param().device_id();
     const int peer = parent_->solver_->param().device_id();
     CUDA_CHECK(cudaSetDevice(peer));
-    MemoryHandler::freeGPU(parent_grads_);
+    gpu_memory::deallocate(parent_grads_);
     parent_grads_ = NULL;
     int access;
     cudaSetDevice(self);
