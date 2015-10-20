@@ -23,7 +23,7 @@
 #include "cuda_fp16.h"
 #endif
 
-#define NATIVE_FP16_SUPPORTED 0
+#define NATIVE_FP16_SUPPORTED 1
 
 // gflags 2.1 issue: namespace google was changed to gflags without warning.
 // Luckily we will be able to use GFLAGS_GFLAGS_H_ to detect if it is version
@@ -72,7 +72,7 @@ private:\
       const std::vector<Blob<double, double>*>& top); \
   template void classname<float16,float>::Forward_gpu( \
       const std::vector<Blob<float16,float>*>& bottom, \
-      const std::vector<Blob<float16,float>*>& top); 
+      const std::vector<Blob<float16,float>*>& top) 
 
 # define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
   template void classname<float, float>::Backward_gpu( \
@@ -86,25 +86,31 @@ private:\
   template void classname<float16,float>::Backward_gpu( \
       const std::vector<Blob<float16,float>*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<float16,float>*>& bottom) \
+      const std::vector<Blob<float16,float>*>& bottom)
 
-# if NATIVE_FP_SUPPORTED
+# if NATIVE_FP16_SUPPORTED
+
 #  define INSTANTIATE_CLASS(classname) \
-   INSTANTIATE_CLASS_CPU(classname)  \
+   INSTANTIATE_CLASS_CPU(classname);	      \
    template class classname<float16, float16>; \
    template class classname<float16,float>
+
 #  define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
    INSTANTIATE_LAYER_GPU_FORWARD(classname); \
    INSTANTIATE_LAYER_GPU_FORWARD_FF(classname); \
    INSTANTIATE_LAYER_GPU_BACKWARD(classname); \
    INSTANTIATE_LAYER_GPU_BACKWARD_FF(classname);
+
 # else
+
 #  define INSTANTIATE_CLASS(classname) \
    INSTANTIATE_CLASS_CPU(classname); \
    template class classname<float16,float>
+
 #  define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
    INSTANTIATE_LAYER_GPU_FORWARD(classname); \
    INSTANTIATE_LAYER_GPU_BACKWARD(classname);
+
 # endif
 #endif
 

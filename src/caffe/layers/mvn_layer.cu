@@ -26,10 +26,10 @@ void MVNLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom
         temp_.mutable_gpu_data());
 
     // computes variance using var(X) = E(X^2) - (EX)^2
-    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, 1. / dim, bottom_data,
-        sum_multiplier_.gpu_data(), 0., mean_.mutable_gpu_data());  // EX
-    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, 1. / dim, temp_.gpu_data(),
-        sum_multiplier_.gpu_data(), 0.,
+    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim,Mtype( 1. / dim), bottom_data,
+        sum_multiplier_.gpu_data(), Mtype(0.), mean_.mutable_gpu_data());  // EX
+    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, Mtype(1. / dim), temp_.gpu_data(),
+        sum_multiplier_.gpu_data(), Mtype(0.),
         variance_.mutable_gpu_data());  // E(X^2)
     caffe_gpu_powx<Dtype,Mtype>(mean_.count(), mean_.gpu_data(), Mtype(2),
         temp_.mutable_gpu_data());  // (EX)^2
@@ -38,8 +38,8 @@ void MVNLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom
 
     // do mean and variance normalization
     // subtract mean
-    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, -1.,
-            mean_.gpu_data(), sum_multiplier_.gpu_data(), 0.,
+    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, Mtype(-1.),
+            mean_.gpu_data(), sum_multiplier_.gpu_data(), Mtype(0.),
             temp_.mutable_gpu_data());
 
     caffe_gpu_add<Dtype,Mtype>(temp_.count(), bottom_data, temp_.gpu_data(), top_data);
@@ -50,18 +50,18 @@ void MVNLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bottom
 
     caffe_gpu_add_scalar<Dtype,Mtype>(variance_.count(), eps_, variance_.mutable_gpu_data());
 
-    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, 1.,
-          variance_.gpu_data(), sum_multiplier_.gpu_data(), 0.,
+    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, Mtype(1.),
+          variance_.gpu_data(), sum_multiplier_.gpu_data(), Mtype(0.),
           temp_.mutable_gpu_data());
 
     caffe_gpu_div<Dtype,Mtype>(temp_.count(), top_data, temp_.gpu_data(), top_data);
   } else {
-    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, 1. / dim, bottom_data,
-            sum_multiplier_.gpu_data(), 0., mean_.mutable_gpu_data());  // EX
+    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, Mtype(1. / dim), bottom_data,
+            sum_multiplier_.gpu_data(), Mtype(0.), mean_.mutable_gpu_data());  // EX
 
     // subtract mean
-    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, -1.,
-            mean_.gpu_data(), sum_multiplier_.gpu_data(), 0.,
+    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, Mtype(-1.),
+            mean_.gpu_data(), sum_multiplier_.gpu_data(), Mtype(0.),
             temp_.mutable_gpu_data());
 
     caffe_gpu_add<Dtype,Mtype>(temp_.count(), bottom_data, temp_.gpu_data(), top_data);
@@ -87,17 +87,17 @@ void MVNLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
 
   if (this->layer_param_.mvn_param().normalize_variance()) {
     caffe_gpu_mul<Dtype,Mtype>(temp_.count(), top_data, top_diff, bottom_diff);
-    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, 1., bottom_diff,
-          sum_multiplier_.gpu_data(), 0., mean_.mutable_gpu_data());
-    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, 1.,
-          mean_.gpu_data(), sum_multiplier_.gpu_data(), 0.,
+    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, Mtype(1.), bottom_diff,
+          sum_multiplier_.gpu_data(), Mtype(0.), mean_.mutable_gpu_data());
+    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, Mtype(1.),
+          mean_.gpu_data(), sum_multiplier_.gpu_data(), Mtype(0.),
           bottom_diff);
     caffe_gpu_mul<Dtype,Mtype>(temp_.count(), top_data, bottom_diff, bottom_diff);
 
-    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, 1., top_diff,
-            sum_multiplier_.gpu_data(), 0., mean_.mutable_gpu_data());
-    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, 1.,
-            mean_.gpu_data(), sum_multiplier_.gpu_data(), 1.,
+    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, Mtype(1.), top_diff,
+            sum_multiplier_.gpu_data(), Mtype(0.), mean_.mutable_gpu_data());
+    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, Mtype(1.),
+            mean_.gpu_data(), sum_multiplier_.gpu_data(), Mtype(1.),
             bottom_diff);
 
     caffe_gpu_axpby<Dtype,Mtype>(temp_.count(), Mtype(1), top_diff, Mtype(-1. / dim),
@@ -107,16 +107,16 @@ void MVNLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
     caffe_gpu_powx<Dtype,Mtype>(temp_.count(), bottom_data, Mtype(2),
         temp_.mutable_gpu_data());
 
-    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, 1.,
-        variance_.gpu_data(), sum_multiplier_.gpu_data(), 0.,
+    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, Mtype(1.),
+        variance_.gpu_data(), sum_multiplier_.gpu_data(), Mtype(0.),
         temp_.mutable_gpu_data());
 
     caffe_gpu_div<Dtype,Mtype>(temp_.count(), bottom_diff, temp_.gpu_data(), bottom_diff);
   } else {
-    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, 1. / dim, top_diff,
-            sum_multiplier_.gpu_data(), 0., mean_.mutable_gpu_data());
-    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, -1.,
-            mean_.gpu_data(), sum_multiplier_.gpu_data(), 0.,
+    caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num, dim, Mtype(1. / dim), top_diff,
+            sum_multiplier_.gpu_data(), Mtype(0.), mean_.mutable_gpu_data());
+    caffe_gpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, Mtype(-1.),
+            mean_.gpu_data(), sum_multiplier_.gpu_data(), Mtype(0.),
             temp_.mutable_gpu_data());
     caffe_gpu_add<Dtype,Mtype>(temp_.count(), top_diff, temp_.gpu_data(), bottom_diff);
   }

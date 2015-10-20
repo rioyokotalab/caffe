@@ -13,8 +13,8 @@ void PowerLayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& bott
   Dtype* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
   // Special case where we can ignore the input: scale or power is 0.
-  if (diff_scale_ == Mtype(0)) {
-    Mtype value = (power_ == 0) ? Mtype(1) : pow(shift_, power_);
+  if (diff_scale_ == Mtype(0.)) {
+    Mtype value = Mtype(power_ == 0 ? 1.0 : pow(shift_, power_));
     caffe_gpu_set<Dtype,Mtype>(count, value, top_data);
     return;
   }

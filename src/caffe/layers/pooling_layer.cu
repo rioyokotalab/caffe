@@ -26,7 +26,7 @@ __global__ void MaxPoolForward(const int nthreads,
     const int wend = min(wstart + kernel_w, width);
     hstart = max(hstart, 0);
     wstart = max(wstart, 0);
-    Mtype maxval = - maxDtype<Dtype>();
+    Mtype maxval( - maxDtype<Dtype>());
     int maxidx = -1;
     const Dtype* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
@@ -68,7 +68,7 @@ __global__ void AvePoolForward(const int nthreads,
     wstart = max(wstart, 0);
     hend = min(hend, height);
     wend = min(wend, width);
-    Mtype aveval = 0;
+    Mtype aveval(0.);
     const Dtype* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
@@ -96,7 +96,7 @@ __global__ void StoPoolForwardTrain(const int nthreads,
     const int hend = min(hstart + kernel_h, height);
     const int wstart = pw * stride_w;
     const int wend = min(wstart + kernel_w, width);
-    Mtype cumsum = 0.;
+    Mtype cumsum(0.);
     const Dtype* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
@@ -139,8 +139,8 @@ __global__ void StoPoolForwardTest(const int nthreads,
     const int wstart = pw * stride_w;
     const int wend = min(wstart + kernel_w, width);
     // We set cumsum to be 0 to avoid divide-by-zero problems
-    Mtype cumsum = FLT_MIN;
-    Mtype cumvalues = 0.;
+    Mtype cumsum(FLT_MIN);
+    Mtype cumvalues(0.);
     const Dtype* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
@@ -234,7 +234,7 @@ __global__ void MaxPoolBackward(const int nthreads, const Dtype* const top_diff,
     const int pwstart =
          (w + pad_w < kernel_w) ? 0 : (w + pad_w - kernel_w) / stride_w + 1;
     const int pwend = min((w + pad_w) / stride_w + 1, pooled_width);
-    Mtype gradient = 0;
+    Mtype gradient(0.);
     const int offset = (n * channels + c) * pooled_height * pooled_width;
     const Dtype* const top_diff_slice = top_diff + offset;
     if (mask) {
@@ -278,7 +278,7 @@ __global__ void AvePoolBackward(const int nthreads, const Dtype* const top_diff,
     const int phend = min(h / stride_h + 1, pooled_height);
     const int pwstart = (w < kernel_w) ? 0 : (w - kernel_w) / stride_w + 1;
     const int pwend = min(w / stride_w + 1, pooled_width);
-    Mtype gradient = 0;
+    Mtype gradient(0.);
     const Dtype* const top_diff_slice =
         top_diff + (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
@@ -315,7 +315,7 @@ __global__ void StoPoolBackward(const int nthreads,
     const int phend = min(h / stride_h + 1, pooled_height);
     const int pwstart = (w < kernel_w) ? 0 : (w - kernel_w) / stride_w + 1;
     const int pwend = min(w / stride_w + 1, pooled_width);
-    Mtype gradient = 0;
+    Mtype gradient(0.);
     const Dtype* const rand_idx_slice =
         rand_idx + (n * channels + c) * pooled_height * pooled_width;
     const Dtype* const top_diff_slice =

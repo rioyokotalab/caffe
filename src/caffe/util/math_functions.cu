@@ -63,6 +63,23 @@ void caffe_gpu_gemm<float16,float>(const CBLAS_TRANSPOSE TransA,
 }
 
 template <>
+void caffe_gpu_gemm<float16,float16>(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const float16 alpha, const float16* A, const float16* B, const float16 beta,
+    float16* C) {
+  // Note that cublas follows fortran order.
+  const int lda = (TransA == CblasNoTrans) ? K : M;
+  const int ldb = (TransB == CblasNoTrans) ? N : K;
+  cublasOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  CUBLAS_CHECK(cublasHgemm(Caffe::cublas_handle(), cuTransB, cuTransA,
+      N, M, K, &alpha.data, &B->data, ldb, &A->data,
+      lda, &beta.data, &C->data, N));
+}
+
+template <>
 void caffe_gpu_gemv<float,float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const float* A, const float* x,
     const float beta, float* y) {
@@ -94,6 +111,21 @@ void caffe_gpu_gemv<float16, float>(const CBLAS_TRANSPOSE TransA, const int M,
   CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), CUBLAS_OP_N, cuTransA,
       1, m, n, &alpha, x, CUBLAS_DATA_HALF, 1, A, CUBLAS_DATA_HALF, N, &beta,
       y, CUBLAS_DATA_HALF, 1));
+}
+
+
+template <>
+void caffe_gpu_gemv<float16, float16>(const CBLAS_TRANSPOSE TransA, const int M,
+    const int N, const float16 alpha, const float16* A, const float16* x,
+    const float16 beta, float16* y) {
+  // Note that cublas still follows Fortran order.
+  cublasOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  const int m = (TransA == CblasNoTrans) ? M : N;
+  const int n = (TransA == CblasNoTrans) ? N : M;
+  CUBLAS_CHECK(cublasHgemm(Caffe::cublas_handle(), CUBLAS_OP_N, cuTransA,
+      1, m, n, &alpha.data, &x->data, 1, &A->data, N, &beta.data,
+      &y->data, 1));
 }
 
 template <>
@@ -193,6 +225,14 @@ void axpby_kernel(const int N, const T_MATH alpha, const T_STORE* X,
 template <>
 void caffe_gpu_axpby<float16,float>(const int N, const float alpha, const float16* X,
     const float beta, float16* Y)
+{
+  axpby_kernel<float16,float><<<CAFFE_GET_BLOCKS(N),CAFFE_CUDA_NUM_THREADS>>>(N,alpha,X,beta,Y);
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template <>
+void caffe_gpu_axpby<float16,float16>(const int N, const float16 alpha, const float16* X,
+    const float16 beta, float16* Y)
 {
   axpby_kernel<float16,float><<<CAFFE_GET_BLOCKS(N),CAFFE_CUDA_NUM_THREADS>>>(N,alpha,X,beta,Y);
   CUDA_POST_KERNEL_CHECK;
@@ -618,11 +658,19 @@ void caffe_gpu_exp<double,double>(const int N, const double* a, double* y) {
       N, a, y);
   CUDA_POST_KERNEL_CHECK;
 }
-
+/*
 template <>
-void caffe_gpu_exp<float16,float>(const int N, const float16* a, float16* y) {
+void caffe_gpu_exp<float16,float>(const int N, const float16* a, float* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   exp_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, a, y);
+  CUDA_POST_KERNEL_CHECK;
+}
+*/
+template <>
+void caffe_gpu_exp<float16,float16>(const int N, const float16* a, float16* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  exp_kernel<float16,float16><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, y);
   CUDA_POST_KERNEL_CHECK;
 }
@@ -682,10 +730,10 @@ void caffe_gpu_powx<double,double>(const int N, const double* a,
 }
 
 template <>
-void caffe_gpu_powx<float16,float>(const int N, const float16* a,
-    const float alpha, float16* y) {
+void caffe_gpu_powx<float16,float16>(const int N, const float16* a,
+    const float16 alpha, float16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  powx_kernel<float16,float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  powx_kernel<float16,float16><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, alpha, y);
   CUDA_POST_KERNEL_CHECK;
 }

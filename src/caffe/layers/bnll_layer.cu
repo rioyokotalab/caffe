@@ -6,8 +6,6 @@
 
 namespace caffe {
 
-const float kBNLL_THRESHOLD = 50.;
-
 template <typename Dtype, typename Mtype>
 __global__ void BNLLForward(const int n, const Dtype* in, Dtype* out) {
   CUDA_KERNEL_LOOP(index, n) {
@@ -34,7 +32,7 @@ template <typename Dtype, typename Mtype>
 __global__ void BNLLBackward(const int n, const Dtype* in_diff,
     const Dtype* in_data, Dtype* out_diff) {
   CUDA_KERNEL_LOOP(index, n) {
-    Mtype expval = exp(min(Get<Mtype>(in_data[index]), Mtype(kBNLL_THRESHOLD)));
+    Mtype expval(exp(min(Get<Mtype>(in_data[index]), Mtype( 50. ))));
     out_diff[index] = Get<Dtype>( Get<Mtype>(in_diff[index]) * expval / (expval + 1.) );
   }
 }

@@ -43,5 +43,6 @@ void CuDNNSigmoidLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>
 
 INSTANTIATE_LAYER_GPU_FUNCS(CuDNNSigmoidLayer);
 
+
 }  // namespace caffe
 #endif

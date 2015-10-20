@@ -287,6 +287,12 @@ void caffe_gpu_##name<float16,float>(const int n, const float16* x, float16* y) 
   /* NOLINT_NEXT_LINE(whitespace/operators) */ \
   name##_kernel<float16,float><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
       n, x, y); \
+} \
+template <> \
+void caffe_gpu_##name<float16,float16>(const int n, const float16* x, float16* y) { \
+  /* NOLINT_NEXT_LINE(whitespace/operators) */ \
+  name##_kernel<float16,float16><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
+      n, x, y); \
 }
 
 #endif  // !CPU_ONLY

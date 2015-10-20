@@ -203,7 +203,7 @@ void Solver<Dtype,Mtype>::Step(int iters) {
   const int stop_iter = iter_ + iters;
   int average_loss = this->param_.average_loss();
   vector<Mtype> losses;
-  Mtype smoothed_loss = 0;
+  Mtype smoothed_loss(0.);
 
   iteration_timer_.Start();
   Timer timer;
@@ -228,7 +228,7 @@ void Solver<Dtype,Mtype>::Step(int iters) {
     const bool display = param_.display() && iter_ % param_.display() == 0;
     net_->set_debug_info(display && param_.debug_info());
     // accumulate the loss and gradient
-    Mtype loss = 0;
+    Mtype loss(0.);
     for (int i = 0; i < param_.iter_size(); ++i) {
       loss += net_->ForwardBackward(bottom_vec);
     }
@@ -356,7 +356,7 @@ void Solver<Dtype,Mtype>::Test(const int test_net_id) {
   vector<int> test_score_output_id;
   vector<Blob<Dtype,Mtype>*> bottom_vec;
   const shared_ptr<Net<Dtype,Mtype> >& test_net = test_nets_[test_net_id];
-  Mtype loss = 0;
+  Mtype loss(0.);
   for (int i = 0; i < param_.test_iter(test_net_id); ++i) {
     SolverAction::Enum request = GetRequestedAction();
     // Check to see if stoppage of testing/training has been requested.
@@ -568,14 +568,14 @@ void SGDSolver<Dtype,Mtype>::PreSolve() {
 
 template <typename Dtype, typename Mtype>
 void SGDSolver<Dtype,Mtype>::ClipGradients() {
-  const Mtype clip_gradients = this->param_.clip_gradients();
+  const Mtype clip_gradients(this->param_.clip_gradients());
   if (clip_gradients < 0) { return; }
   const vector<Blob<Dtype,Mtype>*>& net_params = this->net_->learnable_params();
-  Mtype sumsq_diff = 0;
+  Mtype sumsq_diff(0);
   for (int i = 0; i < net_params.size(); ++i) {
     sumsq_diff += net_params[i]->sumsq_diff();
   }
-  const Mtype l2norm_diff = std::sqrt(sumsq_diff);
+  const Mtype l2norm_diff(std::sqrt(sumsq_diff));
   if (l2norm_diff > clip_gradients) {
     Mtype scale_factor = clip_gradients / l2norm_diff;
     LOG(INFO) << "Gradient clipping: scaling down gradients (L2 norm "
@@ -635,9 +635,9 @@ void SGDSolver<Dtype,Mtype>::Regularize(int param_id) {
   const vector<Blob<Dtype,Mtype>*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_weight_decay =
       this->net_->params_weight_decay();
-  Mtype weight_decay = this->param_.weight_decay();
+  Mtype weight_decay(this->param_.weight_decay());
   string regularization_type = this->param_.regularization_type();
-  Mtype local_decay = weight_decay * net_params_weight_decay[param_id];
+  Mtype local_decay(weight_decay * net_params_weight_decay[param_id]);
   switch (Caffe::mode()) {
   case Caffe::CPU: {
     if (local_decay) {
@@ -696,7 +696,7 @@ template <typename Dtype, typename Mtype>
 void SGDSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Mtype rate) {
   const vector<Blob<Dtype,Mtype>*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
-  Mtype momentum = this->param_.momentum();
+  Mtype momentum(this->param_.momentum());
   Mtype local_rate = rate * net_params_lr[param_id];
   // Compute the update to history, then copy it to the parameter diff.
   switch (Caffe::mode()) {
@@ -836,7 +836,7 @@ void NesterovSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Mtype rate) {
   CHECK(Caffe::root_solver());
   const vector<Blob<Dtype,Mtype>*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
-  Mtype momentum = this->param_.momentum();
+  Mtype momentum(this->param_.momentum());
   Mtype local_rate = rate * net_params_lr[param_id];
   switch (Caffe::mode()) {
   case Caffe::CPU: {
@@ -897,7 +897,7 @@ void AdaGradSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Mtype rate) {
   CHECK(Caffe::root_solver());
   const vector<Blob<Dtype,Mtype>*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
-  Mtype delta = this->param_.delta();
+  Mtype delta(this->param_.delta());
   Mtype local_rate = rate * net_params_lr[param_id];
   switch (Caffe::mode()) {
   case Caffe::CPU: {
@@ -977,8 +977,8 @@ void RMSPropSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Mtype rate) {
   const vector<float>& net_params_lr = this->net_->params_lr();
 
   // get the learning rate
-  Mtype delta = this->param_.delta();
-  Mtype rms_decay = this->param_.rms_decay();
+  Mtype delta(this->param_.delta());
+  Mtype rms_decay(this->param_.rms_decay());
   Mtype local_rate = rate * net_params_lr[param_id];
 
   switch (Caffe::mode()) {
@@ -1062,7 +1062,7 @@ template <typename Dtype, typename Mtype>
 void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   const vector<Blob<Dtype,Mtype>*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
-  Mtype delta = this->param_.delta();
+  Mtype delta(this->param_.delta());
   Mtype momentum = Get<Mtype>(this->param_.momentum());
   Mtype local_rate = Get<Mtype>(rate * net_params_lr[param_id]);
   size_t update_history_offset = net_params.size();
@@ -1209,8 +1209,8 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   const vector<Blob<Dtype,Mtype>*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
   Mtype local_rate = Get<Mtype>(rate * net_params_lr[param_id]);
-  const Mtype beta1 = this->param_.momentum();
-  const Mtype beta2 = this->param_.momentum2();
+  const Mtype beta1(this->param_.momentum());
+  const Mtype beta2(this->param_.momentum2());
 
   // we create aliases for convenience
   size_t update_history_offset = net_params.size();
@@ -1219,10 +1219,10 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   Blob<Dtype,Mtype>* val_t = this->temp_[param_id].get();
 
   const int t = this->iter_  + 1;
-  const Mtype correction = std::sqrt(Mtype(1) - pow(beta2, t)) /
-      (Mtype(1.) - pow(beta1, t));
+  const Mtype correction(std::sqrt(Mtype(1) - pow(beta2, t)) /
+			 (Mtype(1.) - pow(beta1, t)));
   const int N = net_params[param_id]->count();
-  const Mtype eps_hat = this->param_.delta();
+  const Mtype eps_hat(this->param_.delta());
 
   switch (Caffe::mode()) {
     case Caffe::CPU: {

@@ -46,12 +46,12 @@ void SoftmaxLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& bo
     }
     // subtraction
     caffe_cpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, channels, inner_num_,
-        1, -1., sum_multiplier_.cpu_data(), scale_data, 1., top_data);
+				1, Mtype(-1.), sum_multiplier_.cpu_data(), scale_data, Mtype(1.), top_data);
     // exponentiation
     caffe_exp<Dtype,Mtype>(dim, top_data, top_data);
     // sum after exp
-    caffe_cpu_gemv<Dtype,Mtype>(CblasTrans, channels, inner_num_, 1.,
-        top_data, sum_multiplier_.cpu_data(), 0., scale_data);
+    caffe_cpu_gemv<Dtype,Mtype>(CblasTrans, channels, inner_num_, Mtype(1.),
+				top_data, sum_multiplier_.cpu_data(), Mtype(0.), scale_data);
     // division
     for (int j = 0; j < channels; j++) {
       caffe_div<Dtype,Mtype>(inner_num_, top_data, scale_data, top_data);
@@ -80,7 +80,7 @@ void SoftmaxLayer<Dtype,Mtype>::Backward_cpu(const vector<Blob<Dtype,Mtype>*>& t
     }
     // subtraction
     caffe_cpu_gemm<Dtype,Mtype>(CblasNoTrans, CblasNoTrans, channels, inner_num_, 1,
-        -1., sum_multiplier_.cpu_data(), scale_data, 1., bottom_diff + i * dim);
+				Mtype(-1.), sum_multiplier_.cpu_data(), scale_data, Mtype(1.), bottom_diff + i * dim);
   }
   // elementwise multiplication
   caffe_mul<Dtype,Mtype>(top[0]->count(), bottom_diff, top_data, bottom_diff);

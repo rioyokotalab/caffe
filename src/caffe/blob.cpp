@@ -581,9 +581,5 @@ INSTANTIATE_CLASS(Blob);
 template class Blob<int,int>;
 template class Blob<unsigned int, unsigned int>;
 
-#ifndef CPU_ONLY
-template class Blob<float16,float16>;
-#endif // CPU_ONLY
-
 }  // namespace caffe
 

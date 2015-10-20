@@ -31,7 +31,7 @@ void ContrastiveLossLayer<Dtype,Mtype>::Forward_gpu(
       summer_vec_.gpu_data(),
       Mtype(0.0),
       dist_sq_.mutable_gpu_data());  // \Sum (a_i-b_i)^2
-  Mtype margin = this->layer_param_.contrastive_loss_param().margin();
+  Mtype margin(this->layer_param_.contrastive_loss_param().margin());
   bool legacy_version =
       this->layer_param_.contrastive_loss_param().legacy_version();
   Mtype loss(0.0);
@@ -68,7 +68,7 @@ __global__ void CLLBackward(const int count, const int channels,
         mdist = (margin - Get<Mtype>(dist_sq[n]));
         beta = -alpha;
       } else {
-        Mtype dist = sqrt(Get<Mtype>(dist_sq[n]));
+        Mtype dist(sqrt(Get<Mtype>(dist_sq[n])));
         mdist = (margin - dist);
         beta = -alpha * mdist / (dist + Mtype(1e-4)) * Get<Mtype>(diff[i]);
       }
@@ -88,12 +88,12 @@ void ContrastiveLossLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mty
     if (propagate_down[i]) {
       const int count = bottom[0]->count();
       const int channels = bottom[0]->channels();
-      Mtype margin = this->layer_param_.contrastive_loss_param().margin();
+      Mtype margin(this->layer_param_.contrastive_loss_param().margin());
       const bool legacy_version =
           this->layer_param_.contrastive_loss_param().legacy_version();
-      const Mtype sign = (i == 0) ? 1 : -1;
-      const Mtype alpha = sign * Get<Mtype>(top[0]->cpu_diff()[0]) /
-          static_cast<Mtype>(bottom[0]->num());
+      const Mtype sign(i == 0 ? 1 : -1);
+      const Mtype alpha(sign * Get<Mtype>(top[0]->cpu_diff()[0]) /
+          static_cast<Mtype>(bottom[0]->num()));
       // NOLINT_NEXT_LINE(whitespace/operators)
       CLLBackward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
           count, channels, margin, legacy_version, alpha,

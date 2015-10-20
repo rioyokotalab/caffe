@@ -303,8 +303,8 @@ void BaseConvolutionLayer<Dtype,Mtype>::weight_cpu_gemm(const Dtype* input,
 template <typename Dtype, typename Mtype>
 void BaseConvolutionLayer<Dtype,Mtype>::backward_cpu_bias(Dtype* bias,
     const Dtype* input) {
-  caffe_cpu_gemv<Dtype,Mtype>(CblasNoTrans, num_output_, out_spatial_dim_, 1.,
-      input, bias_multiplier_.cpu_data(), 1., bias);
+  caffe_cpu_gemv<Dtype,Mtype>(CblasNoTrans, num_output_, out_spatial_dim_, Mtype(1.),
+			      input, bias_multiplier_.cpu_data(), Mtype(1.), bias);
 }
 
 #ifndef CPU_ONLY
@@ -372,8 +372,8 @@ void BaseConvolutionLayer<Dtype,Mtype>::weight_gpu_gemm(const Dtype* input,
 template <typename Dtype, typename Mtype>
 void BaseConvolutionLayer<Dtype,Mtype>::backward_gpu_bias(Dtype* bias,
     const Dtype* input) {
-  caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num_output_, out_spatial_dim_, 1.,
-      input, bias_multiplier_.gpu_data(), 1., bias);
+  caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, num_output_, out_spatial_dim_, Mtype(1.),
+			      input, bias_multiplier_.gpu_data(), Mtype(1.), bias);
 }
 
 #endif  // !CPU_ONLY

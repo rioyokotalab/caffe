@@ -23,7 +23,7 @@ __global__ void LRNFillScale(const int nthreads, const Dtype* const in,
     int head = 0;
     const int pre_pad = (size - 1) / 2;
     const int post_pad = size - pre_pad - 1;
-    Mtype accum_scale = 0;
+    Mtype accum_scale(0.);
     // fill the scale at [n, :, h, w]
     // accumulate values
     while (head < post_pad && head < channels) {
@@ -105,6 +105,8 @@ template void LRNLayer<double,double>::CrossChannelForward_gpu(
     const vector<Blob<double,double>*>& bottom, const vector<Blob<double,double>*>& top);
 template void LRNLayer<float16,float>::CrossChannelForward_gpu(
     const vector<Blob<float16,float>*>& bottom, const vector<Blob<float16,float>*>& top);
+template void LRNLayer<float16,float16>::CrossChannelForward_gpu(
+    const vector<Blob<float16,float16>*>& bottom, const vector<Blob<float16,float16>*>& top);
 
 
 template <typename Dtype, typename Mtype>
@@ -145,7 +147,7 @@ __global__ void LRNComputeDiff(const int nthreads,
     int head = 0;
     const int pre_pad = size - (size + 1) / 2;
     const int post_pad = size - pre_pad - 1;
-    Mtype accum_ratio = 0;
+    Mtype accum_ratio(0.);
     // accumulate values
     while (head < post_pad && head < channels) {
       accum_ratio += Get<Mtype>(top_diff_off[head * step] * top_off[head * step] /
@@ -193,6 +195,7 @@ void LRNLayer<Dtype,Mtype>::CrossChannelBackward_gpu(
       size_, -beta_, Mtype(2. * alpha_ * beta_ / size_),
       bottom[0]->mutable_gpu_diff());
 }
+
 template void LRNLayer<float,float>::CrossChannelBackward_gpu(
     const vector<Blob<float,float>*>& top, const vector<bool>& propagate_down,
     const vector<Blob<float,float>*>& bottom);
@@ -202,6 +205,9 @@ template void LRNLayer<double,double>::CrossChannelBackward_gpu(
 template void LRNLayer<float16,float>::CrossChannelBackward_gpu(
     const vector<Blob<float16,float>*>& top, const vector<bool>& propagate_down,
     const vector<Blob<float16,float>*>& bottom);
+template void LRNLayer<float16,float16>::CrossChannelBackward_gpu(
+    const vector<Blob<float16,float16>*>& top, const vector<bool>& propagate_down,
+    const vector<Blob<float16,float16>*>& bottom);
 
 
 

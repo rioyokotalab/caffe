@@ -84,7 +84,7 @@ void PReLULayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top
     // slope_diff is set as 0, then accumulated over batches
     caffe_gpu_set<Dtype,Mtype>(this->blobs_[0]->count(), Mtype(0), slope_diff);
     int cdim = channels * dim;
-    Mtype dsum = 0.;
+    Mtype dsum(0.);
     for (int n = 0; n < bottom[0]->num(); ++n) {
       // compute element-wise diff
       // NOLINT_NEXT_LINE(whitespace/operators)
@@ -100,8 +100,8 @@ void PReLULayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top
             multiplier_.gpu_data(), &d);
         dsum += d;
       } else {
-        caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, channels, dim, 1.,
-            backward_buff_.gpu_diff(), multiplier_.gpu_data(), 1.,
+        caffe_gpu_gemv<Dtype,Mtype>(CblasNoTrans, channels, dim, Mtype(1.),
+            backward_buff_.gpu_diff(), multiplier_.gpu_data(), Mtype(1.),
             slope_diff);
       }
     }

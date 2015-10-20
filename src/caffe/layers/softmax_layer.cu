@@ -16,7 +16,7 @@ __global__ void kernel_channel_max(const int num, const int channels,
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
     int s = index % spatial_dim;
-    Mtype maxval = - maxDtype<Dtype>();
+    Mtype maxval(- maxDtype<Dtype>());
     for (int c = 0; c < channels; ++c) {
       maxval = max(Get<Mtype>(data[(n * channels + c) * spatial_dim + s]), maxval);
     }
@@ -48,7 +48,7 @@ __global__ void kernel_channel_sum(const int num, const int channels,
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
     int s = index % spatial_dim;
-    Mtype sum = 0;
+    Mtype sum(0.);
     for (int c = 0; c < channels; ++c) {
       sum += Get<Mtype>(data[(n * channels + c) * spatial_dim + s]);
     }
@@ -74,7 +74,7 @@ __global__ void kernel_channel_dot(const int num, const int channels,
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
     int s = index % spatial_dim;
-    Mtype dot = 0;
+    Mtype dot(0.);
     for (int c = 0; c < channels; ++c) {
       dot += (Get<Mtype>(data_1[(n * channels + c) * spatial_dim + s])
           * Get<Mtype>(data_2[(n * channels + c) * spatial_dim + s]));

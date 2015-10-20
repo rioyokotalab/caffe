@@ -193,7 +193,7 @@ void LRNLayer<Dtype,Mtype>::CrossChannelBackward_cpu(
   // We hack a little bit by using the diff() to store an additional result
   Dtype* accum_ratio_times_bottom = accum_ratio.mutable_cpu_diff();
   caffe_set(padded_ratio.count(), Get<Dtype>(0), padded_ratio_data);
-  Mtype cache_ratio_value = 2. * alpha_ * beta_ / size_;
+  Mtype cache_ratio_value(2. * alpha_ * beta_ / size_);
 
   caffe_powx<Dtype,Mtype>(scale_.count(), scale_data, -beta_, bottom_diff);
   caffe_mul<Dtype,Mtype>(scale_.count(), top_diff, bottom_diff, bottom_diff);
@@ -213,11 +213,11 @@ void LRNLayer<Dtype,Mtype>::CrossChannelBackward_cpu(
     // Now, compute the accumulated ratios and the bottom diff
     caffe_set(accum_ratio.count(), Get<Dtype>(0), accum_ratio_data);
     for (int c = 0; c < size_ - 1; ++c) {
-      caffe_axpy<Dtype,Mtype>(height_ * width_, 1.,
+      caffe_axpy<Dtype,Mtype>(height_ * width_, Mtype(1.),
           padded_ratio_data + padded_ratio.offset(0, c), accum_ratio_data);
     }
     for (int c = 0; c < channels_; ++c) {
-      caffe_axpy<Dtype,Mtype>(height_ * width_, 1.,
+      caffe_axpy<Dtype,Mtype>(height_ * width_, Mtype(1.),
           padded_ratio_data + padded_ratio.offset(0, c + size_ - 1),
           accum_ratio_data);
       // compute bottom diff
@@ -226,7 +226,7 @@ void LRNLayer<Dtype,Mtype>::CrossChannelBackward_cpu(
           accum_ratio_data, accum_ratio_times_bottom);
       caffe_axpy<Dtype,Mtype>(height_ * width_, -cache_ratio_value,
           accum_ratio_times_bottom, bottom_diff + top[0]->offset(n, c));
-      caffe_axpy<Dtype,Mtype>(height_ * width_, -1.,
+      caffe_axpy<Dtype,Mtype>(height_ * width_, Mtype(-1.),
           padded_ratio_data + padded_ratio.offset(0, c), accum_ratio_data);
     }
   }

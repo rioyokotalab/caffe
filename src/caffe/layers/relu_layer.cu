@@ -20,7 +20,7 @@ void ReLULayer<Dtype,Mtype>::Forward_gpu(const vector<Blob<Dtype,Mtype>*>& botto
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
-  Mtype negative_slope = this->layer_param_.relu_param().negative_slope();
+  Mtype negative_slope(this->layer_param_.relu_param().negative_slope());
   // NOLINT_NEXT_LINE(whitespace/operators)
   ReLUForward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
       count, bottom_data, top_data, negative_slope);
@@ -50,7 +50,7 @@ void ReLULayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>& top,
     const Dtype* top_diff = top[0]->gpu_diff();
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
     const int count = bottom[0]->count();
-    Mtype negative_slope = this->layer_param_.relu_param().negative_slope();
+    Mtype negative_slope(this->layer_param_.relu_param().negative_slope());
     // NOLINT_NEXT_LINE(whitespace/operators)
     ReLUBackward<Dtype,Mtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, bottom_data, bottom_diff, negative_slope);
