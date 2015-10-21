@@ -117,7 +117,7 @@ namespace caffe
 
   CAFFE_UTIL_IHD bool  operator==(const float16& a, const float16& b) { return ishequ(a.data, b.data); }
 
-  CAFFE_UTIL_IHD bool  operator!=(const float16& a, const float16& b) { return a != b; }
+  CAFFE_UTIL_IHD bool  operator!=(const float16& a, const float16& b) { return !(a == b); }
 
   CAFFE_UTIL_IHD bool  operator<(const float16& a, const float16& b) { return (float)a < (float)b; }
 
