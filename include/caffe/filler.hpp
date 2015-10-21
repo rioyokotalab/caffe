@@ -70,7 +70,7 @@ class GaussianFiller : public Filler<Dtype,Mtype> {
   virtual void Fill(Blob<Dtype,Mtype>* blob) {
     Dtype* data = blob->mutable_cpu_data();
     CHECK(blob->count());
-    caffe_rng_gaussian<Dtype,Mtype>(blob->count(), Mtype(this->filler_param_.mean()),
+    caffe_rng_gaussian(blob->count(), Mtype(this->filler_param_.mean()),
         Mtype(this->filler_param_.std()), blob->mutable_cpu_data());
     int sparse = this->filler_param_.sparse();
     CHECK_GE(sparse, -1);
@@ -201,7 +201,7 @@ class MSRAFiller : public Filler<Dtype,Mtype> {
       n = Get<Dtype>(fan_out);
     }
     Mtype std = Get<Mtype>(sqrt(Get<Mtype>(2) / Get<Mtype>(n)));
-    caffe_rng_gaussian<Dtype,Mtype>(blob->count(), Mtype(0), std,
+    caffe_rng_gaussian(blob->count(), Mtype(0), std,
         blob->mutable_cpu_data());
     CHECK_EQ(this->filler_param_.sparse(), -1)
          << "Sparsity not supported by this Filler.";

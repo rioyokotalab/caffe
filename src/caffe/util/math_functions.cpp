@@ -34,6 +34,12 @@ void caffe_cpu_gemm<double,double>(const CBLAS_TRANSPOSE TransA,
 
 #ifndef CPU_ONLY
 template<>
+void caffe_cpu_gemm<float16,float16>(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const float16 alpha, const float16* A, const float16* B, const float16 beta,
+    float16* C) {
+}
+template<>
 void caffe_cpu_gemm<float16,float>(const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
     const float alpha, const float16* A, const float16* B, const float beta,
@@ -84,6 +90,14 @@ void caffe_cpu_gemv<float16,float>(const CBLAS_TRANSPOSE TransA, const int M,
   cblas_sgemv(CblasRowMajor, TransA, M, N, alpha, &a.front(), N, &xv.front(), 1, beta, &yv.front(), 1);
   caffe_cpu_convert(yv.size(), &yv.front(), y);
 }
+
+template <>
+void caffe_cpu_gemv<float16,float16>(const CBLAS_TRANSPOSE TransA, const int M,
+    const int N, const float16 alpha, const float16* A, const float16* xv,
+    const float16 beta, float16* y) {
+  //  cblas_hgemv(CblasRowMajor, TransA, M, N, alpha, A, N, x, 1, beta, y, 1);
+}
+
 #endif
 
 template <>
@@ -150,6 +164,12 @@ void caffe_add_scalar(const int N, const float alpha, float16* Y) {
     Y[i] = Get<float16>( Get<float>(Y[i]) + alpha );
   }
 }
+template <>
+void caffe_add_scalar(const int N, const float16 alpha, float16* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] = Get<float16>( Get<float16>(Y[i]) + alpha );
+  }
+}
 #endif
 
 template <typename Dtype, typename Mtype>
@@ -199,9 +219,7 @@ void caffe_scal<float16,float>(const int N, const float alpha, float16 *X) {
 
 template <>
 void caffe_scal<float16,float16>(const int N, const float16 alpha, float16 *X) {
-  for (int i = 0; i < N; ++i) {
-    X[i] = Get<float16>(Get<float>(alpha) * Get<float>(X[i]));
-  }
+  // cblas_hscal(N, alpha, X, 1);
 }
 #endif
 
@@ -218,6 +236,9 @@ void caffe_cpu_axpby<double,double>(const int N, const double alpha, const doubl
 }
 
 #ifndef CPU_ONLY
+template <>
+void caffe_cpu_axpby<float16,float16>(const int N, const float16 alpha, const float16* X,
+				    const float16 beta, float16* Y) {}
 template <>
 void caffe_cpu_axpby<float16,float>(const int N, const float alpha, const float16* X,
                              const float beta, float16* Y) {
@@ -247,6 +268,13 @@ void caffe_add<float16,float>(const int n, const float16* a, const float16* b,
     y[i] = Get<float16>( Get<float>(a[i]) + Get<float>(b[i]) );
   }
 }
+template <>
+void caffe_add<float16,float16>(const int n, const float16* a, const float16* b,
+    float16* y) {
+  for (int i=0; i<n; i++) {
+    y[i] = Get<float16>( Get<float16>(a[i]) + Get<float16>(b[i]) );
+  }
+}
 #endif
 
 template <>
@@ -269,6 +297,11 @@ void caffe_sub<float16,float>(const int n, const float16* a, const float16* b,
     y[i] = Get<float16>( Get<float>(a[i]) - Get<float>(b[i]) );
   }
 }
+template <>
+void caffe_sub<float16,float16>(const int n, const float16* a, const float16* b,
+    float16* y) {
+  //  vhSub(n, a, b, y);
+}
 #endif
 
 template <>
@@ -290,6 +323,11 @@ void caffe_mul<float16,float>(const int n, const float16* a, const float16* b,
   for (int i=0; i<n; i++) {
     y[i] = Get<float16>( Get<float>(a[i]) * Get<float>(b[i]) );
   }
+}
+template <>
+void caffe_mul<float16,float16>(const int n, const float16* a, const float16* b,
+    float16* y) {
+  //  vhMul(n, a, b, y);
 }
 #endif
 
@@ -314,6 +352,12 @@ void caffe_div<float16,float>(const int n, const float16* a, const float16* b,
     y[i] = Get<float16>( Get<float>(a[i]) / Get<float>(b[i]) );
   }
 }
+
+template <>
+void caffe_div<float16,float16>(const int n, const float16* a, const float16* b,
+    float16* y) {
+  //  vhDiv(n, a, b, y);
+}
 #endif
 
 template <>
@@ -329,6 +373,11 @@ void caffe_powx<double,double>(const int n, const double* a, const double b,
 }
 
 #ifndef CPU_ONLY
+template <>
+void caffe_powx<float16,float16>(const int n, const float16* a, const float16 b,
+    float16* y) {
+  //  vhPowx(n, a, b, y);
+}
 template <>
 void caffe_powx<float16,float>(const int n, const float16* a, const float b, float16* y) {
   for (int i=0; i<n; i++) {
@@ -348,6 +397,10 @@ void caffe_sqr<double,double>(const int n, const double* a, double* y) {
 }
 
 #ifndef CPU_ONLY
+template <>
+void caffe_sqr<float16,float16>(const int n, const float16* a, float16* y) {
+  vhSqr(n, a, y);
+}
 template <>
 void caffe_sqr<float16,float>(const int n, const float16* a, float16* y) {
   float f;
@@ -379,6 +432,10 @@ void caffe_log<double>(const int n, const double* a, double* y) {
 }
 
 #ifndef CPU_ONLY
+template <>
+void caffe_exp<float16, float16>(const int n, const float16* a, float16* y) {
+  // vhLn(n, a, y);
+}
 template <>
 void caffe_log<float16>(const int n, const float16* a, float16* y) {
   vhLn(n, a, y);
@@ -454,6 +511,9 @@ void caffe_rng_uniform<double,double>(const int n, const double a, const double 
 template
 void caffe_rng_uniform<float16,float>(const int n, const float a, const float b,
                                float16* r);
+  template<>
+void caffe_rng_uniform<float16,float16>(const int n, const float16 a, const float16 b,
+					float16* r) {}
 #endif
 
 template <typename Dtype, typename Mtype>
@@ -482,6 +542,9 @@ void caffe_rng_gaussian<double,double>(const int n, const double mu,
 template
 void caffe_rng_gaussian<float16,float>(const int n, const float mu,
                                 const float sigma, float16* r);
+  template <>
+void caffe_rng_gaussian<float16,float16>(const int n, const float16 mu,
+					 const float16 sigma, float16* r) {}
 #endif
 
 template <typename Dtype, typename Mtype>
@@ -507,6 +570,8 @@ void caffe_rng_bernoulli<float,float>(const int n, const float p, int* r);
 #ifndef CPU_ONLY
 template
 void caffe_rng_bernoulli<float16,float>(const int n, const float p, int* r);
+template
+void caffe_rng_bernoulli<float16,float16>(const int n, const float16 p, int* r);
 #endif
 
 template <typename Dtype, typename Mtype>
@@ -532,6 +597,8 @@ void caffe_rng_bernoulli<float,float>(const int n, const float p, unsigned int* 
 #ifndef CPU_ONLY
 template
 void caffe_rng_bernoulli<float16,float>(const int n, const float p, unsigned int* r);
+template
+void caffe_rng_bernoulli<float16,float16>(const int n, const float16 p, unsigned int* r);
 #endif
 
 template <>
@@ -671,6 +738,11 @@ void caffe_cpu_scale<double,double>(const int n, const double alpha, const doubl
 }
 
 #ifndef CPU_ONLY
+template <>
+void caffe_cpu_scale<float16,float16>(const int n, const float16 alpha, const float16 *x,
+    float16 *y) {
+}
+
 template <>
 void caffe_cpu_scale<float16,float>(const int n, const float alpha, const float16 *x,
     float16 *y) {

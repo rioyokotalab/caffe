@@ -32,6 +32,7 @@ void SigmoidCrossEntropyLossLayer<Dtype,Mtype>::Backward_gpu(
 }
 
 INSTANTIATE_LAYER_GPU_BACKWARD(SigmoidCrossEntropyLossLayer);
+INSTANTIATE_LAYER_GPU_BACKWARD_FF(SigmoidCrossEntropyLossLayer);
 
 
 }  // namespace caffe

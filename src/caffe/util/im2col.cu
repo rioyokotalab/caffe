@@ -238,7 +238,7 @@ __global__ void col2im_gpu_kernel(const int n, const Dtype* data_col,
     const int height_col, const int width_col,
     Dtype* data_im) {
   CUDA_KERNEL_LOOP(index, n) {
-    Mtype val = 0;
+    Mtype val(0.);
     int w = index % width + pad_w;
     int h = (index / width) % height + pad_h;
     int c = index / (width * height);
@@ -301,6 +301,11 @@ template void col2im_gpu<double,double>(const double* data_col, const int channe
     const int stride_w, double* data_im);
 
 template void col2im_gpu<float16,float>(const float16* data_col, const int channels,
+    const int height, const int width, const int patch_h, const int patch_w,
+    const int pad_h, const int pad_w, const int stride_h,
+    const int stride_w, float16* data_im);
+
+template void col2im_gpu<float16,float16>(const float16* data_col, const int channels,
     const int height, const int width, const int patch_h, const int patch_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, float16* data_im);
