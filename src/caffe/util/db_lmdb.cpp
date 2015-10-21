@@ -2,12 +2,23 @@
 #include "caffe/util/db_lmdb.hpp"
 
 #include <sys/stat.h>
-
+#include <cstdint>
 #include <string>
+
 
 namespace caffe { namespace db {
 
+#if UINTPTR_MAX == 0xffffffff
+/* 32-bit */
+const size_t LMDB_MAP_SIZE = 1073741824;  // 1 GB
+#elif UINTPTR_MAX == 0xffffffffffffffff
+/* 64-bit */
 const size_t LMDB_MAP_SIZE = 1099511627776;  // 1 TB
+#else
+#  error "Bad stdint.h!"
+#endif
+
+
 
 void LMDB::Open(const string& source, Mode mode) {
   MDB_CHECK(mdb_env_create(&mdb_env_));
