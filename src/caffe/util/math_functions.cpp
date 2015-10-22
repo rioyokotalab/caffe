@@ -681,6 +681,7 @@ int caffe_cpu_hamming_distance<double,double>(const int n, const double* x,
 }
 
 #ifndef CPU_ONLY
+#if !NATIVE_FP16_SUPPORTED
 template <>
 int caffe_cpu_hamming_distance<float16, float>(const int n, const float16* x,
                                             const float16* y) {
@@ -691,6 +692,7 @@ int caffe_cpu_hamming_distance<float16, float>(const int n, const float16* x,
   }
   return dist;
 }
+#endif
 #endif
 
 template <>

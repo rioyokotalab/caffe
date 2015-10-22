@@ -76,7 +76,7 @@ void ReductionLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>*>&
       caffe_gpu_scal<Dtype,Mtype>(dim_, bottom_coeff, bottom_diff);
       break;
     case ReductionParameter_ReductionOp_SUMSQ:
-      caffe_gpu_scale(dim_, 2 * bottom_coeff, bottom_data, bottom_diff);
+      caffe_gpu_scale(dim_, Mtype(bottom_coeff*2.), bottom_data, bottom_diff);
       break;
     default:
       LOG(FATAL) << "Unknown reduction op: "

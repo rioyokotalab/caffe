@@ -581,5 +581,8 @@ INSTANTIATE_CLASS(Blob);
 template class Blob<int,int>;
 template class Blob<unsigned int, unsigned int>;
 
+# if !NATIVE_FP16_SUPPORTED
+template class Blob<float16, float>;
+# endif
 }  // namespace caffe
 

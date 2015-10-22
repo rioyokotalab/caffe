@@ -2,7 +2,7 @@
 #ifndef CAFFE_UTIL_DB_LMDB_HPP
 #define CAFFE_UTIL_DB_LMDB_HPP
 
-#include <cstdint>
+#include <stdint.h>
 #include <string>
 
 #include "lmdb.h"

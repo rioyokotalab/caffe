@@ -2,7 +2,6 @@
 #include "caffe/util/db_lmdb.hpp"
 
 #include <sys/stat.h>
-#include <cstdint>
 #include <string>
 
 

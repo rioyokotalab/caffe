@@ -99,6 +99,7 @@ void caffe_gpu_gemv<double,double>(const CBLAS_TRANSPOSE TransA, const int M,
       A, N, x, 1, &beta, y, 1));
 }
 
+#if !NATIVE_FP16_SUPPORTED
 template <>
 void caffe_gpu_gemv<float16, float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const float16* A, const float16* x,
@@ -112,7 +113,7 @@ void caffe_gpu_gemv<float16, float>(const CBLAS_TRANSPOSE TransA, const int M,
       1, m, n, &alpha, x, CUBLAS_DATA_HALF, 1, A, CUBLAS_DATA_HALF, N, &beta,
       y, CUBLAS_DATA_HALF, 1));
 }
-
+#else
 
 template <>
 void caffe_gpu_gemv<float16, float16>(const CBLAS_TRANSPOSE TransA, const int M,
@@ -127,6 +128,7 @@ void caffe_gpu_gemv<float16, float16>(const CBLAS_TRANSPOSE TransA, const int M,
       1, m, n, &alpha.data, &x->data, 1, &A->data, N, &beta.data,
       &y->data, 1));
 }
+#endif
 
 template <>
 void caffe_gpu_axpy<float,float>(const int N, const float alpha, const float* X,
@@ -285,7 +287,7 @@ void gpu_dot_kernel(const int N, const Dtype *x, const Dtype *y, Mtype *out)
 
   if (tidx == 0) *out = cache[tidx];
 }
-
+#if !NATIVE_FP16_SUPPORTED
 template <>
 void caffe_gpu_dot<float16, float>(const int n, const float16* x, const float16* y,
     float *out)
@@ -301,7 +303,7 @@ void caffe_gpu_dot<float16, float>(const int n, const float16* x, const float16*
   cudaFree(res);
   CUDA_POST_KERNEL_CHECK;
 }
-
+#else
 template <>
 void caffe_gpu_dot<float16, float16>(const int n, const float16* x, const float16* y, float16 *out)
 {
@@ -313,6 +315,7 @@ void caffe_gpu_dot<float16, float16>(const int n, const float16* x, const float1
   cudaFree(res);
   CUDA_POST_KERNEL_CHECK;
 }
+#endif
 
 template <>
 void caffe_gpu_asum<float,float>(const int n, const float* x, float* y) {
@@ -352,7 +355,7 @@ void gpu_asum_kernel(const int N, const Dtype *x, Mtype *out)
 
   if (tidx == 0) *out = cache[tidx];
 }
-
+#if !NATIVE_FP16_SUPPORTED
 template <>
 void caffe_gpu_asum<float16,float>(const int n, const float16* x, float* y)
 {
@@ -366,7 +369,7 @@ void caffe_gpu_asum<float16,float>(const int n, const float16* x, float* y)
   cudaMemcpy(y,res,sizeof(float),cudaMemcpyDeviceToHost);
   CUDA_POST_KERNEL_CHECK;
 }
-
+#endif
 template <>
 void caffe_gpu_asum<float16,float16>(const int n, const float16* x, float16* y)
 {
@@ -400,7 +403,7 @@ void scale_kernel(const int n, const T_MATH alpha, const T_STORE* x, T_STORE* y)
     y[idx] = Get<T_STORE>( alpha * Get<T_MATH>(x[idx]) );
   }
 }
-
+#if !NATIVE_FP16_SUPPORTED
 template <>
 void caffe_gpu_scale<float16,float>(const int n, const float alpha, const float16 *x,
     float16 *y)
@@ -408,6 +411,7 @@ void caffe_gpu_scale<float16,float>(const int n, const float alpha, const float1
   scale_kernel<float16,float><<<CAFFE_GET_BLOCKS(n),CAFFE_CUDA_NUM_THREADS>>>(n,alpha,x,y);
   CUDA_POST_KERNEL_CHECK;
 }
+#endif
 
 template <>
 void caffe_gpu_scale<float16,float16>(const int n, const float16 alpha, const float16 *x,
@@ -439,7 +443,9 @@ void caffe_gpu_set(const int N, const Mtype alpha, Dtype* Y) {
 template void caffe_gpu_set<int,int>(const int N, const int alpha, int* Y);
 template void caffe_gpu_set<float,float>(const int N, const float alpha, float* Y);
 template void caffe_gpu_set<double,double>(const int N, const double alpha, double* Y);
+#if !NATIVE_FP16_SUPPORTED
 template void caffe_gpu_set<float16,float>(const int N, const float alpha, float16* Y);
+#endif
 template void caffe_gpu_set<float16,float16>(const int N, const float16 alpha, float16* Y);
 
 template <typename Dtype, typename Mtype>
@@ -464,7 +470,7 @@ void caffe_gpu_add_scalar(const int N, const double alpha, double* Y) {
       N, alpha, Y);
   CUDA_POST_KERNEL_CHECK;
 }
-
+#if !NATIVE_FP16_SUPPORTED
 template <>
 void caffe_gpu_add_scalar(const int N, const float alpha, float16* Y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
@@ -472,7 +478,7 @@ void caffe_gpu_add_scalar(const int N, const float alpha, float16* Y) {
       N, alpha, Y);
   CUDA_POST_KERNEL_CHECK;
 }
-
+#endif
 template <>
 void caffe_gpu_add_scalar(const int N, const float16 alpha, float16* Y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
@@ -507,7 +513,7 @@ void caffe_gpu_add<double,double>(const int N, const double* a, const double* b,
       N, a, b, y);
   CUDA_POST_KERNEL_CHECK;
 }
-
+#if !NATIVE_FP16_SUPPORTED
 template <>
 void caffe_gpu_add<float16,float>(const int N, const float16* a, const float16* b,
     float16* y) {
@@ -516,7 +522,7 @@ void caffe_gpu_add<float16,float>(const int N, const float16* a, const float16* 
       N, a, b, y);
   CUDA_POST_KERNEL_CHECK;
 }
-
+#else
 template <>
 void caffe_gpu_add<float16,float16>(const int N, const float16* a, const float16* b,
     float16* y) {
@@ -525,6 +531,7 @@ void caffe_gpu_add<float16,float16>(const int N, const float16* a, const float16
       N, a, b, y);
   CUDA_POST_KERNEL_CHECK;
 }
+#endif
 
 template <typename Dtype, typename Mtype>
 __global__ void sub_kernel(const int n, const Dtype* a,
@@ -551,7 +558,7 @@ void caffe_gpu_sub<double,double>(const int N, const double* a, const double* b,
       N, a, b, y);
   CUDA_POST_KERNEL_CHECK;
 }
-
+#if !NATIVE_FP16_SUPPORTED
 template <>
 void caffe_gpu_sub<float16,float>(const int N, const float16* a, const float16* b,
     float16* y) {
@@ -560,7 +567,7 @@ void caffe_gpu_sub<float16,float>(const int N, const float16* a, const float16* 
       N, a, b, y);
   CUDA_POST_KERNEL_CHECK;
 }
-
+#endif
 template <>
 void caffe_gpu_sub<float16,float16>(const int N, const float16* a, const float16* b,
     float16* y) {

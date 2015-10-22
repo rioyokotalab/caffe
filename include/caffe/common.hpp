@@ -69,10 +69,13 @@ private:\
       const std::vector<Blob<float, float>*>& top); \
   template void classname<double, double>::Forward_gpu( \
       const std::vector<Blob<double, double>*>& bottom, \
-      const std::vector<Blob<double, double>*>& top); \
+      const std::vector<Blob<double, double>*>& top); 
+
+#if !NATIVE_FP16_SUPPORTED
   template void classname<float16,float>::Forward_gpu( \
       const std::vector<Blob<float16,float>*>& bottom, \
       const std::vector<Blob<float16,float>*>& top) 
+#endif
 
 # define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
   template void classname<float, float>::Backward_gpu( \
@@ -82,18 +85,22 @@ private:\
   template void classname<double, double>::Backward_gpu( \
       const std::vector<Blob<double, double>*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<double, double>*>& bottom); \
+      const std::vector<Blob<double, double>*>& bottom)
+
+#if !NATIVE_FP16_SUPPORTED
   template void classname<float16,float>::Backward_gpu( \
       const std::vector<Blob<float16,float>*>& top, \
       const std::vector<bool>& propagate_down, \
       const std::vector<Blob<float16,float>*>& bottom)
+# endif
 
 # if NATIVE_FP16_SUPPORTED
 
 #  define INSTANTIATE_CLASS(classname) \
    INSTANTIATE_CLASS_CPU(classname);	      \
-   template class classname<float16, float16>; \
-   template class classname<float16,float>
+   template class classname<float16, float16>
+
+  //   template class classname<float16,float>
 
 #  define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
    INSTANTIATE_LAYER_GPU_FORWARD(classname); \
@@ -104,8 +111,8 @@ private:\
 # else
 
 #  define INSTANTIATE_CLASS(classname) \
-   INSTANTIATE_CLASS_CPU(classname); \
-   template class classname<float16,float>
+   INSTANTIATE_CLASS_CPU(classname)
+  //   template class classname<float16,float>
 
 #  define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
    INSTANTIATE_LAYER_GPU_FORWARD(classname); \

@@ -10,10 +10,9 @@
 #include <glog/logging.h>
 #include <google/protobuf/text_format.h>
 
-#if defined(USE_LEVELDB) && defined(USE_LMDB)
+#if defined(USE_LEVELDB) 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
-#include <lmdb.h>
 #endif
 
 #include <stdint.h>
@@ -21,6 +20,10 @@
 
 #include <fstream>  // NOLINT(readability/streams)
 #include <string>
+
+#if defined(USE_LMDB)
+#include "caffe/util/db_lmdb.hpp"
+#endif
 
 #include "caffe/proto/caffe.pb.h"
 

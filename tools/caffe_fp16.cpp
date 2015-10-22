@@ -125,7 +125,7 @@ RegisterBrewFunction(device_query);
 
 // Load the weights from the specified caffemodel(s) into the train and
 // test nets.
-#ifndef CPU_ONLY
+#if! defined (CPU_ONLY) && !NATIVE_FP16_SUPPORTED
 void CopyLayers(caffe::Solver<float16,float>* solver, const std::string& model_list) {
   std::vector<std::string> model_names;
   boost::split(model_names, model_list, boost::is_any_of(",") );

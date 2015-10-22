@@ -82,7 +82,7 @@ void hdf5_load_nd_dataset<double,double>(hid_t file_id, const char* dataset_name
 }
 
 #ifndef CPU_ONLY
-
+#if !NATIVE_FP16_SUPPORTED
 template <>
 void hdf5_load_nd_dataset<float16,float>(hid_t file_id, const char* dataset_name_,
         int min_dim, int max_dim, Blob<float16,float>* blob) {
@@ -95,6 +95,7 @@ void hdf5_load_nd_dataset<float16,float>(hid_t file_id, const char* dataset_name
     blob->mutable_cpu_data()[i] = Get<float16>(temp_data[i]);
   }
 }
+#endif
 
 template <>
 void hdf5_load_nd_dataset<float16,float16>(hid_t file_id, const char* dataset_name_,
@@ -154,7 +155,7 @@ void hdf5_save_nd_dataset<double,double>(
 }
 
 #ifndef CPU_ONLY
-
+#if !NATIVE_FP16_SUPPORTED
 template <>
 void hdf5_save_nd_dataset<float16,float>(
     const hid_t file_id, const string& dataset_name, const Blob<float16,float>& blob,
@@ -174,7 +175,7 @@ void hdf5_save_nd_dataset<float16,float>(
   CHECK_GE(status, 0) << "Failed to make float dataset " << dataset_name;
   delete[] dims;
 }
-
+#endif
 template <>
 void hdf5_save_nd_dataset<float16,float16>(
     const hid_t file_id, const string& dataset_name, const Blob<float16,float16>& blob,
