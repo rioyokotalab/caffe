@@ -132,7 +132,6 @@ class LayerRegisterer {
 # define REGISTER_LAYER_CREATOR_GPU(type, creator) \
   REGISTER_LAYER_CREATOR_CPU(type, creator); \
   static LayerRegisterer<float16,float16> g_creator_hh_##type(#type, creator<float16, float16>)
-  //  static LayerRegisterer<float16,float> g_creator_hf_##type(#type, creator<float16,float>);
 
 # else
 # define REGISTER_LAYER_CREATOR_GPU(type, creator) \

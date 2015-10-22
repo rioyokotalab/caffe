@@ -263,6 +263,7 @@ void caffe_gpu_fabs(const int n, const Dtype* x, Dtype* y);
 template <typename Dtype, typename Mtype>
 void caffe_gpu_scale(const int n, const Mtype alpha, const Dtype *x, Dtype* y);
 
+
 #define DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(name, operation) \
 template<typename Dtype, typename Mtype> \
 __global__ void name##_kernel(const int n, const Dtype* x, Dtype* y) { \
@@ -283,21 +284,11 @@ void caffe_gpu_##name<double,double>(const int n, const double* x, double* y) { 
       n, x, y); \
 } \
 template <> \
-void caffe_gpu_##name<float16,float16>(const int n, const float16* x, float16* y) { \
+void caffe_gpu_##name<float16,CAFFE_FP16_MTYPE>(const int n, const float16* x, float16* y) { \
   /* NOLINT_NEXT_LINE(whitespace/operators) */ \
-  name##_kernel<float16,float16><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
-      n, x, y); \
-}
-
-#if !NATIVE_FP16_SUPPORTED
-template <> \
-void caffe_gpu_##name<float16,float>(const int n, const float16* x, float16* y) { \
-  /* NOLINT_NEXT_LINE(whitespace/operators) */ \
-  name##_kernel<float16,float><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
+  name##_kernel<float16,CAFFE_FP16_MTYPE><<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>( \
       n, x, y); \
 } 
-#endif
- 
 #endif  // !CPU_ONLY
 
 }  // namespace caffe

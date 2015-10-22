@@ -303,7 +303,8 @@ void caffe_gpu_dot<float16, float>(const int n, const float16* x, const float16*
   cudaFree(res);
   CUDA_POST_KERNEL_CHECK;
 }
-#else
+#endif
+
 template <>
 void caffe_gpu_dot<float16, float16>(const int n, const float16* x, const float16* y, float16 *out)
 {
@@ -315,7 +316,7 @@ void caffe_gpu_dot<float16, float16>(const int n, const float16* x, const float1
   cudaFree(res);
   CUDA_POST_KERNEL_CHECK;
 }
-#endif
+
 
 template <>
 void caffe_gpu_asum<float,float>(const int n, const float* x, float* y) {

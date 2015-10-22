@@ -125,8 +125,8 @@ RegisterBrewFunction(device_query);
 
 // Load the weights from the specified caffemodel(s) into the train and
 // test nets.
-#if! defined (CPU_ONLY) && !NATIVE_FP16_SUPPORTED
-void CopyLayers(caffe::Solver<float16,float>* solver, const std::string& model_list) {
+#if! defined (CPU_ONLY)
+void CopyLayers(caffe::Solver<float16,CAFFE_FP16_MTYPE>* solver, const std::string& model_list) {
   std::vector<std::string> model_names;
   boost::split(model_names, model_list, boost::is_any_of(",") );
   for (int i = 0; i < model_names.size(); ++i) {
@@ -200,8 +200,8 @@ int train() {
         GetRequestedAction(FLAGS_sigint_effect),
         GetRequestedAction(FLAGS_sighup_effect));
 
-  shared_ptr<caffe::Solver<float16,float> >
-    solver(caffe::GetSolver<float16,float>(solver_param));
+  shared_ptr<caffe::Solver<float16,CAFFE_FP16_MTYPE> >
+    solver(caffe::GetSolver<float16,CAFFE_FP16_MTYPE>(solver_param));
 
   solver->SetActionFunction(signal_handler.GetActionFunction());
 
@@ -213,7 +213,7 @@ int train() {
   }
 
   if (gpus.size() > 1) {
-    caffe::P2PSync<float16,float> sync(solver, NULL, solver->param());
+    caffe::P2PSync<float16,CAFFE_FP16_MTYPE> sync(solver, NULL, solver->param());
     sync.run(gpus);
   } else {
     LOG(INFO) << "Starting Optimization";
@@ -244,24 +244,24 @@ int test() {
     Caffe::set_mode(Caffe::CPU);
   }
   // Instantiate the caffe net.
-  Net<float16,float> caffe_net(FLAGS_model, caffe::TEST);
+  Net<float16,CAFFE_FP16_MTYPE> caffe_net(FLAGS_model, caffe::TEST);
   caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
   LOG(INFO) << "Running for " << FLAGS_iterations << " iterations.";
 
-  vector<Blob<float16,float>* > bottom_vec;
+  vector<Blob<float16,CAFFE_FP16_MTYPE>* > bottom_vec;
   vector<int> test_score_output_id;
-  vector<float> test_score;
+  vector<CAFFE_FP16_MTYPE> test_score;
   float loss = 0;
   for (int i = 0; i < FLAGS_iterations; ++i) {
     float iter_loss;
-    const vector<Blob<float16,float>*>& result =
+    const vector<Blob<float16,CAFFE_FP16_MTYPE>*>& result =
         caffe_net.Forward(bottom_vec, &iter_loss);
     loss += iter_loss;
     int idx = 0;
     for (int j = 0; j < result.size(); ++j) {
       const float16* result_vec = result[j]->cpu_data();
       for (int k = 0; k < result[j]->count(); ++k, ++idx) {
-        const float score = Get<float>(result_vec[k]);
+        const CAFFE_FP16_MTYPE score = Get<CAFFE_FP16_MTYPE>(result_vec[k]);
         if (i == 0) {
           test_score.push_back(score);
           test_score_output_id.push_back(j);
@@ -311,22 +311,22 @@ int time() {
     Caffe::set_mode(Caffe::CPU);
   }
   // Instantiate the caffe net.
-  Net<float16,float16> caffe_net(FLAGS_model, caffe::TRAIN);
+  Net<float16,CAFFE_FP16_MTYPE> caffe_net(FLAGS_model, caffe::TRAIN);
 
   // Do a clean forward and backward pass, so that memory allocation are done
   // and future iterations will be more stable.
   LOG(INFO) << "Performing Forward";
   // Note that for the speed benchmark, we will assume that the network does
   // not take any input blobs.
-  float16 initial_loss;
-  caffe_net.Forward(vector<Blob<float16,float16>*>(), &initial_loss);
+  CAFFE_FP16_MTYPE initial_loss;
+  caffe_net.Forward(vector<Blob<float16,CAFFE_FP16_MTYPE>*>(), &initial_loss);
   LOG(INFO) << "Initial loss: " << initial_loss;
   LOG(INFO) << "Performing Backward";
   caffe_net.Backward();
 
-  const vector<shared_ptr<Layer<float16,float16> > >& layers = caffe_net.layers();
-  const vector<vector<Blob<float16,float16>*> >& bottom_vecs = caffe_net.bottom_vecs();
-  const vector<vector<Blob<float16,float16>*> >& top_vecs = caffe_net.top_vecs();
+  const vector<shared_ptr<Layer<float16,CAFFE_FP16_MTYPE> > >& layers = caffe_net.layers();
+  const vector<vector<Blob<float16,CAFFE_FP16_MTYPE>*> >& bottom_vecs = caffe_net.bottom_vecs();
+  const vector<vector<Blob<float16,CAFFE_FP16_MTYPE>*> >& top_vecs = caffe_net.top_vecs();
   const vector<vector<bool> >& bottom_need_backward =
       caffe_net.bottom_need_backward();
   LOG(INFO) << "*** Benchmark begins ***";

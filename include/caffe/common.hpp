@@ -23,7 +23,17 @@
 #include "cuda_fp16.h"
 #endif
 
-#define NATIVE_FP16_SUPPORTED 1
+// We only build 1 flavor per host architecture:
+// <float16,float> for Intel
+// <float16,float16> for ARM
+
+#define NATIVE_FP16_SUPPORTED 0
+
+#if NATIVE_FP16_SUPPORTED
+# define CAFFE_FP16_MTYPE float16
+#else
+# define CAFFE_FP16_MTYPE float
+#endif
 
 // gflags 2.1 issue: namespace google was changed to gflags without warning.
 // Luckily we will be able to use GFLAGS_GFLAGS_H_ to detect if it is version
@@ -53,15 +63,15 @@ private:\
 #else
 
 # define INSTANTIATE_LAYER_GPU_FORWARD_FF(classname) \
-  template void classname<float16,float16>::Forward_gpu( \
-      const std::vector<Blob<float16,float16>*>& bottom, \
-      const std::vector<Blob<float16,float16>*>& top)
+  template void classname<float16,CAFFE_FP16_MTYPE>::Forward_gpu( \
+      const std::vector<Blob<float16,CAFFE_FP16_MTYPE>*>& bottom, \
+      const std::vector<Blob<float16,CAFFE_FP16_MTYPE>*>& top) 
 
 # define INSTANTIATE_LAYER_GPU_BACKWARD_FF(classname) \
-  template void classname<float16,float16>::Backward_gpu( \
-      const std::vector<Blob<float16,float16>*>& top, \
+  template void classname<float16,CAFFE_FP16_MTYPE>::Backward_gpu( \
+      const std::vector<Blob<float16,CAFFE_FP16_MTYPE>*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<float16,float16>*>& bottom)
+      const std::vector<Blob<float16,CAFFE_FP16_MTYPE>*>& bottom)
 
 # define INSTANTIATE_LAYER_GPU_FORWARD(classname) \
   template void classname<float, float>::Forward_gpu( \
@@ -70,12 +80,6 @@ private:\
   template void classname<double, double>::Forward_gpu( \
       const std::vector<Blob<double, double>*>& bottom, \
       const std::vector<Blob<double, double>*>& top); 
-
-#if !NATIVE_FP16_SUPPORTED
-  template void classname<float16,float>::Forward_gpu( \
-      const std::vector<Blob<float16,float>*>& bottom, \
-      const std::vector<Blob<float16,float>*>& top) 
-#endif
 
 # define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
   template void classname<float, float>::Backward_gpu( \
@@ -87,20 +91,10 @@ private:\
       const std::vector<bool>& propagate_down, \
       const std::vector<Blob<double, double>*>& bottom)
 
-#if !NATIVE_FP16_SUPPORTED
-  template void classname<float16,float>::Backward_gpu( \
-      const std::vector<Blob<float16,float>*>& top, \
-      const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<float16,float>*>& bottom)
-# endif
-
-# if NATIVE_FP16_SUPPORTED
 
 #  define INSTANTIATE_CLASS(classname) \
-   INSTANTIATE_CLASS_CPU(classname);	      \
-   template class classname<float16, float16>
-
-  //   template class classname<float16,float>
+  INSTANTIATE_CLASS_CPU(classname); \
+   template class classname<float16,CAFFE_FP16_MTYPE>
 
 #  define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
    INSTANTIATE_LAYER_GPU_FORWARD(classname); \
@@ -108,17 +102,6 @@ private:\
    INSTANTIATE_LAYER_GPU_BACKWARD(classname); \
    INSTANTIATE_LAYER_GPU_BACKWARD_FF(classname);
 
-# else
-
-#  define INSTANTIATE_CLASS(classname) \
-   INSTANTIATE_CLASS_CPU(classname)
-  //   template class classname<float16,float>
-
-#  define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
-   INSTANTIATE_LAYER_GPU_FORWARD(classname); \
-   INSTANTIATE_LAYER_GPU_BACKWARD(classname);
-
-# endif
 #endif
 
 // A simple macro to mark codes that are not implemented, so that when the code
