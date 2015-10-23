@@ -154,146 +154,73 @@ caffe::SolverAction::Enum GetRequestedAction(
   LOG(FATAL) << "Invalid signal effect \""<< flag_value << "\" was specified";
 }
 
-// Train / Finetune a model.
-int train() {
-  CHECK_GT(FLAGS_solver.size(), 0) << "Need a solver definition to train.";
-  CHECK(!FLAGS_snapshot.size() || !FLAGS_weights.size())
-      << "Give a snapshot to resume training or weights to finetune "
-      "but not both.";
 
-  caffe::SolverParameter solver_param;
-  caffe::ReadProtoFromTextFileOrDie(FLAGS_solver, &solver_param);
+// // Test: score a model.
+// int test() {
+//   CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to score.";
+//   CHECK_GT(FLAGS_weights.size(), 0) << "Need model weights to score.";
 
-  // If the gpus flag is not provided, allow the mode and device to be set
-  // in the solver prototxt.
-  if (FLAGS_gpu.size() == 0
-      && solver_param.solver_mode() == caffe::SolverParameter_SolverMode_GPU) {
-      if (solver_param.has_device_id()) {
-          FLAGS_gpu = ""  +
-              boost::lexical_cast<string>(solver_param.device_id());
-      } else {  // Set default GPU if unspecified
-          FLAGS_gpu = "" + boost::lexical_cast<string>(0);
-      }
-  }
+//   // Set device id and mode
+//   vector<int> gpus;
+//   get_gpus(&gpus);
+//   if (gpus.size() != 0) {
+//     LOG(INFO) << "Use GPU with device ID " << gpus[0];
+//     Caffe::SetDevice(gpus[0]);
+//     Caffe::set_mode(Caffe::GPU);
+//   } else {
+//     LOG(INFO) << "Use CPU.";
+//     Caffe::set_mode(Caffe::CPU);
+//   }
+//   // Instantiate the caffe net.
+//   Net<float16,float16> caffe_net(FLAGS_model, caffe::TEST);
+//   caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
+//   LOG(INFO) << "Running for " << FLAGS_iterations << " iterations.";
 
-  vector<int> gpus;
-  get_gpus(&gpus);
-  if (gpus.size() == 0) {
-    LOG(INFO) << "Use CPU.";
-    Caffe::set_mode(Caffe::CPU);
-  } else {
-    ostringstream s;
-    for (int i = 0; i < gpus.size(); ++i) {
-      s << (i ? ", " : "") << gpus[i];
-    }
-    LOG(INFO) << "Using GPUs " << s.str();
+//   vector<Blob<float16,float16>* > bottom_vec;
+//   vector<int> test_score_output_id;
+//   vector<float16> test_score;
+//   float loss = 0;
+//   for (int i = 0; i < FLAGS_iterations; ++i) {
+//     float iter_loss;
+//     const vector<Blob<float16,float16>*>& result =
+//         caffe_net.Forward(bottom_vec, &iter_loss);
+//     loss += iter_loss;
+//     int idx = 0;
+//     for (int j = 0; j < result.size(); ++j) {
+//       const float16* result_vec = result[j]->cpu_data();
+//       for (int k = 0; k < result[j]->count(); ++k, ++idx) {
+//         const CAFFE_FP16_MTYPE score = Get<CAFFE_FP16_MTYPE>(result_vec[k]);
+//         if (i == 0) {
+//           test_score.push_back(score);
+//           test_score_output_id.push_back(j);
+//         } else {
+//           test_score[idx] += score;
+//         }
+//         const std::string& output_name = caffe_net.blob_names()[
+//             caffe_net.output_blob_indices()[j]];
+//         LOG(INFO) << "Batch " << i << ", " << output_name << " = " << score;
+//       }
+//     }
+//   }
+//   loss /= FLAGS_iterations;
+//   LOG(INFO) << "Loss: " << loss;
+//   for (int i = 0; i < test_score.size(); ++i) {
+//     const std::string& output_name = caffe_net.blob_names()[
+//         caffe_net.output_blob_indices()[test_score_output_id[i]]];
+//     const float loss_weight = caffe_net.blob_loss_weights()[
+//         caffe_net.output_blob_indices()[test_score_output_id[i]]];
+//     std::ostringstream loss_msg_stream;
+//     const float mean_score = test_score[i] / FLAGS_iterations;
+//     if (loss_weight) {
+//       loss_msg_stream << " (* " << loss_weight
+//                       << " = " << loss_weight * mean_score << " loss)";
+//     }
+//     LOG(INFO) << output_name << " = " << mean_score << loss_msg_stream.str();
+//   }
 
-    solver_param.set_device_id(gpus[0]);
-    Caffe::SetDevice(gpus[0]);
-    Caffe::set_mode(Caffe::GPU);
-    Caffe::set_solver_count(gpus.size());
-  }
-
-  caffe::gpu_memory::arena arena(gpus);
-
-  caffe::SignalHandler signal_handler(
-        GetRequestedAction(FLAGS_sigint_effect),
-        GetRequestedAction(FLAGS_sighup_effect));
-
-  shared_ptr<caffe::Solver<float16,CAFFE_FP16_MTYPE> >
-    solver(caffe::GetSolver<float16,CAFFE_FP16_MTYPE>(solver_param));
-
-  solver->SetActionFunction(signal_handler.GetActionFunction());
-
-  if (FLAGS_snapshot.size()) {
-    LOG(INFO) << "Resuming from " << FLAGS_snapshot;
-    solver->Restore(FLAGS_snapshot.c_str());
-  } else if (FLAGS_weights.size()) {
-    CopyLayers(solver.get(), FLAGS_weights);
-  }
-
-  if (gpus.size() > 1) {
-    caffe::P2PSync<float16,CAFFE_FP16_MTYPE> sync(solver, NULL, solver->param());
-    sync.run(gpus);
-  } else {
-    LOG(INFO) << "Starting Optimization";
-    solver->Solve();
-  }
-  LOG(INFO) << "Optimization Done.";
-
-  // solver.reset();
-  return 0;
-}
-RegisterBrewFunction(train);
-
-
-// Test: score a model.
-int test() {
-  CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to score.";
-  CHECK_GT(FLAGS_weights.size(), 0) << "Need model weights to score.";
-
-  // Set device id and mode
-  vector<int> gpus;
-  get_gpus(&gpus);
-  if (gpus.size() != 0) {
-    LOG(INFO) << "Use GPU with device ID " << gpus[0];
-    Caffe::SetDevice(gpus[0]);
-    Caffe::set_mode(Caffe::GPU);
-  } else {
-    LOG(INFO) << "Use CPU.";
-    Caffe::set_mode(Caffe::CPU);
-  }
-  // Instantiate the caffe net.
-  Net<float16,CAFFE_FP16_MTYPE> caffe_net(FLAGS_model, caffe::TEST);
-  caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
-  LOG(INFO) << "Running for " << FLAGS_iterations << " iterations.";
-
-  vector<Blob<float16,CAFFE_FP16_MTYPE>* > bottom_vec;
-  vector<int> test_score_output_id;
-  vector<CAFFE_FP16_MTYPE> test_score;
-  float loss = 0;
-  for (int i = 0; i < FLAGS_iterations; ++i) {
-    float iter_loss;
-    const vector<Blob<float16,CAFFE_FP16_MTYPE>*>& result =
-        caffe_net.Forward(bottom_vec, &iter_loss);
-    loss += iter_loss;
-    int idx = 0;
-    for (int j = 0; j < result.size(); ++j) {
-      const float16* result_vec = result[j]->cpu_data();
-      for (int k = 0; k < result[j]->count(); ++k, ++idx) {
-        const CAFFE_FP16_MTYPE score = Get<CAFFE_FP16_MTYPE>(result_vec[k]);
-        if (i == 0) {
-          test_score.push_back(score);
-          test_score_output_id.push_back(j);
-        } else {
-          test_score[idx] += score;
-        }
-        const std::string& output_name = caffe_net.blob_names()[
-            caffe_net.output_blob_indices()[j]];
-        LOG(INFO) << "Batch " << i << ", " << output_name << " = " << score;
-      }
-    }
-  }
-  loss /= FLAGS_iterations;
-  LOG(INFO) << "Loss: " << loss;
-  for (int i = 0; i < test_score.size(); ++i) {
-    const std::string& output_name = caffe_net.blob_names()[
-        caffe_net.output_blob_indices()[test_score_output_id[i]]];
-    const float loss_weight = caffe_net.blob_loss_weights()[
-        caffe_net.output_blob_indices()[test_score_output_id[i]]];
-    std::ostringstream loss_msg_stream;
-    const float mean_score = test_score[i] / FLAGS_iterations;
-    if (loss_weight) {
-      loss_msg_stream << " (* " << loss_weight
-                      << " = " << loss_weight * mean_score << " loss)";
-    }
-    LOG(INFO) << output_name << " = " << mean_score << loss_msg_stream.str();
-  }
-
-  return 0;
-}
-RegisterBrewFunction(test);
-
+//   return 0;
+// }
+// RegisterBrewFunction(test);
 
 // Time: benchmark the execution time of a model.
 int time() {
@@ -321,25 +248,18 @@ int time() {
   CAFFE_FP16_MTYPE initial_loss;
   caffe_net.Forward(vector<Blob<float16,CAFFE_FP16_MTYPE>*>(), &initial_loss);
   LOG(INFO) << "Initial loss: " << initial_loss;
-  LOG(INFO) << "Performing Backward";
-  caffe_net.Backward();
 
   const vector<shared_ptr<Layer<float16,CAFFE_FP16_MTYPE> > >& layers = caffe_net.layers();
   const vector<vector<Blob<float16,CAFFE_FP16_MTYPE>*> >& bottom_vecs = caffe_net.bottom_vecs();
   const vector<vector<Blob<float16,CAFFE_FP16_MTYPE>*> >& top_vecs = caffe_net.top_vecs();
-  const vector<vector<bool> >& bottom_need_backward =
-      caffe_net.bottom_need_backward();
   LOG(INFO) << "*** Benchmark begins ***";
   LOG(INFO) << "Testing for " << FLAGS_iterations << " iterations.";
   Timer total_timer;
   total_timer.Start();
   Timer forward_timer;
-  Timer backward_timer;
   Timer timer;
   std::vector<double> forward_time_per_layer(layers.size(), 0.0);
-  std::vector<double> backward_time_per_layer(layers.size(), 0.0);
   double forward_time = 0.0;
-  double backward_time = 0.0;
   for (int j = 0; j < FLAGS_iterations; ++j) {
     Timer iter_timer;
     iter_timer.Start();
@@ -350,15 +270,7 @@ int time() {
       forward_time_per_layer[i] += timer.MicroSeconds();
     }
     forward_time += forward_timer.MicroSeconds();
-    backward_timer.Start();
-    for (int i = layers.size() - 1; i >= 0; --i) {
-      timer.Start();
-      layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
-                          bottom_vecs[i]);
-      backward_time_per_layer[i] += timer.MicroSeconds();
-    }
-    backward_time += backward_timer.MicroSeconds();
-    LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
+    LOG(INFO) << "Iteration: " << j + 1 << " forward time: "
       << iter_timer.MilliSeconds() << " ms.";
   }
   LOG(INFO) << "Average time per layer: ";
@@ -367,16 +279,9 @@ int time() {
     LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
       "\tforward: " << forward_time_per_layer[i] / 1000 /
       FLAGS_iterations << " ms.";
-    LOG(INFO) << std::setfill(' ') << std::setw(10) << layername  <<
-      "\tbackward: " << backward_time_per_layer[i] / 1000 /
-      FLAGS_iterations << " ms.";
   }
   total_timer.Stop();
   LOG(INFO) << "Average Forward pass: " << forward_time / 1000 /
-    FLAGS_iterations << " ms.";
-  LOG(INFO) << "Average Backward pass: " << backward_time / 1000 /
-    FLAGS_iterations << " ms.";
-  LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /
     FLAGS_iterations << " ms.";
   LOG(INFO) << "Total Time: " << total_timer.MilliSeconds() << " ms.";
   LOG(INFO) << "*** Benchmark ends ***";
@@ -392,7 +297,6 @@ int main(int argc, char** argv) {
   gflags::SetUsageMessage("command line brew\n"
       "usage: caffe <command> <args>\n\n"
       "commands:\n"
-      "  train           train or finetune a model\n"
       "  test            score a model\n"
       "  device_query    show GPU diagnostic information\n"
       "  time            benchmark model execution time");

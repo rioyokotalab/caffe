@@ -36,14 +36,22 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Forward_gpu(
                                  cudnn::dataType<Dtype>::one,
                                  bottom_descs_[i],
                                  bottom_data + bottom_offset_ * g,
-                                 filter_desc_,
+                                 fwd_filter_desc_,
                                  weight + this->weight_offset_ * g,
-                                 conv_descs_[i],
+                                 fwd_conv_descs_[i],
                                  fwd_algo_[i], workspaceData,
                                  workspace_fwd_sizes_[i],
                                  cudnn::dataType<Dtype>::zero,
                                  top_descs_[i],
                                  top_data + top_offset_ * g));
+        int array_length;
+        int padA[10];
+        int strideA[10];
+        int upscaleA[10];
+        cudnnConvolutionMode_t mode;
+        cudnnDataType_t dataType;
+        CUDNN_CHECK(cudnnGetConvolutionNdDescriptor(fwd_conv_descs_[i],1,&array_length,
+                                                    padA, strideA, upscaleA, &mode, &dataType));
 
         gpu_memory::deallocate(workspaceData);
         workspaceData = NULL;
@@ -114,12 +122,12 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mt
                                          bottom_data + bottom_offset_ * g,
                                          top_descs_[i],
                                          top_diff + top_offset_ * g,
-                                         conv_descs_[i],
+                                         bwd_conv_descs_[i],
                                          bwd_filter_algo_[i],
                                          workspaceData,
                                          workspace_bwd_filter_sizes_[i],
                                          cudnn::dataType<Dtype>::one,
-                                         filter_desc_,
+                                         bwd_filter_desc_,
                                          weight_diff + weight_offset_ * g));
           gpu_memory::deallocate(workspaceData);
           workspaceData = NULL;
@@ -135,11 +143,11 @@ void CuDNNConvolutionLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mt
                                workspace_bwd_data_sizes_[i]);
           CUDNN_CHECK(cudnnConvBwdData(Caffe::cudnn_handle(),
                                        cudnn::dataType<Dtype>::one,
-                                       filter_desc_,
+                                       bwd_filter_desc_,
                                        weight + this->weight_offset_ * g,
                                        top_descs_[i],
                                        top_diff + top_offset_ * g,
-                                       conv_descs_[i],
+                                       bwd_conv_descs_[i],
                                        bwd_data_algo_[i], workspaceData,
                                        workspace_bwd_data_sizes_[i],
                                        cudnn::dataType<Dtype>::zero,

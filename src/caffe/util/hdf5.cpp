@@ -83,18 +83,33 @@ void hdf5_load_nd_dataset<double,double>(hid_t file_id, const char* dataset_name
 
 #ifndef CPU_ONLY
 
+// template <>
+// void hdf5_load_nd_dataset<float16,float>(hid_t file_id, const char* dataset_name_,
+//         int min_dim, int max_dim, Blob<float16,CAFFE_FP16_MTYPE>* blob) {
+//   hdf5_load_nd_dataset_helper(file_id, dataset_name_, min_dim, max_dim, blob);
+//   std::vector<float> temp_data(blob->count());
+//   herr_t status = H5LTread_dataset_float(
+//     file_id, dataset_name_, &temp_data.front());
+//   CHECK_GE(status, 0) << "Failed to read float dataset " << dataset_name_;
+//   for (int i = 0; i < blob->count(); ++i) {
+//     blob->mutable_cpu_data()[i] = Get<float16>(temp_data[i]);
+//   }
+// }
+
 template <>
-void hdf5_load_nd_dataset<float16,CAFFE_FP16_MTYPE>(hid_t file_id, const char* dataset_name_,
+void hdf5_load_nd_dataset<float16,float16>(hid_t file_id, const char* dataset_name_,
         int min_dim, int max_dim, Blob<float16,CAFFE_FP16_MTYPE>* blob) {
   hdf5_load_nd_dataset_helper(file_id, dataset_name_, min_dim, max_dim, blob);
-  std::vector<CAFFE_FP16_MTYPE> temp_data(blob->count());
-  herr_t status = H5LTread_dataset_float(
+  std::vector<short> temp_data(blob->count());
+  // XXX HACK HACK HACK.  HDF4 doesn't have a mechansim to read float16 data natively.
+  herr_t status = H5LTread_dataset_short(
     file_id, dataset_name_, &temp_data.front());
   CHECK_GE(status, 0) << "Failed to read float dataset " << dataset_name_;
   for (int i = 0; i < blob->count(); ++i) {
     blob->mutable_cpu_data()[i] = Get<float16>(temp_data[i]);
   }
 }
+
 
 #endif // CPU_ONLY
 
@@ -142,7 +157,7 @@ void hdf5_save_nd_dataset<double,double>(
 
 #ifndef CPU_ONLY
 template <>
-void hdf5_save_nd_dataset<float16,CAFFE_FP16_MTYPE>(
+void hdf5_save_nd_dataset<float16,float16>(
     const hid_t file_id, const string& dataset_name, const Blob<float16,CAFFE_FP16_MTYPE>& blob,
     bool write_diff) {
   int num_axes = blob.num_axes();
@@ -151,11 +166,11 @@ void hdf5_save_nd_dataset<float16,CAFFE_FP16_MTYPE>(
     dims[i] = blob.shape(i);
   }
   const float16* data = write_diff ? blob.cpu_diff() : blob.cpu_data();
-  std::vector<CAFFE_FP16_MTYPE> temp_data(blob.count());
+  std::vector<short> temp_data(blob.count());
   for (int i = 0; i < blob.count(); ++i) {
     temp_data[i] = Get<CAFFE_FP16_MTYPE>(data[i]);
   }
-  herr_t status = H5LTmake_dataset_float(
+  herr_t status = H5LTmake_dataset_short(
       file_id, dataset_name.c_str(), num_axes, dims, &temp_data.front());
   CHECK_GE(status, 0) << "Failed to make float dataset " << dataset_name;
   delete[] dims;

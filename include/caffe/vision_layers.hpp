@@ -311,8 +311,10 @@ class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype,Mtype> {
 
   vector<cudnnTensorDescriptor_t> bottom_descs_, top_descs_;
   cudnnTensorDescriptor_t    bias_desc_;
-  cudnnFilterDescriptor_t      filter_desc_;
-  vector<cudnnConvolutionDescriptor_t> conv_descs_;
+  cudnnFilterDescriptor_t      fwd_filter_desc_;
+  cudnnFilterDescriptor_t      bwd_filter_desc_;
+  vector<cudnnConvolutionDescriptor_t> fwd_conv_descs_;
+  vector<cudnnConvolutionDescriptor_t> bwd_conv_descs_;
 
   int bottom_offset_, top_offset_, weight_offset_, bias_offset_;
 

@@ -558,7 +558,7 @@ void Blob<float16,CAFFE_FP16_MTYPE>::ToProto(BlobProto* proto, bool write_diff) 
 #endif // CPU_ONLY
 
 INSTANTIATE_CLASS(Blob);
-template class Blob<float16,float16>;
+//template class Blob<float16,float16>;
 template class Blob<int,int>;
 template class Blob<unsigned int, unsigned int>;
 
