@@ -112,6 +112,17 @@ inline void setConvolutionDesc(cudnnConvolutionDescriptor_t* conv,
       pad_h, pad_w, stride_h, stride_w, 1, 1, CUDNN_CROSS_CORRELATION));
 }
 
+template <>
+inline void setConvolutionDesc<half>(cudnnConvolutionDescriptor_t* conv,
+    cudnnTensorDescriptor_t bottom, cudnnFilterDescriptor_t filter,
+    int pad_h, int pad_w, int stride_h, int stride_w) {
+  int padA[2] = {pad_h,pad_w};
+  int strideA[2] = {stride_h,stride_w};
+  int upscaleA[2] = {1, 1};
+  CUDNN_CHECK(cudnnSetConvolutionNdDescriptor_v3(*conv,
+      2, padA, strideA, upscaleA, CUDNN_CROSS_CORRELATION, CUDNN_DATA_HALF));
+}
+
 template <typename Dtype>
 inline void createPoolingDesc(cudnnPoolingDescriptor_t* pool_desc,
     PoolingParameter_PoolMethod poolmethod, cudnnPoolingMode_t* mode,
