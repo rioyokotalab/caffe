@@ -1,0 +1,485 @@
+1023 23:11:30.639950 18363 net.cpp:435] Input 0 -> data
+I1023 23:11:30.641039 18363 net.cpp:76] Memory required for data: 0
+I1023 23:11:30.641479 18363 layer_factory.hpp:76] Creating layer conv1
+I1023 23:11:30.641780 18363 net.cpp:110] Creating Layer conv1
+I1023 23:11:30.641871 18363 net.cpp:477] conv1 <- data
+I1023 23:11:30.642010 18363 net.cpp:433] conv1 -> conv1
+I1023 23:11:30.645458 18363 net.cpp:155] Setting up conv1
+I1023 23:11:30.645725 18363 net.cpp:163] Top shape: 1 96 55 55 (290400)
+I1023 23:11:30.645843 18363 net.cpp:174] Memory required for data: 580800
+I1023 23:11:30.646210 18363 layer_factory.hpp:76] Creating layer relu1
+I1023 23:11:30.646381 18363 net.cpp:110] Creating Layer relu1
+I1023 23:11:30.646461 18363 net.cpp:477] relu1 <- conv1
+I1023 23:11:30.646574 18363 net.cpp:419] relu1 -> conv1 (in-place)
+I1023 23:11:30.646703 18363 net.cpp:155] Setting up relu1
+I1023 23:11:30.646770 18363 net.cpp:163] Top shape: 1 96 55 55 (290400)
+I1023 23:11:30.646843 18363 net.cpp:174] Memory required for data: 1161600
+I1023 23:11:30.646914 18363 layer_factory.hpp:76] Creating layer norm1
+I1023 23:11:30.647053 18363 net.cpp:110] Creating Layer norm1
+I1023 23:11:30.647128 18363 net.cpp:477] norm1 <- conv1
+I1023 23:11:30.647234 18363 net.cpp:433] norm1 -> norm1
+I1023 23:11:30.647589 18363 net.cpp:155] Setting up norm1
+I1023 23:11:30.647671 18363 net.cpp:163] Top shape: 1 96 55 55 (290400)
+I1023 23:11:30.647744 18363 net.cpp:174] Memory required for data: 1742400
+I1023 23:11:30.647815 18363 layer_factory.hpp:76] Creating layer pool1
+I1023 23:11:30.647953 18363 net.cpp:110] Creating Layer pool1
+I1023 23:11:30.648027 18363 net.cpp:477] pool1 <- norm1
+I1023 23:11:30.648131 18363 net.cpp:433] pool1 -> pool1
+I1023 23:11:30.648468 18363 net.cpp:155] Setting up pool1
+I1023 23:11:30.648555 18363 net.cpp:163] Top shape: 1 96 27 27 (69984)
+I1023 23:11:30.648629 18363 net.cpp:174] Memory required for data: 1882368
+I1023 23:11:30.648699 18363 layer_factory.hpp:76] Creating layer conv2
+I1023 23:11:30.648823 18363 net.cpp:110] Creating Layer conv2
+I1023 23:11:30.648897 18363 net.cpp:477] conv2 <- pool1
+I1023 23:11:30.649006 18363 net.cpp:433] conv2 -> conv2
+I1023 23:11:30.660435 18363 net.cpp:155] Setting up conv2
+I1023 23:11:30.660548 18363 net.cpp:163] Top shape: 1 256 27 27 (186624)
+I1023 23:11:30.660614 18363 net.cpp:174] Memory required for data: 2255616
+I1023 23:11:30.660768 18363 layer_factory.hpp:76] Creating layer relu2
+I1023 23:11:30.660888 18363 net.cpp:110] Creating Layer relu2
+I1023 23:11:30.660959 18363 net.cpp:477] relu2 <- conv2
+I1023 23:11:30.661057 18363 net.cpp:419] relu2 -> conv2 (in-place)
+I1023 23:11:30.661165 18363 net.cpp:155] Setting up relu2
+I1023 23:11:30.661231 18363 net.cpp:163] Top shape: 1 256 27 27 (186624)
+I1023 23:11:30.661293 18363 net.cpp:174] Memory required for data: 2628864
+I1023 23:11:30.661350 18363 layer_factory.hpp:76] Creating layer norm2
+I1023 23:11:30.661437 18363 net.cpp:110] Creating Layer norm2
+I1023 23:11:30.661500 18363 net.cpp:477] norm2 <- conv2
+I1023 23:11:30.661588 18363 net.cpp:433] norm2 -> norm2
+I1023 23:11:30.661893 18363 net.cpp:155] Setting up norm2
+I1023 23:11:30.661969 18363 net.cpp:163] Top shape: 1 256 27 27 (186624)
+I1023 23:11:30.662024 18363 net.cpp:174] Memory required for data: 3002112
+I1023 23:11:30.662077 18363 layer_factory.hpp:76] Creating layer pool2
+I1023 23:11:30.662169 18363 net.cpp:110] Creating Layer pool2
+I1023 23:11:30.662231 18363 net.cpp:477] pool2 <- norm2
+I1023 23:11:30.662315 18363 net.cpp:433] pool2 -> pool2
+I1023 23:11:30.662597 18363 net.cpp:155] Setting up pool2
+I1023 23:11:30.662663 18363 net.cpp:163] Top shape: 1 256 13 13 (43264)
+I1023 23:11:30.662719 18363 net.cpp:174] Memory required for data: 3088640
+I1023 23:11:30.662770 18363 layer_factory.hpp:76] Creating layer conv3
+I1023 23:11:30.662874 18363 net.cpp:110] Creating Layer conv3
+I1023 23:11:30.662935 18363 net.cpp:477] conv3 <- pool2
+I1023 23:11:30.663017 18363 net.cpp:433] conv3 -> conv3
+I1023 23:11:30.690479 18363 net.cpp:155] Setting up conv3
+I1023 23:11:30.690584 18363 net.cpp:163] Top shape: 1 384 13 13 (64896)
+I1023 23:11:30.690661 18363 net.cpp:174] Memory required for data: 3218432
+I1023 23:11:30.690834 18363 layer_factory.hpp:76] Creating layer relu3
+I1023 23:11:30.690963 18363 net.cpp:110] Creating Layer relu3
+I1023 23:11:30.691035 18363 net.cpp:477] relu3 <- conv3
+I1023 23:11:30.691126 18363 net.cpp:419] relu3 -> conv3 (in-place)
+I1023 23:11:30.691227 18363 net.cpp:155] Setting up relu3
+I1023 23:11:30.691383 18363 net.cpp:163] Top shape: 1 384 13 13 (64896)
+I1023 23:11:30.691452 18363 net.cpp:174] Memory required for data: 3348224
+I1023 23:11:30.691505 18363 layer_factory.hpp:76] Creating layer conv4
+I1023 23:11:30.691612 18363 net.cpp:110] Creating Layer conv4
+I1023 23:11:30.691669 18363 net.cpp:477] conv4 <- conv3
+I1023 23:11:30.691759 18363 net.cpp:433] conv4 -> conv4
+I1023 23:11:30.710482 18363 net.cpp:155] Setting up conv4
+I1023 23:11:30.710566 18363 net.cpp:163] Top shape: 1 384 13 13 (64896)
+I1023 23:11:30.710623 18363 net.cpp:174] Memory required for data: 3478016
+I1023 23:11:30.710713 18363 layer_factory.hpp:76] Creating layer relu4
+I1023 23:11:30.710798 18363 net.cpp:110] Creating Layer relu4
+I1023 23:11:30.710856 18363 net.cpp:477] relu4 <- conv4
+I1023 23:11:30.710935 18363 net.cpp:419] relu4 -> conv4 (in-place)
+I1023 23:11:30.711019 18363 net.cpp:155] Setting up relu4
+I1023 23:11:30.711071 18363 net.cpp:163] Top shape: 1 384 13 13 (64896)
+I1023 23:11:30.711122 18363 net.cpp:174] Memory required for data: 3607808
+I1023 23:11:30.711171 18363 layer_factory.hpp:76] Creating layer conv5
+I1023 23:11:30.711246 18363 net.cpp:110] Creating Layer conv5
+I1023 23:11:30.711297 18363 net.cpp:477] conv5 <- conv4
+I1023 23:11:30.711376 18363 net.cpp:433] conv5 -> conv5
+I1023 23:11:30.724187 18363 net.cpp:155] Setting up conv5
+I1023 23:11:30.724298 18363 net.cpp:163] Top shape: 1 256 13 13 (43264)
+I1023 23:11:30.724355 18363 net.cpp:174] Memory required for data: 3694336
+I1023 23:11:30.724500 18363 layer_factory.hpp:76] Creating layer relu5
+I1023 23:11:30.724596 18363 net.cpp:110] Creating Layer relu5
+I1023 23:11:30.724696 18363 net.cpp:477] relu5 <- conv5
+I1023 23:11:30.724786 18363 net.cpp:419] relu5 -> conv5 (in-place)
+I1023 23:11:30.724870 18363 net.cpp:155] Setting up relu5
+I1023 23:11:30.724917 18363 net.cpp:163] Top shape: 1 256 13 13 (43264)
+I1023 23:11:30.724963 18363 net.cpp:174] Memory required for data: 3780864
+I1023 23:11:30.725008 18363 layer_factory.hpp:76] Creating layer pool5
+I1023 23:11:30.725085 18363 net.cpp:110] Creating Layer pool5
+I1023 23:11:30.725134 18363 net.cpp:477] pool5 <- conv5
+I1023 23:11:30.725204 18363 net.cpp:433] pool5 -> pool5
+I1023 23:11:30.725431 18363 net.cpp:155] Setting up pool5
+I1023 23:11:30.725492 18363 net.cpp:163] Top shape: 1 256 6 6 (9216)
+I1023 23:11:30.725548 18363 net.cpp:174] Memory required for data: 3799296
+I1023 23:11:30.725600 18363 layer_factory.hpp:76] Creating layer fc6
+I1023 23:11:30.725705 18363 net.cpp:110] Creating Layer fc6
+I1023 23:11:30.725759 18363 net.cpp:477] fc6 <- pool5
+I1023 23:11:30.725847 18363 net.cpp:433] fc6 -> fc6
+I1023 23:11:31.664943 18363 net.cpp:155] Setting up fc6
+I1023 23:11:31.665021 18363 net.cpp:163] Top shape: 1 4096 (4096)
+I1023 23:11:31.665066 18363 net.cpp:174] Memory required for data: 3807488
+I1023 23:11:31.665140 18363 layer_factory.hpp:76] Creating layer relu6
+I1023 23:11:31.665238 18363 net.cpp:110] Creating Layer relu6
+I1023 23:11:31.665285 18363 net.cpp:477] relu6 <- fc6
+I1023 23:11:31.665355 18363 net.cpp:419] relu6 -> fc6 (in-place)
+I1023 23:11:31.665422 18363 net.cpp:155] Setting up relu6
+I1023 23:11:31.665459 18363 net.cpp:163] Top shape: 1 4096 (4096)
+I1023 23:11:31.665498 18363 net.cpp:174] Memory required for data: 3815680
+I1023 23:11:31.665539 18363 layer_factory.hpp:76] Creating layer drop6
+I1023 23:11:31.665604 18363 net.cpp:110] Creating Layer drop6
+I1023 23:11:31.665644 18363 net.cpp:477] drop6 <- fc6
+I1023 23:11:31.665699 18363 net.cpp:419] drop6 -> fc6 (in-place)
+I1023 23:11:31.665832 18363 net.cpp:155] Setting up drop6
+I1023 23:11:31.665870 18363 net.cpp:163] Top shape: 1 4096 (4096)
+I1023 23:11:31.665915 18363 net.cpp:174] Memory required for data: 3823872
+I1023 23:11:31.665952 18363 layer_factory.hpp:76] Creating layer fc7
+I1023 23:11:31.666010 18363 net.cpp:110] Creating Layer fc7
+I1023 23:11:31.666049 18363 net.cpp:477] fc7 <- fc6
+I1023 23:11:31.666106 18363 net.cpp:433] fc7 -> fc7
+I1023 23:11:32.086058 18363 net.cpp:155] Setting up fc7
+I1023 23:11:32.086146 18363 net.cpp:163] Top shape: 1 4096 (4096)
+I1023 23:11:32.086258 18363 net.cpp:174] Memory required for data: 3832064
+I1023 23:11:32.086336 18363 layer_factory.hpp:76] Creating layer relu7
+I1023 23:11:32.086416 18363 net.cpp:110] Creating Layer relu7
+I1023 23:11:32.086467 18363 net.cpp:477] relu7 <- fc7
+I1023 23:11:32.086534 18363 net.cpp:419] relu7 -> fc7 (in-place)
+I1023 23:11:32.086606 18363 net.cpp:155] Setting up relu7
+I1023 23:11:32.086642 18363 net.cpp:163] Top shape: 1 4096 (4096)
+I1023 23:11:32.086680 18363 net.cpp:174] Memory required for data: 3840256
+I1023 23:11:32.086719 18363 layer_factory.hpp:76] Creating layer drop7
+I1023 23:11:32.086771 18363 net.cpp:110] Creating Layer drop7
+I1023 23:11:32.086812 18363 net.cpp:477] drop7 <- fc7
+I1023 23:11:32.086863 18363 net.cpp:419] drop7 -> fc7 (in-place)
+I1023 23:11:32.086982 18363 net.cpp:155] Setting up drop7
+I1023 23:11:32.087021 18363 net.cpp:163] Top shape: 1 4096 (4096)
+I1023 23:11:32.087060 18363 net.cpp:174] Memory required for data: 3848448
+I1023 23:11:32.087100 18363 layer_factory.hpp:76] Creating layer fc8
+I1023 23:11:32.087159 18363 net.cpp:110] Creating Layer fc8
+I1023 23:11:32.087198 18363 net.cpp:477] fc8 <- fc7
+I1023 23:11:32.087260 18363 net.cpp:433] fc8 -> fc8
+I1023 23:11:32.195363 18363 net.cpp:155] Setting up fc8
+I1023 23:11:32.195443 18363 net.cpp:163] Top shape: 1 1000 (1000)
+I1023 23:11:32.195500 18363 net.cpp:174] Memory required for data: 3850448
+I1023 23:11:32.195575 18363 layer_factory.hpp:76] Creating layer prob
+I1023 23:11:32.195683 18363 net.cpp:110] Creating Layer prob
+I1023 23:11:32.195734 18363 net.cpp:477] prob <- fc8
+I1023 23:11:32.195802 18363 net.cpp:433] prob -> prob
+I1023 23:11:32.196090 18363 net.cpp:155] Setting up prob
+I1023 23:11:32.196135 18363 net.cpp:163] Top shape: 1 1000 (1000)
+I1023 23:11:32.196179 18363 net.cpp:174] Memory required for data: 3852448
+I1023 23:11:32.196223 18363 net.cpp:240] prob does not need backward computation.
+I1023 23:11:32.196264 18363 net.cpp:240] fc8 does not need backward computation.
+I1023 23:11:32.196303 18363 net.cpp:240] drop7 does not need backward computation.
+I1023 23:11:32.196341 18363 net.cpp:240] relu7 does not need backward computation.
+I1023 23:11:32.196379 18363 net.cpp:240] fc7 does not need backward computation.
+I1023 23:11:32.196423 18363 net.cpp:240] drop6 does not need backward computation.
+I1023 23:11:32.196460 18363 net.cpp:240] relu6 does not need backward computation.
+I1023 23:11:32.196498 18363 net.cpp:240] fc6 does not need backward computation.
+I1023 23:11:32.196533 18363 net.cpp:240] pool5 does not need backward computation.
+I1023 23:11:32.196573 18363 net.cpp:240] relu5 does not need backward computation.
+I1023 23:11:32.196610 18363 net.cpp:240] conv5 does not need backward computation.
+I1023 23:11:32.196650 18363 net.cpp:240] relu4 does not need backward computation.
+I1023 23:11:32.196686 18363 net.cpp:240] conv4 does not need backward computation.
+I1023 23:11:32.196724 18363 net.cpp:240] relu3 does not need backward computation.
+I1023 23:11:32.196763 18363 net.cpp:240] conv3 does not need backward computation.
+I1023 23:11:32.196802 18363 net.cpp:240] pool2 does not need backward computation.
+I1023 23:11:32.196841 18363 net.cpp:240] norm2 does not need backward computation.
+I1023 23:11:32.196877 18363 net.cpp:240] relu2 does not need backward computation.
+I1023 23:11:32.196916 18363 net.cpp:240] conv2 does not need backward computation.
+I1023 23:11:32.196951 18363 net.cpp:240] pool1 does not need backward computation.
+I1023 23:11:32.196990 18363 net.cpp:240] norm1 does not need backward computation.
+I1023 23:11:32.197029 18363 net.cpp:240] relu1 does not need backward computation.
+I1023 23:11:32.197067 18363 net.cpp:240] conv1 does not need backward computation.
+I1023 23:11:32.197108 18363 net.cpp:283] This network produces output prob
+I1023 23:11:32.197221 18363 net.cpp:297] Network initialization done.
+I1023 23:11:32.197257 18363 net.cpp:298] Memory required for data: 3852448
+I1023 23:11:32.197501 18363 caffe_fp16.cpp:245] Performing Forward
+I1023 23:11:32.497540 18363 caffe_fp16.cpp:250] Initial loss: 0
+I1023 23:11:32.497758 18363 caffe_fp16.cpp:255] *** Benchmark begins ***
+I1023 23:11:32.497822 18363 caffe_fp16.cpp:256] Testing for 100 iterations.
+I1023 23:11:32.602244 18363 caffe_fp16.cpp:273] Iteration: 1 forward time (layer by layer): 94.1416 ms.
+I1023 23:11:32.697778 18363 caffe_fp16.cpp:273] Iteration: 2 forward time (layer by layer): 96.4763 ms.
+I1023 23:11:32.796895 18363 caffe_fp16.cpp:273] Iteration: 3 forward time (layer by layer): 100.047 ms.
+I1023 23:11:32.908908 18363 caffe_fp16.cpp:273] Iteration: 4 forward time (layer by layer): 111.628 ms.
+I1023 23:11:33.015645 18363 caffe_fp16.cpp:273] Iteration: 5 forward time (layer by layer): 107.259 ms.
+I1023 23:11:33.109868 18363 caffe_fp16.cpp:273] Iteration: 6 forward time (layer by layer): 95.3091 ms.
+I1023 23:11:33.205720 18363 caffe_fp16.cpp:273] Iteration: 7 forward time (layer by layer): 95.2044 ms.
+I1023 23:11:33.304764 18363 caffe_fp16.cpp:273] Iteration: 8 forward time (layer by layer): 99.6257 ms.
+I1023 23:11:33.402375 18363 caffe_fp16.cpp:273] Iteration: 9 forward time (layer by layer): 98.2682 ms.
+I1023 23:11:33.508460 18363 caffe_fp16.cpp:273] Iteration: 10 forward time (layer by layer): 106.612 ms.
+I1023 23:11:33.599987 18363 caffe_fp16.cpp:273] Iteration: 11 forward time (layer by layer): 92.2968 ms.
+I1023 23:11:33.693162 18363 caffe_fp16.cpp:273] Iteration: 12 forward time (layer by layer): 93.6363 ms.
+I1023 23:11:33.791537 18363 caffe_fp16.cpp:273] Iteration: 13 forward time (layer by layer): 99.1578 ms.
+I1023 23:11:33.890913 18363 caffe_fp16.cpp:273] Iteration: 14 forward time (layer by layer): 100.176 ms.
+I1023 23:11:33.982424 18363 caffe_fp16.cpp:273] Iteration: 15 forward time (layer by layer): 92.2408 ms.
+I1023 23:11:34.083997 18363 caffe_fp16.cpp:273] Iteration: 16 forward time (layer by layer): 102.36 ms.
+I1023 23:11:34.182528 18363 caffe_fp16.cpp:273] Iteration: 17 forward time (layer by layer): 99.5842 ms.
+I1023 23:11:34.283617 18363 caffe_fp16.cpp:273] Iteration: 18 forward time (layer by layer): 101.636 ms.
+I1023 23:11:34.396245 18363 caffe_fp16.cpp:273] Iteration: 19 forward time (layer by layer): 113.422 ms.
+I1023 23:11:34.503877 18363 caffe_fp16.cpp:273] Iteration: 20 forward time (layer by layer): 107.713 ms.
+I1023 23:11:34.598189 18363 caffe_fp16.cpp:273] Iteration: 21 forward time (layer by layer): 95.0756 ms.
+I1023 23:11:34.701436 18363 caffe_fp16.cpp:273] Iteration: 22 forward time (layer by layer): 103.901 ms.
+I1023 23:11:34.794510 18363 caffe_fp16.cpp:273] Iteration: 23 forward time (layer by layer): 93.8204 ms.
+I1023 23:11:34.893168 18363 caffe_fp16.cpp:273] Iteration: 24 forward time (layer by layer): 99.3751 ms.
+I1023 23:11:34.999220 18363 caffe_fp16.cpp:273] Iteration: 25 forward time (layer by layer): 106.724 ms.
+I1023 23:11:35.090376 18363 caffe_fp16.cpp:273] Iteration: 26 forward time (layer by layer): 91.8475 ms.
+I1023 23:11:35.191159 18363 caffe_fp16.cpp:273] Iteration: 27 forward time (layer by layer): 101.671 ms.
+I1023 23:11:35.297070 18363 caffe_fp16.cpp:273] Iteration: 28 forward time (layer by layer): 106.545 ms.
+I1023 23:11:35.405100 18363 caffe_fp16.cpp:273] Iteration: 29 forward time (layer by layer): 108.421 ms.
+I1023 23:11:35.506897 18363 caffe_fp16.cpp:273] Iteration: 30 forward time (layer by layer): 102.365 ms.
+I1023 23:11:35.607487 18363 caffe_fp16.cpp:273] Iteration: 31 forward time (layer by layer): 101.772 ms.
+I1023 23:11:35.703743 18363 caffe_fp16.cpp:273] Iteration: 32 forward time (layer by layer): 96.2496 ms.
+I1023 23:11:35.802062 18363 caffe_fp16.cpp:273] Iteration: 33 forward time (layer by layer): 98.6018 ms.
+I1023 23:11:35.897367 18363 caffe_fp16.cpp:273] Iteration: 34 forward time (layer by layer): 96.1348 ms.
+I1023 23:11:35.996907 18363 caffe_fp16.cpp:273] Iteration: 35 forward time (layer by layer): 99.9862 ms.
+I1023 23:11:36.093353 18363 caffe_fp16.cpp:273] Iteration: 36 forward time (layer by layer): 97.2901 ms.
+I1023 23:11:36.189744 18363 caffe_fp16.cpp:273] Iteration: 37 forward time (layer by layer): 96.9034 ms.
+I1023 23:11:36.284876 18363 caffe_fp16.cpp:273] Iteration: 38 forward time (layer by layer): 96.1365 ms.
+I1023 23:11:36.384438 18363 caffe_fp16.cpp:273] Iteration: 39 forward time (layer by layer): 100.027 ms.
+I1023 23:11:36.498420 18363 caffe_fp16.cpp:273] Iteration: 40 forward time (layer by layer): 114.905 ms.
+I1023 23:11:36.588340 18363 caffe_fp16.cpp:273] Iteration: 41 forward time (layer by layer): 90.0756 ms.
+I1023 23:11:36.682499 18363 caffe_fp16.cpp:273] Iteration: 42 forward time (layer by layer): 94.4105 ms.
+I1023 23:11:36.774979 18363 caffe_fp16.cpp:273] Iteration: 43 forward time (layer by layer): 92.9672 ms.
+I1023 23:11:36.879390 18363 caffe_fp16.cpp:273] Iteration: 44 forward time (layer by layer): 105.852 ms.
+I1023 23:11:36.974830 18363 caffe_fp16.cpp:273] Iteration: 45 forward time (layer by layer): 94.4748 ms.
+I1023 23:11:37.064040 18363 caffe_fp16.cpp:273] Iteration: 46 forward time (layer by layer): 89.8786 ms.
+I1023 23:11:37.145153 18363 caffe_fp16.cpp:273] Iteration: 47 forward time (layer by layer): 81.5087 ms.
+I1023 23:11:37.241400 18363 caffe_fp16.cpp:273] Iteration: 48 forward time (layer by layer): 97.349 ms.
+I1023 23:11:37.353114 18363 caffe_fp16.cpp:273] Iteration: 49 forward time (layer by layer): 112.06 ms.
+I1023 23:11:37.445519 18363 caffe_fp16.cpp:273] Iteration: 50 forward time (layer by layer): 92.4323 ms.
+I1023 23:11:37.532223 18363 caffe_fp16.cpp:273] Iteration: 51 forward time (layer by layer): 87.4061 ms.
+I1023 23:11:37.616201 18363 caffe_fp16.cpp:273] Iteration: 52 forward time (layer by layer): 84.363 ms.
+I1023 23:11:37.711141 18363 caffe_fp16.cpp:273] Iteration: 53 forward time (layer by layer): 95.9811 ms.
+I1023 23:11:37.814445 18363 caffe_fp16.cpp:273] Iteration: 54 forward time (layer by layer): 103.699 ms.
+I1023 23:11:37.909539 18363 caffe_fp16.cpp:273] Iteration: 55 forward time (layer by layer): 94.8782 ms.
+I1023 23:11:37.994737 18363 caffe_fp16.cpp:273] Iteration: 56 forward time (layer by layer): 86.1286 ms.
+I1023 23:11:38.089568 18363 caffe_fp16.cpp:273] Iteration: 57 forward time (layer by layer): 95.6487 ms.
+I1023 23:11:38.197515 18363 caffe_fp16.cpp:273] Iteration: 58 forward time (layer by layer): 108.178 ms.
+I1023 23:11:38.284449 18363 caffe_fp16.cpp:273] Iteration: 59 forward time (layer by layer): 87.6351 ms.
+I1023 23:11:38.378443 18363 caffe_fp16.cpp:273] Iteration: 60 forward time (layer by layer): 94.4243 ms.
+I1023 23:11:38.470638 18363 caffe_fp16.cpp:273] Iteration: 61 forward time (layer by layer): 93.3077 ms.
+I1023 23:11:38.570480 18363 caffe_fp16.cpp:273] Iteration: 62 forward time (layer by layer): 99.8802 ms.
+I1023 23:11:38.660465 18363 caffe_fp16.cpp:273] Iteration: 63 forward time (layer by layer): 90.4919 ms.
+I1023 23:11:38.754856 18363 caffe_fp16.cpp:273] Iteration: 64 forward time (layer by layer): 95.5008 ms.
+I1023 23:11:38.863795 18363 caffe_fp16.cpp:273] Iteration: 65 forward time (layer by layer): 109.111 ms.
+I1023 23:11:38.945123 18363 caffe_fp16.cpp:273] Iteration: 66 forward time (layer by layer): 81.9615 ms.
+I1023 23:11:39.032968 18363 caffe_fp16.cpp:273] Iteration: 67 forward time (layer by layer): 88.229 ms.
+I1023 23:11:39.121896 18363 caffe_fp16.cpp:273] Iteration: 68 forward time (layer by layer): 89.6504 ms.
+I1023 23:11:39.237184 18363 caffe_fp16.cpp:273] Iteration: 69 forward time (layer by layer): 115.664 ms.
+I1023 23:11:39.335253 18363 caffe_fp16.cpp:273] Iteration: 70 forward time (layer by layer): 98.0506 ms.
+I1023 23:11:39.428908 18363 caffe_fp16.cpp:273] Iteration: 71 forward time (layer by layer): 94.7395 ms.
+I1023 23:11:39.536319 18363 caffe_fp16.cpp:273] Iteration: 72 forward time (layer by layer): 107.206 ms.
+I1023 23:11:39.628065 18363 caffe_fp16.cpp:273] Iteration: 73 forward time (layer by layer): 92.0833 ms.
+I1023 23:11:39.720266 18363 caffe_fp16.cpp:273] Iteration: 74 forward time (layer by layer): 93.3943 ms.
+I1023 23:11:39.830807 18363 caffe_fp16.cpp:273] Iteration: 75 forward time (layer by layer): 110.661 ms.
+I1023 23:11:39.922008 18363 caffe_fp16.cpp:273] Iteration: 76 forward time (layer by layer): 91.7234 ms.
+I1023 23:11:40.018883 18363 caffe_fp16.cpp:273] Iteration: 77 forward time (layer by layer): 97.7221 ms.
+I1023 23:11:40.122611 18363 caffe_fp16.cpp:273] Iteration: 78 forward time (layer by layer): 103.794 ms.
+I1023 23:11:40.212548 18363 caffe_fp16.cpp:273] Iteration: 79 forward time (layer by layer): 90.9172 ms.
+I1023 23:11:40.298996 18363 caffe_fp16.cpp:273] Iteration: 80 forward time (layer by layer): 87.0602 ms.
+I1023 23:11:40.407927 18363 caffe_fp16.cpp:273] Iteration: 81 forward time (layer by layer): 109.4 ms.
+I1023 23:11:40.493592 18363 caffe_fp16.cpp:273] Iteration: 82 forward time (layer by layer): 86.2708 ms.
+I1023 23:11:40.578953 18363 caffe_fp16.cpp:273] Iteration: 83 forward time (layer by layer): 86.0216 ms.
+I1023 23:11:40.673463 18363 caffe_fp16.cpp:273] Iteration: 84 forward time (layer by layer): 95.4006 ms.
+I1023 23:11:40.783679 18363 caffe_fp16.cpp:273] Iteration: 85 forward time (layer by layer): 109.351 ms.
+I1023 23:11:40.872844 18363 caffe_fp16.cpp:273] Iteration: 86 forward time (layer by layer): 89.1847 ms.
+I1023 23:11:40.954366 18363 caffe_fp16.cpp:273] Iteration: 87 forward time (layer by layer): 82.069 ms.
+I1023 23:11:41.055382 18363 caffe_fp16.cpp:273] Iteration: 88 forward time (layer by layer): 102.063 ms.
+I1023 23:11:41.155984 18363 caffe_fp16.cpp:273] Iteration: 89 forward time (layer by layer): 100.511 ms.
+I1023 23:11:41.249709 18363 caffe_fp16.cpp:273] Iteration: 90 forward time (layer by layer): 94.4643 ms.
+I1023 23:11:41.348258 18363 caffe_fp16.cpp:273] Iteration: 91 forward time (layer by layer): 99.665 ms.
+I1023 23:11:41.448598 18363 caffe_fp16.cpp:273] Iteration: 92 forward time (layer by layer): 100.655 ms.
+I1023 23:11:41.554371 18363 caffe_fp16.cpp:273] Iteration: 93 forward time (layer by layer): 106.224 ms.
+I1023 23:11:41.666021 18363 caffe_fp16.cpp:273] Iteration: 94 forward time (layer by layer): 111.989 ms.
+I1023 23:11:41.758035 18363 caffe_fp16.cpp:273] Iteration: 95 forward time (layer by layer): 92.7717 ms.
+I1023 23:11:41.860916 18363 caffe_fp16.cpp:273] Iteration: 96 forward time (layer by layer): 103.515 ms.
+I1023 23:11:41.965198 18363 caffe_fp16.cpp:273] Iteration: 97 forward time (layer by layer): 105.011 ms.
+I1023 23:11:42.073066 18363 caffe_fp16.cpp:273] Iteration: 98 forward time (layer by layer): 108.174 ms.
+I1023 23:11:42.172160 18363 caffe_fp16.cpp:273] Iteration: 99 forward time (layer by layer): 99.9726 ms.
+I1023 23:11:42.286746 18363 caffe_fp16.cpp:273] Iteration: 100 forward time (layer by layer): 115.2 ms.
+I1023 23:11:42.287623 18363 caffe_fp16.cpp:276] Average time per layer: 
+I1023 23:11:42.287861 18363 caffe_fp16.cpp:279]      conv1   forward: 3.25838 ms.
+I1023 23:11:42.288269 18363 caffe_fp16.cpp:279]      relu1   forward: 0.430159 ms.
+I1023 23:11:42.288600 18363 caffe_fp16.cpp:279]      norm1   forward: 0.446255 ms.
+I1023 23:11:42.288925 18363 caffe_fp16.cpp:279]      pool1   forward: 0.415843 ms.
+I1023 23:11:42.289247 18363 caffe_fp16.cpp:279]      conv2   forward: 31.3 ms.
+I1023 23:11:42.289577 18363 caffe_fp16.cpp:279]      relu2   forward: 0.270645 ms.
+I1023 23:11:42.289898 18363 caffe_fp16.cpp:279]      norm2   forward: 0.396176 ms.
+I1023 23:11:42.290222 18363 caffe_fp16.cpp:279]      pool2   forward: 0.18822 ms.
+I1023 23:11:42.290546 18363 caffe_fp16.cpp:279]      conv3   forward: 3.77229 ms.
+I1023 23:11:42.290855 18363 caffe_fp16.cpp:279]      relu3   forward: 0.22537 ms.
+I1023 23:11:42.291200 18363 caffe_fp16.cpp:279]      conv4   forward: 4.95043 ms.
+I1023 23:11:42.291503 18363 caffe_fp16.cpp:279]      relu4   forward: 0.3161 ms.
+I1023 23:11:42.291857 18363 caffe_fp16.cpp:279]      conv5   forward: 4.42141 ms.
+I1023 23:11:42.292178 18363 caffe_fp16.cpp:279]      relu5   forward: 0.252216 ms.
+I1023 23:11:42.292507 18363 caffe_fp16.cpp:279]      pool5   forward: 0.293656 ms.
+I1023 23:11:42.292830 18363 caffe_fp16.cpp:279]        fc6   forward: 16.948 ms.
+I1023 23:11:42.293159 18363 caffe_fp16.cpp:279]      relu6   forward: 0.273386 ms.
+I1023 23:11:42.293481 18363 caffe_fp16.cpp:279]      drop6   forward: 0.420988 ms.
+I1023 23:11:42.293808 18363 caffe_fp16.cpp:279]        fc7   forward: 6.53413 ms.
+I1023 23:11:42.294126 18363 caffe_fp16.cpp:279]      relu7   forward: 0.317269 ms.
+I1023 23:11:42.294823 18363 caffe_fp16.cpp:279]      drop7   forward: 0.517277 ms.
+I1023 23:11:42.295125 18363 caffe_fp16.cpp:279]        fc8   forward: 1.8664 ms.
+I1023 23:11:42.295411 18363 caffe_fp16.cpp:279]       prob   forward: 12.9685 ms.
+I1023 23:11:42.396045 18363 caffe_fp16.cpp:295] Iteration: 1 forward-backward time: 101.263 ms.
+I1023 23:11:42.488600 18363 caffe_fp16.cpp:295] Iteration: 2 forward-backward time: 92.6023 ms.
+I1023 23:11:42.575585 18363 caffe_fp16.cpp:295] Iteration: 3 forward-backward time: 87.8905 ms.
+I1023 23:11:42.660863 18363 caffe_fp16.cpp:295] Iteration: 4 forward-backward time: 85.5357 ms.
+I1023 23:11:42.756568 18363 caffe_fp16.cpp:295] Iteration: 5 forward-backward time: 96.6978 ms.
+I1023 23:11:42.845402 18363 caffe_fp16.cpp:295] Iteration: 6 forward-backward time: 89.6223 ms.
+I1023 23:11:42.937670 18363 caffe_fp16.cpp:295] Iteration: 7 forward-backward time: 92.1703 ms.
+I1023 23:11:43.027271 18363 caffe_fp16.cpp:295] Iteration: 8 forward-backward time: 90.232 ms.
+I1023 23:11:43.121814 18363 caffe_fp16.cpp:295] Iteration: 9 forward-backward time: 94.6405 ms.
+I1023 23:11:43.213523 18363 caffe_fp16.cpp:295] Iteration: 10 forward-backward time: 92.2223 ms.
+I1023 23:11:43.306068 18363 caffe_fp16.cpp:295] Iteration: 11 forward-backward time: 93.4443 ms.
+I1023 23:11:43.400034 18363 caffe_fp16.cpp:295] Iteration: 12 forward-backward time: 94.2839 ms.
+I1023 23:11:43.499794 18363 caffe_fp16.cpp:295] Iteration: 13 forward-backward time: 100.217 ms.
+I1023 23:11:43.586791 18363 caffe_fp16.cpp:295] Iteration: 14 forward-backward time: 88.3832 ms.
+I1023 23:11:43.675748 18363 caffe_fp16.cpp:295] Iteration: 15 forward-backward time: 88.4704 ms.
+I1023 23:11:43.769554 18363 caffe_fp16.cpp:295] Iteration: 16 forward-backward time: 94.5046 ms.
+I1023 23:11:43.856691 18363 caffe_fp16.cpp:295] Iteration: 17 forward-backward time: 87.5862 ms.
+I1023 23:11:43.948568 18363 caffe_fp16.cpp:295] Iteration: 18 forward-backward time: 92.9582 ms.
+I1023 23:11:44.040184 18363 caffe_fp16.cpp:295] Iteration: 19 forward-backward time: 91.4886 ms.
+I1023 23:11:44.128952 18363 caffe_fp16.cpp:295] Iteration: 20 forward-backward time: 89.6816 ms.
+I1023 23:11:44.220402 18363 caffe_fp16.cpp:295] Iteration: 21 forward-backward time: 92.0395 ms.
+I1023 23:11:44.310847 18363 caffe_fp16.cpp:295] Iteration: 22 forward-backward time: 90.7544 ms.
+I1023 23:11:44.397909 18363 caffe_fp16.cpp:295] Iteration: 23 forward-backward time: 87.745 ms.
+I1023 23:11:44.488061 18363 caffe_fp16.cpp:295] Iteration: 24 forward-backward time: 90.9666 ms.
+I1023 23:11:44.577021 18363 caffe_fp16.cpp:295] Iteration: 25 forward-backward time: 89.3904 ms.
+I1023 23:11:44.673481 18363 caffe_fp16.cpp:295] Iteration: 26 forward-backward time: 97.4027 ms.
+I1023 23:11:44.760231 18363 caffe_fp16.cpp:295] Iteration: 27 forward-backward time: 86.6595 ms.
+I1023 23:11:44.844049 18363 caffe_fp16.cpp:295] Iteration: 28 forward-backward time: 84.3872 ms.
+I1023 23:11:44.948096 18363 caffe_fp16.cpp:295] Iteration: 29 forward-backward time: 105.155 ms.
+I1023 23:11:45.036198 18363 caffe_fp16.cpp:295] Iteration: 30 forward-backward time: 88.3944 ms.
+I1023 23:11:45.126391 18363 caffe_fp16.cpp:295] Iteration: 31 forward-backward time: 90.7574 ms.
+I1023 23:11:45.212285 18363 caffe_fp16.cpp:295] Iteration: 32 forward-backward time: 86.6741 ms.
+I1023 23:11:45.311584 18363 caffe_fp16.cpp:295] Iteration: 33 forward-backward time: 99.9282 ms.
+I1023 23:11:45.405778 18363 caffe_fp16.cpp:295] Iteration: 34 forward-backward time: 94.2992 ms.
+I1023 23:11:45.499132 18363 caffe_fp16.cpp:295] Iteration: 35 forward-backward time: 93.5251 ms.
+I1023 23:11:45.588446 18363 caffe_fp16.cpp:295] Iteration: 36 forward-backward time: 89.581 ms.
+I1023 23:11:45.683625 18363 caffe_fp16.cpp:295] Iteration: 37 forward-backward time: 96.2322 ms.
+I1023 23:11:45.789731 18363 caffe_fp16.cpp:295] Iteration: 38 forward-backward time: 106.754 ms.
+I1023 23:11:45.889521 18363 caffe_fp16.cpp:295] Iteration: 39 forward-backward time: 99.8876 ms.
+I1023 23:11:45.977200 18363 caffe_fp16.cpp:295] Iteration: 40 forward-backward time: 88.0601 ms.
+I1023 23:11:46.066666 18363 caffe_fp16.cpp:295] Iteration: 41 forward-backward time: 89.5865 ms.
+I1023 23:11:46.154480 18363 caffe_fp16.cpp:295] Iteration: 42 forward-backward time: 88.3939 ms.
+I1023 23:11:46.252041 18363 caffe_fp16.cpp:295] Iteration: 43 forward-backward time: 98.2952 ms.
+I1023 23:11:46.339643 18363 caffe_fp16.cpp:295] Iteration: 44 forward-backward time: 87.4659 ms.
+I1023 23:11:46.426475 18363 caffe_fp16.cpp:295] Iteration: 45 forward-backward time: 87.5175 ms.
+I1023 23:11:46.519750 18363 caffe_fp16.cpp:295] Iteration: 46 forward-backward time: 94.0855 ms.
+I1023 23:11:46.618468 18363 caffe_fp16.cpp:295] Iteration: 47 forward-backward time: 98.8463 ms.
+I1023 23:11:46.712594 18363 caffe_fp16.cpp:295] Iteration: 48 forward-backward time: 94.6183 ms.
+I1023 23:11:46.823084 18363 caffe_fp16.cpp:295] Iteration: 49 forward-backward time: 111.176 ms.
+I1023 23:11:46.920706 18363 caffe_fp16.cpp:295] Iteration: 50 forward-backward time: 97.6356 ms.
+I1023 23:11:47.018522 18363 caffe_fp16.cpp:295] Iteration: 51 forward-backward time: 98.5765 ms.
+I1023 23:11:47.105883 18363 caffe_fp16.cpp:295] Iteration: 52 forward-backward time: 87.8247 ms.
+I1023 23:11:47.196022 18363 caffe_fp16.cpp:295] Iteration: 53 forward-backward time: 90.8794 ms.
+I1023 23:11:47.284531 18363 caffe_fp16.cpp:295] Iteration: 54 forward-backward time: 89.2766 ms.
+I1023 23:11:47.378267 18363 caffe_fp16.cpp:295] Iteration: 55 forward-backward time: 93.908 ms.
+I1023 23:11:47.467357 18363 caffe_fp16.cpp:295] Iteration: 56 forward-backward time: 89.0887 ms.
+I1023 23:11:47.567847 18363 caffe_fp16.cpp:295] Iteration: 57 forward-backward time: 101.213 ms.
+I1023 23:11:47.658285 18363 caffe_fp16.cpp:295] Iteration: 58 forward-backward time: 90.5256 ms.
+I1023 23:11:47.749552 18363 caffe_fp16.cpp:295] Iteration: 59 forward-backward time: 92.1224 ms.
+I1023 23:11:47.833112 18363 caffe_fp16.cpp:295] Iteration: 60 forward-backward time: 83.9775 ms.
+I1023 23:11:47.925956 18363 caffe_fp16.cpp:295] Iteration: 61 forward-backward time: 93.7486 ms.
+I1023 23:11:48.013609 18363 caffe_fp16.cpp:295] Iteration: 62 forward-backward time: 88.1557 ms.
+I1023 23:11:48.101913 18363 caffe_fp16.cpp:295] Iteration: 63 forward-backward time: 88.807 ms.
+I1023 23:11:48.193655 18363 caffe_fp16.cpp:295] Iteration: 64 forward-backward time: 92.297 ms.
+I1023 23:11:48.282642 18363 caffe_fp16.cpp:295] Iteration: 65 forward-backward time: 89.6514 ms.
+I1023 23:11:48.384548 18363 caffe_fp16.cpp:295] Iteration: 66 forward-backward time: 102.747 ms.
+I1023 23:11:48.477627 18363 caffe_fp16.cpp:295] Iteration: 67 forward-backward time: 92.6736 ms.
+I1023 23:11:48.566835 18363 caffe_fp16.cpp:295] Iteration: 68 forward-backward time: 89.8761 ms.
+I1023 23:11:48.661053 18363 caffe_fp16.cpp:295] Iteration: 69 forward-backward time: 94.7992 ms.
+I1023 23:11:48.747452 18363 caffe_fp16.cpp:295] Iteration: 70 forward-backward time: 87.0602 ms.
+I1023 23:11:48.843730 18363 caffe_fp16.cpp:295] Iteration: 71 forward-backward time: 96.9985 ms.
+I1023 23:11:48.933917 18363 caffe_fp16.cpp:295] Iteration: 72 forward-backward time: 90.6998 ms.
+I1023 23:11:49.031829 18363 caffe_fp16.cpp:295] Iteration: 73 forward-backward time: 98.8704 ms.
+I1023 23:11:49.127233 18363 caffe_fp16.cpp:295] Iteration: 74 forward-backward time: 95.6175 ms.
+I1023 23:11:49.216663 18363 caffe_fp16.cpp:295] Iteration: 75 forward-backward time: 89.8749 ms.
+I1023 23:11:49.306987 18363 caffe_fp16.cpp:295] Iteration: 76 forward-backward time: 91.2516 ms.
+I1023 23:11:49.399355 18363 caffe_fp16.cpp:295] Iteration: 77 forward-backward time: 92.5044 ms.
+I1023 23:11:49.498581 18363 caffe_fp16.cpp:295] Iteration: 78 forward-backward time: 100.148 ms.
+I1023 23:11:49.587697 18363 caffe_fp16.cpp:295] Iteration: 79 forward-backward time: 89.8133 ms.
+I1023 23:11:49.688494 18363 caffe_fp16.cpp:295] Iteration: 80 forward-backward time: 100.931 ms.
+I1023 23:11:49.775727 18363 caffe_fp16.cpp:295] Iteration: 81 forward-backward time: 88.17 ms.
+I1023 23:11:49.864162 18363 caffe_fp16.cpp:295] Iteration: 82 forward-backward time: 88.6627 ms.
+I1023 23:11:49.958488 18363 caffe_fp16.cpp:295] Iteration: 83 forward-backward time: 95.209 ms.
+I1023 23:11:50.047895 18363 caffe_fp16.cpp:295] Iteration: 84 forward-backward time: 90.0588 ms.
+I1023 23:11:50.147130 18363 caffe_fp16.cpp:295] Iteration: 85 forward-backward time: 99.3645 ms.
+I1023 23:11:50.229401 18363 caffe_fp16.cpp:295] Iteration: 86 forward-backward time: 83.0924 ms.
+I1023 23:11:50.311435 18363 caffe_fp16.cpp:295] Iteration: 87 forward-backward time: 82.3964 ms.
+I1023 23:11:50.402473 18363 caffe_fp16.cpp:295] Iteration: 88 forward-backward time: 91.1152 ms.
+I1023 23:11:50.507519 18363 caffe_fp16.cpp:295] Iteration: 89 forward-backward time: 105.86 ms.
+I1023 23:11:50.596858 18363 caffe_fp16.cpp:295] Iteration: 90 forward-backward time: 89.6475 ms.
+I1023 23:11:50.691165 18363 caffe_fp16.cpp:295] Iteration: 91 forward-backward time: 95.4446 ms.
+I1023 23:11:50.788549 18363 caffe_fp16.cpp:295] Iteration: 92 forward-backward time: 97.5484 ms.
+I1023 23:11:50.871815 18363 caffe_fp16.cpp:295] Iteration: 93 forward-backward time: 83.7003 ms.
+I1023 23:11:50.959884 18363 caffe_fp16.cpp:295] Iteration: 94 forward-backward time: 87.2888 ms.
+I1023 23:11:51.049862 18363 caffe_fp16.cpp:295] Iteration: 95 forward-backward time: 89.926 ms.
+I1023 23:11:51.140626 18363 caffe_fp16.cpp:295] Iteration: 96 forward-backward time: 91.3342 ms.
+I1023 23:11:51.237249 18363 caffe_fp16.cpp:295] Iteration: 97 forward-backward time: 96.9958 ms.
+I1023 23:11:51.328446 18363 caffe_fp16.cpp:295] Iteration: 98 forward-backward time: 92.1481 ms.
+I1023 23:11:51.420369 18363 caffe_fp16.cpp:295] Iteration: 99 forward-backward time: 92.0502 ms.
+I1023 23:11:51.516281 18363 caffe_fp16.cpp:295] Iteration: 100 forward-backward time: 96.8855 ms.
+I1023 23:11:51.517839 18363 caffe_fp16.cpp:300] Average Forward pass: 92.1322 ms.
+I1023 23:11:51.518014 18363 caffe_fp16.cpp:302] Total Time: 19208.9 ms.
+I1023 23:11:51.518205 18363 caffe_fp16.cpp:303] *** Benchmark ends ***
+==18363== Profiling application: build/tools/caffe_fp16 time --model alexnet.prototxt -gpu=0 -iterations=100
+==18363== Profiling result:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 43.31%  5.02058s       603  8.3260ms  1.5431ms  23.783ms  void magma_hgemm_kernel<__half, __half, bool=0, bool=0, int=5, int=4, int=5, int=3, int=3, bool=0>(int, int, int, __half const *, int, __half const *, int, __half*, int, int, int, __half const *, __half const *, __half, __half, int)
+ 17.49%  2.02703s       804  2.5212ms  53.750us  17.646ms  void fft2d_r2c_32x32<__half>(__half const *, float2*, int, int, int, int, int, int, int, int, int, int, bool)
+ 10.63%  1.23270s       201  6.1329ms  5.9657ms  7.7880ms  void caffe::kernel_channel_max<caffe::float16, caffe::float16>(int, int, int, caffe::float16 const *, caffe::kernel_channel_max<caffe::float16, caffe::float16>*)
+ 10.28%  1.19170s       201  5.9289ms  5.7803ms  7.5356ms  void caffe::kernel_channel_sum<caffe::float16, caffe::float16>(int, int, int, caffe::float16 const *, caffe::kernel_channel_sum<caffe::float16, caffe::float16>*)
+  8.68%  1.00658s       402  2.5039ms  2.0908ms  5.0528ms  void fermiPlusCgemmLDS128_batched<bool=1, bool=0, bool=0, bool=0, int=4, int=4, int=4, int=3, int=3>(float2**, float2**, float2**, int, int, int, int, int, int, float2 const *, float2 const *, float2, float2, int)
+  3.94%  456.49ms      1005  454.22us  232.81us  1.3452ms  maxwell_hcudnn_128x128_small_nn
+  1.04%  120.75ms         1  120.75ms  120.75ms  120.75ms  generate_seed_pseudo(__int64, __int64, __int64, curandOrdering, curandStateXORWOW*, unsigned int*)
+  0.75%  87.066ms       201  433.16us  410.05us  2.5476ms  maxwell_hcudnn_128x128_interior_nn
+  0.65%  75.770ms       402  188.48us  103.18us  578.28us  void cudnn::detail::lrn_fw_Nd_kernel<__half, float, bool=1, bool=0>(cudnnTensorStruct, __half const *, cudnnTensorStruct*, float, cudnnTensorStruct*, cudnnLRNStruct)
+  0.54%  62.750ms      1608  39.023us  9.8950us  179.43us  void add_tensor_kernel_v3<int=2, __half, float, int=128, int=1, int=1, int=4, int=2>(cudnnTensorStruct, __half*, cudnnTensorStruct, __half const *, float, float)
+  0.49%  56.540ms      1407  40.184us  7.2390us  398.80us  void cudnn::detail::activation_fw_4d_kernel<__half, float, int=128, int=1, int=4, cudnn::detail::relu_func<float, cudnnNanPropagation_t=0, bool=0>>(cudnnTensorStruct, __half const *, cudnn::detail::activation_fw_4d_kernel<__half, float, int=128, int=1, int=4, cudnn::detail::relu_func<float, cudnnNanPropagation_t=0, bool=0>>, cudnnTensorStruct*, float, cudnnTensorStruct*, int, double)
+  0.43%  49.280ms       402  122.59us  100.36us  523.13us  void flip_filter_V2<__half, __half>(__half*, __half const *, int, int, int, int)
+  0.38%  44.470ms       402  110.62us  99.375us  165.63us  void fft2d_c2r_32x32_input_trp_clipping_V2<__half, bool=0, bool=0>(__half*, float2*, int, int, int, int, int, int, int, int, int, int, float, float)
+  0.35%  40.050ms       603  66.418us  14.167us  572.03us  void cudnn::detail::pooling_fw_4d_kernel<__half, float, cudnn::detail::maxpooling_func<float, cudnnNanPropagation_t=0>, int=0>(cudnnTensorStruct, __half const *, cudnn::detail::pooling_fw_4d_kernel<__half, float, cudnn::detail::maxpooling_func<float, cudnnNanPropagation_t=0>, int=0>, cudnnTensorStruct*, cudnnPoolingStruct, float, cudnnPoolingStruct, int, cudnn::reduced_divisor, float)
+  0.24%  27.940ms       402  69.503us  53.490us  101.56us  void transpose_readWrite_alignment_kernel<float2, int=1, bool=0, int=6, int=4, int=4>(cublasTransposeParams<float2>, float2 const *, float2*, float2 const *)
+  0.21%  24.874ms       603  41.250us  23.854us  65.417us  void caffe::axpy_kernel<caffe::float16, caffe::float16>(int, caffe::float16, caffe::float16 const *, caffe::float16*)
+  0.16%  17.999ms       402  44.772us  41.668us  55.729us  void caffe::DropoutForward<caffe::float16, caffe::float16>(int, caffe::float16 const *, unsigned int const *, unsigned int, caffe::float16, caffe::DropoutForward<caffe::float16, caffe::float16>*)
+  0.15%  16.980ms       402  42.238us  35.573us  49.219us  void gen_sequenced<curandStateXORWOW, unsigned int, int, __operator_&__(unsigned int curand_noargs<curandStateXORWOW>(curandStateXORWOW*, int))>(curandStateXORWOW*, unsigned int*, unsigned int, unsigned int, int)
+  0.12%  14.422ms        18  801.21us     781ns  7.5173ms  [CUDA memcpy HtoD]
+  0.04%  4.2551ms       201  21.169us  18.853us  28.334us  void caffe::kernel_channel_subtract<caffe::float16, caffe::float16>(int, int, int, int, caffe::float16 const *, caffe::kernel_channel_subtract<caffe::float16, caffe::float16>*)
+  0.04%  4.2227ms       201  21.008us  18.749us  34.479us  void caffe::kernel_channel_div<caffe::float16, caffe::float16>(int, int, int, int, caffe::float16 const *, caffe::kernel_channel_div<caffe::float16, caffe::float16>*)
+  0.03%  3.7453ms       402  9.3160us  8.8020us  16.459us  compute_gemm_pointers(float2**, float2*, int, float2*, int, float2*, int, int, int)
+  0.03%  3.7103ms      1206  3.0760us  2.2400us  15.208us  cudnn::maxwell::gemm::computeOffsetsKernel(cudnn::maxwell::gemm::ComputeOffsetsParams)
+  0.02%  2.0178ms       201  10.038us  9.4790us  14.531us  void caffe::kernel_exp<caffe::float16, caffe::float16>(int, caffe::float16 const *, caffe::kernel_exp<caffe::float16, caffe::float16>*)
+  0.00%  67.499us        18  3.7490us     207ns  54.949us  [CUDA memset]
+  0.00%  56.883us       201     283ns     207ns  1.8230us  [CUDA memcpy DtoD]
+
+==18363== API calls:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 49.59%  27.0470s      1011  26.753ms  30.833us  26.9782s  cudaMemGetInfo
+ 18.10%  9.87203s      1647  5.9940ms  1.7710us  3.78150s  cudaFree
+ 14.36%  7.83219s      2601  3.0112ms  6.0410us  46.134ms  cudaEventSynchronize
+  9.12%  4.97282s         8  621.60ms  50.000us  4.97173s  cudaStreamCreateWithFlags
+  3.47%  1.89174s     12262  154.28us  69.792us  7.9289ms  cudaLaunch
+  2.09%  1.14239s      1650  692.36us  23.229us  8.0098ms  cudaMalloc
+  1.46%  797.92ms      1005  793.95us  482.97us  4.4523ms  cudaStreamSynchronize
+  1.00%  546.47ms      6408  85.278us  3.3330us  3.9205ms  cudaEventRecord
+  0.24%  132.70ms     82617  1.6060us     677ns  1.9458ms  cudaSetupArgument
+  0.18%  99.912ms       219  456.22us  104.58us  16.546ms  cudaMemcpy
+  0.06%  35.446ms     12262  2.8900us     885ns  2.3733ms  cudaConfigureCall
+  0.06%  30.763ms      2601  11.827us  6.3020us  59.010us  cudaEventElapsedTime
+  0.04%  24.387ms      2048  11.907us  3.8020us  208.23us  cudaEventDestroy
+  0.04%  22.750ms     12263  1.8550us     677ns  294.79us  cudaGetLastError
+  0.04%  21.129ms       118  179.06us  30.885us  4.7334ms  cudaFreeHost
+  0.04%  19.315ms      3359  5.7500us  1.3020us  119.32us  cudaGetDevice
+  0.03%  17.864ms      1682  10.620us  3.0210us  67.082us  cudaEventCreateWithFlags
+  0.02%  13.008ms       118  110.24us  24.271us  3.3296ms  cudaMallocHost
+  0.02%  9.3803ms      1206  7.7780us  3.3330us  144.79us  cudaStreamWaitEvent
+  0.01%  4.5671ms       406  11.248us  3.8020us  44.166us  cudaEventCreate
+  0.01%  2.8970ms        18  160.95us  74.011us  419.27us  cudaMemset
+  0.00%  1.8164ms      1005  1.8070us  1.1460us  34.218us  cudaPeekAtLastError
+  0.00%  1.1183ms       332  3.3680us     729ns  140.10us  cuDeviceGetAttribute
+  0.00%  389.37us        70  5.5620us  2.4480us  9.5840us  cudaSetDevice
+  0.00%  216.20us         2  108.10us  38.437us  177.76us  cudaGetDeviceProperties
+  0.00%  196.98us         1  196.98us  196.98us  196.98us  cudaThreadSynchronize
+  0.00%  169.69us        30  5.6560us  1.8750us  15.417us  cudaDeviceGetAttribute
+  0.00%  77.031us         4  19.257us  5.7290us  51.927us  cuDeviceTotalMem
+  0.00%  19.376us         3  6.4580us  1.8230us  15.469us  cuDriverGetVersion
+  0.00%  18.698us         4  4.6740us  1.9790us  12.292us  cuDeviceGetName
+  0.00%  16.823us         3  5.6070us  1.7710us  12.188us  cuInit
+  0.00%  16.510us         5  3.3020us  1.1980us  8.9060us  cuDeviceGetCount
+  0.00%  13.751us         5  2.7500us  1.1980us  8.5940
