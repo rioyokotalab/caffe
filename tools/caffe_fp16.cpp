@@ -260,18 +260,18 @@ int time() {
   Timer timer;
   std::vector<double> forward_time_per_layer(layers.size(), 0.0);
   double forward_time = 0.0;
+  // Per layer timing
   for (int j = 0; j < FLAGS_iterations; ++j) {
     Timer iter_timer;
     iter_timer.Start();
-    forward_timer.Start();
+    // Time forward layers
     for (int i = 0; i < layers.size(); ++i) {
       timer.Start();
       layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
       forward_time_per_layer[i] += timer.MicroSeconds();
     }
-    forward_time += forward_timer.MicroSeconds();
-    LOG(INFO) << "Iteration: " << j + 1 << " forward time: "
-      << iter_timer.MilliSeconds() << " ms.";
+    LOG(INFO) << "Iteration: " << j + 1 << " forward time (layer by layer): "
+	      << iter_timer.MilliSeconds() << " ms.";
   }
   LOG(INFO) << "Average time per layer: ";
   for (int i = 0; i < layers.size(); ++i) {
@@ -280,7 +280,23 @@ int time() {
       "\tforward: " << forward_time_per_layer[i] / 1000 /
       FLAGS_iterations << " ms.";
   }
+  // Total timing - remove overheads introduced in timing individual layers
+  total_timer.Start();
+  for (int j = 0; j < FLAGS_iterations; ++j) {
+    Timer iter_timer;
+    iter_timer.Start();
+    // Time total forward
+    forward_timer.Start();
+    for (int i = 0; i < layers.size(); ++i) {
+      layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
+    }
+    forward_time += forward_timer.MicroSeconds();
+    
+    LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
+	      << iter_timer.MilliSeconds() << " ms.";
+  }
   total_timer.Stop();
+
   LOG(INFO) << "Average Forward pass: " << forward_time / 1000 /
     FLAGS_iterations << " ms.";
   LOG(INFO) << "Total Time: " << total_timer.MilliSeconds() << " ms.";
