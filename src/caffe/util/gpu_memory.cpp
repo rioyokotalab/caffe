@@ -34,8 +34,10 @@ namespace caffe {
     }
 
     switch (m) {
+    case CubPool:
     case CnMemPool:
-      initMEM(gpus);
+      initMEM(gpus, m);
+      break;
     default:
       break;
     }
@@ -100,7 +102,8 @@ namespace caffe {
     }
   }
 
-  void gpu_memory::initMEM(const std::vector<int>& gpus) {
+  void gpu_memory::initMEM(const std::vector<int>& gpus, PoolMode m) {
+    mode_ = m;
 #if USE_CNMEM
     cnmemDevice_t* devs = new cnmemDevice_t[gpus.size()];
 #endif
@@ -125,14 +128,14 @@ namespace caffe {
     }
     
     switch(mode_)
-      {
+    {
       case CnMemPool:
 #if USE_CNMEM
 	CNMEM_CHECK(cnmemInit(gpus.size(), devs, CNMEM_FLAGS_DEFAULT));
 #endif
 	break;
       case CubPool:
-	try {
+    try {
 
 	  // if you are paranoid, that doesn't mean they are not after you :)
 	  delete cubAlloc;
@@ -147,7 +150,9 @@ namespace caffe {
 	catch (...) {}
 	CHECK(cubAlloc);
 	break;
-      }
+  default:
+    break;
+  }
     
     CUDA_CHECK(cudaSetDevice(initial_device));
 #if USE_CNMEM

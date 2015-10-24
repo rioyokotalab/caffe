@@ -42,7 +42,7 @@ class gpu_memory {
   static void getInfo(size_t *free_mem, size_t *used_mem);
 
  private:
-  static void initMEM(const std::vector<int>& gpus);
+  static void initMEM(const std::vector<int>& gpus, PoolMode m);
 
 #endif
 };
