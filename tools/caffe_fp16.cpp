@@ -318,6 +318,11 @@ int main(int argc, char** argv) {
       "  time            benchmark model execution time");
   // Run tool or show usage.
   caffe::GlobalInit(&argc, &argv);
+
+  vector<int> gpus;
+  get_gpus(&gpus);
+  caffe::gpu_memory::arena arena(gpus);
+
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER
     try {

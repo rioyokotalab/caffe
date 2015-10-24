@@ -49,6 +49,8 @@ namespace caffe
        
     CAFFE_UTIL_IHD operator half() const { return data; }
 
+    CAFFE_UTIL_IHD unsigned short halfx() const { return data.x; }
+
     template <class T>
     CAFFE_UTIL_IHD float16& operator=(const T& rhs) { assign(rhs); return *this; }
 
