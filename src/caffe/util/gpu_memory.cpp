@@ -18,8 +18,7 @@ namespace caffe {
   gpu_memory::PoolMode gpu_memory::mode_ = gpu_memory::NoPool;
 
 #ifdef CPU_ONLY  // CPU-only Caffe.
-  void gpu_memory::init(const std::vector<int>& gpus,
-                        PoolMode m)  {}
+  void gpu_memory::init(const std::vector<int>& gpus, PoolMode m)  {}
   void gpu_memory::destroy() {}
 
   const char* gpu_memory::getPoolName()  {
@@ -69,6 +68,7 @@ namespace caffe {
       break;
     case CubPool:
       CUDA_CHECK(cubAlloc->DeviceAllocate(ptr,size,stream));
+      break;
     default:
       CUDA_CHECK(cudaMalloc(ptr, size));
       break;
@@ -85,6 +85,7 @@ namespace caffe {
       break;
     case CubPool:
       CUDA_CHECK(cubAlloc->DeviceFree(ptr));
+      break;
     default:
       CUDA_CHECK(cudaFree(ptr));
       break;

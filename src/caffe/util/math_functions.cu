@@ -287,7 +287,7 @@ void gpu_dot_kernel(const int N, const Dtype *x, const Dtype *y, Mtype *out)
 
   if (tidx == 0) *out = cache[tidx];
 }
-#if !NATIVE_FP16_SUPPORTED
+
 template <>
 void caffe_gpu_dot<float16, float>(const int n, const float16* x, const float16* y,
     float *out)
@@ -303,7 +303,6 @@ void caffe_gpu_dot<float16, float>(const int n, const float16* x, const float16*
   cudaFree(res);
   CUDA_POST_KERNEL_CHECK;
 }
-#endif
 
 template <>
 void caffe_gpu_dot<float16, float16>(const int n, const float16* x, const float16* y, float16 *out)
@@ -356,7 +355,7 @@ void gpu_asum_kernel(const int N, const Dtype *x, Mtype *out)
 
   if (tidx == 0) *out = cache[tidx];
 }
-#if !NATIVE_FP16_SUPPORTED
+
 template <>
 void caffe_gpu_asum<float16,float>(const int n, const float16* x, float* y)
 {
@@ -370,7 +369,7 @@ void caffe_gpu_asum<float16,float>(const int n, const float16* x, float* y)
   cudaMemcpy(y,res,sizeof(float),cudaMemcpyDeviceToHost);
   CUDA_POST_KERNEL_CHECK;
 }
-#endif
+
 template <>
 void caffe_gpu_asum<float16,float16>(const int n, const float16* x, float16* y)
 {

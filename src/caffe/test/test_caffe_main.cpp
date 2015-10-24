@@ -21,6 +21,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   caffe::GlobalInit(&argc, &argv);
   {
+    // This is something we really rely on
+    CHECK(sizeof(caffe::float16)==sizeof(short));
+
 #ifndef CPU_ONLY
   // Before starting testing, let's first print out a few cuda defice info.
   std::vector<int> devices;

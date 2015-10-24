@@ -780,7 +780,7 @@ void SGDSolver<Dtype,Mtype>::SnapshotSolverStateToHDF5(
   for (int i = 0; i < history_.size(); ++i) {
     ostringstream oss;
     oss << i;
-    hdf5_save_nd_dataset<Dtype,Mtype>(history_hid, oss.str(), *history_[i]);
+    hdf5_save_nd_dataset(history_hid, oss.str(), *history_[i]);
   }
   H5Gclose(history_hid);
   H5Fclose(file_hid);
@@ -824,7 +824,7 @@ void SGDSolver<Dtype,Mtype>::RestoreSolverStateFromHDF5(const string& state_file
   for (int i = 0; i < history_.size(); ++i) {
     ostringstream oss;
     oss << i;
-    hdf5_load_nd_dataset<Dtype,Mtype>(history_hid, oss.str().c_str(), 0,
+    hdf5_load_nd_dataset(history_hid, oss.str().c_str(), 0,
                                 kMaxBlobAxes, history_[i].get());
   }
   H5Gclose(history_hid);

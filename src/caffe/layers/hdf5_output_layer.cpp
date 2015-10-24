@@ -35,8 +35,8 @@ void HDF5OutputLayer<Dtype,Mtype>::SaveBlobs() {
   LOG(INFO) << "Saving HDF5 file " << file_name_;
   CHECK_EQ(data_blob_.num(), label_blob_.num()) <<
       "data blob and label blob must have the same batch size";
-  hdf5_save_nd_dataset<Dtype,Mtype>(file_id_, HDF5_DATA_DATASET_NAME, data_blob_);
-  hdf5_save_nd_dataset<Dtype,Mtype>(file_id_, HDF5_DATA_LABEL_NAME, label_blob_);
+  hdf5_save_nd_dataset(file_id_, HDF5_DATA_DATASET_NAME, data_blob_);
+  hdf5_save_nd_dataset(file_id_, HDF5_DATA_LABEL_NAME, label_blob_);
   LOG(INFO) << "Successfully saved " << data_blob_.num() << " rows";
 }
 

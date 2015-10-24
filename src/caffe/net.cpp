@@ -929,7 +929,7 @@ void Net<Dtype,Mtype>::CopyTrainedLayersFromHDF5(const string trained_filename) 
               << source_layer_name;
         }
       }
-      hdf5_load_nd_dataset<Dtype,Mtype>(layer_hid, dataset_name.c_str(), 0, kMaxBlobAxes,
+      hdf5_load_nd_dataset(layer_hid, dataset_name.c_str(), 0, kMaxBlobAxes,
           target_blobs[j].get());
     }
     H5Gclose(layer_hid);
@@ -989,12 +989,12 @@ void Net<Dtype,Mtype>::ToHDF5(const string& filename, bool write_diff) const {
       const int net_param_id = param_id_vecs_[layer_id][param_id];
       if (param_owners_[net_param_id] == -1) {
         // Only save params that own themselves
-        hdf5_save_nd_dataset<Dtype,Mtype>(layer_data_hid, dataset_name.str(),
+        hdf5_save_nd_dataset(layer_data_hid, dataset_name.str(),
             *params_[net_param_id]);
       }
       if (write_diff) {
         // Write diffs regardless of weight-sharing
-        hdf5_save_nd_dataset<Dtype,Mtype>(layer_diff_hid, dataset_name.str(),
+        hdf5_save_nd_dataset(layer_diff_hid, dataset_name.str(),
             *params_[net_param_id], true);
       }
     }

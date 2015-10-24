@@ -323,8 +323,8 @@ int time() {
   const vector<shared_ptr<Layer<float,float> > >& layers = caffe_net.layers();
   const vector<vector<Blob<float,float>*> >& bottom_vecs = caffe_net.bottom_vecs();
   const vector<vector<Blob<float,float>*> >& top_vecs = caffe_net.top_vecs();
-  const vector<vector<bool> >& bottom_need_backward =
-      caffe_net.bottom_need_backward();
+  //  const vector<vector<bool> >& bottom_need_backward =  caffe_net.bottom_need_backward();
+
   LOG(INFO) << "*** Benchmark begins ***";
   LOG(INFO) << "Testing for " << FLAGS_iterations << " iterations.";
   Timer total_timer;
@@ -420,7 +420,7 @@ int main(int argc, char** argv) {
 
   vector<int> gpus;
   get_gpus(&gpus);
-  caffe::gpu_memory::arena arena(gpus, caffe::gpu_memory::NoPool);
+  caffe::gpu_memory::arena arena(gpus, caffe::gpu_memory::CubPool);
 
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER

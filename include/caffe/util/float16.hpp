@@ -22,20 +22,10 @@ namespace caffe
   {
     /* constexpr */ CAFFE_UTIL_IHD float16() {}
     
-#if 1
     template <class T>
     CAFFE_UTIL_IHD explicit float16(const T& rhs) {
       assign(rhs);
     }
-# else
-    CAFFE_UTIL_IHD explicit float16(float rhs) {
-      assign(rhs);
-    }
-
-    CAFFE_UTIL_IHD explicit float16(const half& rhs) {
-      data = rhs;
-    }
-#endif
       
     CAFFE_UTIL_IHD operator float() const { 
 #ifdef __CUDA_ARCH__
