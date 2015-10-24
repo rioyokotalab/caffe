@@ -17,7 +17,7 @@ class gpu_memory {
 
   class arena {
    public:
-    arena(const std::vector<int>& gpus, PoolMode m = CnMemPool) {
+    arena(const std::vector<int>& gpus, PoolMode m = CubPool) {
       init(gpus, m);
     }
     ~arena() {
@@ -42,7 +42,8 @@ class gpu_memory {
   static void getInfo(size_t *free_mem, size_t *used_mem);
 
  private:
-    static void initCNMEM(const std::vector<int>& gpus);
+  static void initMEM(const std::vector<int>& gpus);
+
 #endif
 };
 

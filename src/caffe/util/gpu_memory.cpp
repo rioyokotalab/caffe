@@ -9,7 +9,11 @@
 #include "cnmem.h"
 #endif
 
+#include "cub/cub/util_allocator.cuh"
+
 namespace caffe {
+
+  static cub::CachingDeviceAllocator* cubAlloc = 0;
 
   gpu_memory::PoolMode gpu_memory::mode_ = gpu_memory::NoPool;
 
@@ -31,9 +35,7 @@ namespace caffe {
 
     switch (m) {
     case CnMemPool:
-      initCNMEM(gpus);
-      break;
-    case CubPool:
+      initMEM(gpus);
     default:
       break;
     }
@@ -48,6 +50,8 @@ namespace caffe {
       CNMEM_CHECK(cnmemFinalize());
       break;
     case CubPool:
+      delete cubAlloc;
+      cubAlloc = NULL;
     default:
       break;
     }
@@ -62,6 +66,7 @@ namespace caffe {
       CNMEM_CHECK(cnmemMalloc(ptr, size, stream));
       break;
     case CubPool:
+      CUDA_CHECK(cubAlloc->DeviceAllocate(ptr,size,stream));
     default:
       CUDA_CHECK(cudaMalloc(ptr, size));
       break;
@@ -77,6 +82,7 @@ namespace caffe {
       CNMEM_CHECK(cnmemFree(ptr, stream));
       break;
     case CubPool:
+      CUDA_CHECK(cubAlloc->DeviceFree(ptr));
     default:
       CUDA_CHECK(cudaFree(ptr));
       break;
@@ -94,25 +100,58 @@ namespace caffe {
     }
   }
 
-  void gpu_memory::initCNMEM(const std::vector<int>& gpus) {
-#ifdef USE_CNMEM
+  void gpu_memory::initMEM(const std::vector<int>& gpus) {
+#if USE_CNMEM
     cnmemDevice_t* devs = new cnmemDevice_t[gpus.size()];
+#endif
     int initial_device;
     CUDA_CHECK(cudaGetDevice(&initial_device));
+    size_t minmem = 0;
 
     for (int i = 0; i < gpus.size(); i++) {
       CUDA_CHECK(cudaSetDevice(gpus[i]));
-      devs[i].device = gpus[i];
       size_t free_mem, used_mem;
       CUDA_CHECK(cudaMemGetInfo(&free_mem, &used_mem));
-      devs[i].size = size_t(0.95*free_mem);
+      size_t sz = size_t(0.85*free_mem);
+      // find out the smallest GPU size 
+      if (minmem > 0 && minmem > sz)
+         minmem = sz;
+#if USE_CNMEM
+      devs[i].device = gpus[i];
+      devs[i].size = sz;
       devs[i].numStreams = 0;
       devs[i].streams = NULL;
+#endif
     }
-    CNMEM_CHECK(cnmemInit(gpus.size(), devs, CNMEM_FLAGS_DEFAULT));
+    
+    switch(mode_)
+      {
+      case CnMemPool:
+#if USE_CNMEM
+	CNMEM_CHECK(cnmemInit(gpus.size(), devs, CNMEM_FLAGS_DEFAULT));
+#endif
+	break;
+      case CubPool:
+	try {
+
+	  // if you are paranoid, that doesn't mean they are not after you :)
+	  delete cubAlloc;
+
+          cubAlloc = new cub::CachingDeviceAllocator( 2,   // not entirely sure. default is 8.
+	       					0,   // 1 byte
+							14,  // 16M
+							minmem,  // 85% of smallest GPU
+						      false // don't skip clean up, we have arena for that
+						      );
+	}
+	catch (...) {}
+	CHECK(cubAlloc);
+	break;
+      }
+    
     CUDA_CHECK(cudaSetDevice(initial_device));
+#if USE_CNMEM
     delete [] devs;
-    mode_  = CnMemPool;
 #endif
   }
 
@@ -133,6 +172,7 @@ namespace caffe {
       CNMEM_CHECK(cnmemMemGetInfo(free_mem, total_mem, cudaStreamDefault));
       break;
     case CubPool:
+      // TODO
     default:
       CUDA_CHECK(cudaMemGetInfo(free_mem, total_mem));
     }
