@@ -29,8 +29,9 @@ class gpu_memory {
     static void init(const std::vector<int>&, PoolMode);
     static void destroy();
 
-    static bool initialized_;
+    static bool     initialized_;
     static PoolMode mode_;
+    static size_t   poolsize_;
 
 #ifndef CPU_ONLY
 
