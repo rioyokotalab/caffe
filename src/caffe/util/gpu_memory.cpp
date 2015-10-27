@@ -17,9 +17,10 @@ namespace caffe {
 
   gpu_memory::PoolMode gpu_memory::mode_   = gpu_memory::NoPool;
   size_t               gpu_memory::poolsize_ = 0;
+  bool                 gpu_memory::debug_ = false;
 
 #ifdef CPU_ONLY  // CPU-only Caffe.
-  void gpu_memory::init(const std::vector<int>& gpus, PoolMode m)  {}
+  void gpu_memory::init(const std::vector<int>& gpus, PoolMode m, bool debug)  {}
   void gpu_memory::destroy() {}
 
   const char* gpu_memory::getPoolName()  {
@@ -27,7 +28,8 @@ namespace caffe {
   }
 #else
   void gpu_memory::init(const std::vector<int>& gpus,
-                           PoolMode m)  {
+			PoolMode m, bool debug) {
+    debug_ = debug;
     if (gpus.size() <= 0) {
       // should we report an error here ?
       m = gpu_memory::NoPool;
@@ -41,9 +43,9 @@ namespace caffe {
     default:
       break;
     }
-
-    std::cout << "gpu_memory initialized with "
-              << getPoolName() << std::endl;
+    if (debug) 
+      std::cout << "gpu_memory initialized with "
+		<< getPoolName() << std::endl;
   }
 
   void gpu_memory::destroy() {
@@ -148,7 +150,7 @@ namespace caffe {
 						      7,  //
 						      size_t(0.9*poolsize_),  // 90% of smallest GPU can be cached
 						      false, // don't skip clean up, we have arena for that
-						      true
+						      debug_
 						      );
 	}
 	catch (...) {}

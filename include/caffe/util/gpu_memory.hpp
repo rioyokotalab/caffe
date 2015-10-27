@@ -17,8 +17,8 @@ class gpu_memory {
 
   class arena {
    public:
-    arena(const std::vector<int>& gpus, PoolMode m = CubPool) {
-      init(gpus, m);
+    arena(const std::vector<int>& gpus, PoolMode m = CubPool, bool debug = false) {
+      init(gpus, m, debug);
     }
     ~arena() {
       destroy();
@@ -26,13 +26,13 @@ class gpu_memory {
   };
 
  private:
-    static void init(const std::vector<int>&, PoolMode);
+  static void init(const std::vector<int>&, PoolMode, bool);
     static void destroy();
 
     static bool     initialized_;
     static PoolMode mode_;
     static size_t   poolsize_;
-
+  static bool       debug_;
 #ifndef CPU_ONLY
 
  public:
