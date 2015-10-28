@@ -3,7 +3,7 @@
 
 #include <cfloat>
 #include <iostream>
-#include <fp16_emu.h>
+#include "caffe/util/fp16_emu.h"
 // #include "caffe/util/fp16_conversion.hpp"
 #include "caffe/util/float16.hpp"
 

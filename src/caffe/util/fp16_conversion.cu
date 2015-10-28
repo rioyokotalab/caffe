@@ -1,4 +1,4 @@
-#include <fp16_emu.h>
+#include "caffe/util/fp16_emu.h"
 #include "caffe/util/fp16_conversion.hpp"
 
 half cpu_float2half_rn(float f)

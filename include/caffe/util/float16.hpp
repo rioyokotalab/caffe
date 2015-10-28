@@ -4,7 +4,7 @@
 // #include "get.hpp"
 #include <cfloat>
 #include <iosfwd>
-#include <fp16_emu.h>
+#include "caffe/util/fp16_emu.h"
 #include "caffe/util/fp16_conversion.hpp"
 
 #ifdef CPU_ONLY
