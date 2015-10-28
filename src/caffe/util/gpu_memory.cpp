@@ -118,17 +118,18 @@ namespace caffe {
     
     for (int i = 0; i < gpus.size(); i++) {
       CUDA_CHECK(cudaSetDevice(gpus[i]));
-      size_t free_mem, used_mem;
+      size_t free_mem, total_mem;
       cudaDeviceProp props;
       CUDA_CHECK(cudaGetDeviceProperties(&props, gpus[i]));
-      CUDA_CHECK(cudaMemGetInfo(&free_mem, &used_mem));
+      CUDA_CHECK(cudaMemGetInfo(&free_mem, &total_mem));
 
       if (debug_) { 
 	std::cout << "cudaGetDeviceProperties: totalGlobalMem = " << props.totalGlobalMem <<std:: endl;
-	std::cout << "cudaMemGetInfo:  free_mem= " << free_mem << " used_mem = " << used_mem << std::endl;
+	std::cout << "cudaMemGetInfo:  free_mem= " << free_mem << " total_mem = " << total_mem << std::endl;
       }
-
-
+      
+      // just in case, make sure total mem reported is not less than free
+      free_mem = std::min(total_mem, free_mem);
       free_mem = size_t(0.8*std::min(props.totalGlobalMem, free_mem));
       // find out the smallest GPU size 
       if (poolsize_ == 0 || poolsize_ > free_mem)
@@ -155,9 +156,9 @@ namespace caffe {
 	  // if you are paranoid, that doesn't mean they are not after you :)
 	  delete cubAlloc;
 	  
-	  cubAlloc = new cub::CachingDeviceAllocator( 4,   // not entirely sure. default is 8.
-						      3,   //
-						      7,  //
+	  cubAlloc = new cub::CachingDeviceAllocator( 8, // defaults
+						      3,
+						      7,
 						      poolsize_,  // 90% of smallest GPU can be cached
 						      false, // don't skip clean up, we have arena for that
 						      debug_

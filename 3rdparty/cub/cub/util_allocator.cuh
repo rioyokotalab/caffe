@@ -280,7 +280,7 @@ struct CachingDeviceAllocator
             max_bin_bytes(IntPow(bin_growth, max_bin)),
             max_cached_bytes(max_cached_bytes),
 	    skip_cleanup(skip_cleanup),
-            debug(false)
+            debug(debug)
     #if (CUB_PTX_ARCH == 0)   // Only define STL container members in host code
             ,cached_blocks(BlockDescriptor::SizeCompare)
             ,live_blocks(BlockDescriptor::PtrCompare)
@@ -302,7 +302,8 @@ struct CachingDeviceAllocator
      * sets a maximum of 6,291,455 cached bytes per device
      */
     CachingDeviceAllocator(
-        bool skip_cleanup = false)  ///< Whether or not to skip a call to \p FreeAllCached() when the destructor is called.  (Useful for preventing warnings when the allocator is declared at file/static/global scope: by the time the destructor is called on program exit, the CUDA runtime may have already shut down and freed all allocations.)
+        bool skip_cleanup = false, 
+	bool debug = false) 
     :
         spin_lock(0),
         bin_growth(8),
@@ -312,7 +313,7 @@ struct CachingDeviceAllocator
         max_bin_bytes(IntPow(bin_growth, max_bin)),
         max_cached_bytes((max_bin_bytes * 3) - 1),
         skip_cleanup(skip_cleanup),
-        debug(false)
+        debug(debug)
     #if (CUB_PTX_ARCH == 0)   // Only define STL container members in host code
         ,cached_blocks(BlockDescriptor::SizeCompare)
         ,live_blocks(BlockDescriptor::PtrCompare)
