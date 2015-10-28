@@ -100,18 +100,19 @@ void caffe_gpu_gemv<double,double>(const CBLAS_TRANSPOSE TransA, const int M,
 }
 
 #if !NATIVE_FP16_SUPPORTED
-template <>
+    template <>
 void caffe_gpu_gemv<float16, float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const float16* A, const float16* x,
     const float beta, float16* y) {
   // Note that cublas still follows Fortran order.
   cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  const int m = (TransA == CblasNoTrans) ? M : N;
-  const int n = (TransA == CblasNoTrans) ? N : M;
-  CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), CUBLAS_OP_N, cuTransA,
-      1, m, n, &alpha, x, CUBLAS_DATA_HALF, 1, A, CUBLAS_DATA_HALF, N, &beta,
-      y, CUBLAS_DATA_HALF, 1));
+      (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
+  int LDA = (cuTransA == CUBLAS_OP_T) ? M : N;
+  // We are going to call cublasSgemEx to trigger the fast hgemv path
+
+  CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), cuTransA, CUBLAS_OP_N,
+      N, 1, M, &alpha, A, CUBLAS_DATA_HALF, LDA, x, CUBLAS_DATA_HALF, M, &beta,
+      y, CUBLAS_DATA_HALF, N));
 }
 #else
 
@@ -121,12 +122,17 @@ void caffe_gpu_gemv<float16, float16>(const CBLAS_TRANSPOSE TransA, const int M,
     const float16 beta, float16* y) {
   // Note that cublas still follows Fortran order.
   cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  const int m = (TransA == CblasNoTrans) ? M : N;
-  const int n = (TransA == CblasNoTrans) ? N : M;
-  CUBLAS_CHECK(cublasHgemm(Caffe::cublas_handle(), CUBLAS_OP_N, cuTransA,
-      1, m, n, &alpha.data, &x->data, 1, &A->data, N, &beta.data,
-      &y->data, 1));
+      (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
+  int LDA = (cuTransA == CUBLAS_OP_T) ? M : N;
+
+  // We are going to call cublasSgemEx to trigger the fast hgemv path
+  // This path assumes alpha and beta are 32 bit, so we need to convert in place
+  float alpha_fp32 = cpu_half2float(alpha);
+  float beta_fp32 = cpu_half2float(beta);
+  
+  CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), cuTransA, CUBLAS_OP_N,
+      N, 1, M, &alpha_fp32, A, CUBLAS_DATA_HALF, LDA, x, CUBLAS_DATA_HALF, M, &beta_fp32,
+      y, CUBLAS_DATA_HALF, N));
 }
 #endif
 
