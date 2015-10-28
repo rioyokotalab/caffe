@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
 
   cout << "Current device name: " << CAFFE_TEST_CUDA_PROP.name << endl;
 
-  caffe::gpu_memory::arena arena(devices);
+  caffe::gpu_memory::arena arena(devices, caffe::gpu_memory::CubPool /*, true */);
 #endif
   // invoke the test.
   return RUN_ALL_TESTS();

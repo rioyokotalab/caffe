@@ -269,9 +269,9 @@ struct CachingDeviceAllocator
         unsigned int    max_bin,                ///< Maximum bin
         size_t          max_cached_bytes,       ///< Maximum aggregate cached bytes per device
         bool            skip_cleanup = false,   ///< Whether or not to skip a call to \p FreeAllCached() when the destructor is called.
-	bool            debug = false           ///<  Whether or not to print (de)allocation events to stdout	 
-	)				
-    :	
+        bool            debug = false           ///<  Whether or not to print (de)allocation events to stdout    
+        )                               
+    :   
             spin_lock(0),
             bin_growth(bin_growth),
             min_bin(min_bin),
@@ -279,7 +279,7 @@ struct CachingDeviceAllocator
             min_bin_bytes(IntPow(bin_growth, min_bin)),
             max_bin_bytes(IntPow(bin_growth, max_bin)),
             max_cached_bytes(max_cached_bytes),
-	    skip_cleanup(skip_cleanup),
+            skip_cleanup(skip_cleanup),
             debug(debug)
     #if (CUB_PTX_ARCH == 0)   // Only define STL container members in host code
             ,cached_blocks(BlockDescriptor::SizeCompare)
@@ -303,7 +303,7 @@ struct CachingDeviceAllocator
      */
     CachingDeviceAllocator(
         bool skip_cleanup = false, 
-	bool debug = false) 
+        bool debug = false) 
     :
         spin_lock(0),
         bin_growth(8),
@@ -397,7 +397,7 @@ struct CachingDeviceAllocator
             BlockDescriptor search_key(bin_bytes, bin, device, active_stream);
 
             // Lock
-	    Lock(&spin_lock);
+            Lock(&spin_lock);
 
             // Find the range of freed blocks big enough within the same bin on the same device
             CachedBlocks::iterator block_itr = cached_blocks.lower_bound(search_key);
@@ -420,10 +420,10 @@ struct CachingDeviceAllocator
                     // Remove from free blocks
                     cached_blocks.erase(block_itr);
                     cached_bytes[device].free -= search_key.bytes;
-                    cached_bytes[device].busy -= search_key.bytes;
+                    cached_bytes[device].busy += search_key.bytes;
 
-                    if (debug) CubLog("\tdevice %d reused cached block for stream %lld (%lld bytes, previously associated with stream %lld).\n\t\t %lld available blocks cached (%lld bytes), %lld live blocks outstanding (%lld bytes).\n",
-				      device, (long long) active_stream, (long long) search_key.bytes, (long long) prev_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].busy);
+                    if (debug) CubLog("\tdevice %d reused cached block at %p (%lld bytes) for stream %lld (previously associated with stream %lld).\n",
+                                      device, search_key.d_ptr, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long)  prev_stream);
 
                     break;
                 }
@@ -434,31 +434,34 @@ struct CachingDeviceAllocator
 
             if (!found)
             {
-	      Unlock(&spin_lock);
-	      // Set to specified device
-	      if (device != entrypoint_device) {
-		if (CubDebug(error = cudaSetDevice(device))) break;
-	      }
-	      
-	      // Allocate
-	      if (CubDebug(error = cudaMalloc(&search_key.d_ptr, search_key.bytes))) break;
-	      if (CubDebug(error = cudaEventCreateWithFlags(&search_key.ready_event, cudaEventDisableTiming))) break;
-	      
-	      
-	      Lock(&spin_lock);
-	      // Insert into live blocks
-	      live_blocks.insert(search_key);
-	      
-	      if (debug) CubLog("\tdevice %d allocating new device block %lld bytes associated with stream %lld.\n\t\t %lld available blocks cached (%lld bytes), %lld live blocks outstanding(%lld bytes).\n",
-				device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].busy);
+              Unlock(&spin_lock);
+              // Set to specified device
+              if (device != entrypoint_device) {
+                if (CubDebug(error = cudaSetDevice(device))) break;
+              }
+              
+              // Allocate
+              if (CubDebug(error = cudaMalloc(&search_key.d_ptr, search_key.bytes))) break;
+              if (CubDebug(error = cudaEventCreateWithFlags(&search_key.ready_event, cudaEventDisableTiming))) break;
+              
+              
+              Lock(&spin_lock);
+              // Insert into live blocks
+              live_blocks.insert(search_key);
+              cached_bytes[device].busy += search_key.bytes;
+
+              if (debug) CubLog("\tdevice %d allocated new device block at %p (%lld bytes associated with stream %lld).\n",
+                                device, search_key.d_ptr, (long long) search_key.bytes, (long long) search_key.associated_stream);
             }
 
             // Copy device pointer to output parameter
             *d_ptr = search_key.d_ptr;
-
+            if (debug) CubLog("\t\t%lld available blocks cached (%lld bytes), %lld live blocks outstanding(%lld bytes).\n",
+                              (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].busy);
+            
         } while(0);
 
-	Unlock(&spin_lock);
+        Unlock(&spin_lock);
 
         // Attempt to revert back to previous device if necessary
         if ((entrypoint_device != INVALID_DEVICE_ORDINAL) && (entrypoint_device != device))
@@ -511,13 +514,15 @@ struct CachingDeviceAllocator
 
         int entrypoint_device           = INVALID_DEVICE_ORDINAL;
         cudaError_t error               = cudaSuccess;
-	
-	BlockDescriptor search_key(d_ptr, device);
 
+	if (CubDebug(error = cudaGetDevice(&entrypoint_device))) return error;
+
+	if (device == INVALID_DEVICE_ORDINAL)
+	  device = entrypoint_device;
+        
+        BlockDescriptor search_key(d_ptr, device);
+	
         do {
-            if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
-            if (device == INVALID_DEVICE_ORDINAL)
-                device = entrypoint_device;
 
             // Set to specified device
             if (device != entrypoint_device) {
@@ -525,7 +530,7 @@ struct CachingDeviceAllocator
             }
 
             // Lock
-	    Lock(&spin_lock);
+            Lock(&spin_lock);
 
             // Find corresponding block descriptor
             BusyBlocks::iterator block_itr = live_blocks.find(search_key);
@@ -540,7 +545,7 @@ struct CachingDeviceAllocator
                 search_key = *block_itr;
                 live_blocks.erase(block_itr);
 
-		cached_bytes[device].busy -= search_key.bytes;
+                cached_bytes[device].busy -= search_key.bytes;
 
                 // Check if we should keep the returned allocation
                 if (cached_bytes[device].free + search_key.bytes <= max_cached_bytes)
@@ -553,27 +558,27 @@ struct CachingDeviceAllocator
                     cached_bytes[device].free += search_key.bytes;
 
                     if (debug) CubLog("\tdevice %d returned %lld bytes from associated stream %lld.\n\t\t %lld available blocks cached (%lld bytes), %lld live blocks outstanding. (%lld bytes)\n",
-				      device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].busy);
+                                      device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].busy);
                 }
                 else {
-		  // This means : actually delete the block after we release the lock
-		  d_ptr = 0;
-		}
+                  // This means : actually delete the block after we release the lock
+                  d_ptr = 0;
+                }
             }
         } while (0);
 
-	Unlock(&spin_lock);
+        Unlock(&spin_lock);
 
-	if (!d_ptr)
-	{
-	  // Free device memory
-	  if (CubDebug(error = cudaFree(d_ptr))) return error;
-	  if (CubDebug(error = cudaEventDestroy(search_key.ready_event))) return error;
-	  
-	  if (debug) CubLog("\tdevice %d freed %lld bytes from associated stream %lld.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
-			    device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].busy);
-	}
-	
+        if (!d_ptr)
+        {
+          // Free device memory
+          if (CubDebug(error = cudaFree(d_ptr))) return error;
+          if (CubDebug(error = cudaEventDestroy(search_key.ready_event))) return error;
+          
+          if (debug) CubLog("\tdevice %d freed %lld bytes from associated stream %lld.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
+                            device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].busy);
+        }
+        
         if ((entrypoint_device != INVALID_DEVICE_ORDINAL) && (entrypoint_device != device))
         {
             if (CubDebug(error = cudaSetDevice(entrypoint_device))) return error;
@@ -618,7 +623,7 @@ struct CachingDeviceAllocator
         int entrypoint_device     = INVALID_DEVICE_ORDINAL;
         int current_device        = INVALID_DEVICE_ORDINAL;
 
-	Lock(&spin_lock);
+        Lock(&spin_lock);
 
         while (!cached_blocks.empty())
         {
@@ -647,10 +652,10 @@ struct CachingDeviceAllocator
             cached_blocks.erase(begin);
 
             if (debug) CubLog("\tdevice %d freed %lld bytes.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
-			      current_device, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_device].free, (long long) live_blocks.size(), (long long) cached_bytes[current_device].free);
+                              current_device, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_device].free, (long long) live_blocks.size(), (long long) cached_bytes[current_device].free);
         }
-	
-	Unlock(&spin_lock);
+        
+        Unlock(&spin_lock);
 
         // Attempt to revert back to entry-point device if necessary
         if (entrypoint_device != INVALID_DEVICE_ORDINAL)
