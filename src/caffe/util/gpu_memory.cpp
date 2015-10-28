@@ -45,7 +45,7 @@ namespace caffe {
     }
     if (debug) 
       std::cout << "gpu_memory initialized with "
-		<< getPoolName() << std::endl;
+		<< getPoolName() << ". Poolsize = " << ((double)poolsize_)/(1024.0*1024.0*1024.0) << " G." << std::endl;
   }
 
   void gpu_memory::destroy() {
@@ -113,25 +113,35 @@ namespace caffe {
 #if USE_CNMEM
     cnmemDevice_t* devs = new cnmemDevice_t[gpus.size()];
 #endif
-    if (poolsize_ == 0 || mode_== CnMemPool) {
-      CUDA_CHECK(cudaGetDevice(&initial_device));
-      
-      for (int i = 0; i < gpus.size(); i++) {
-	CUDA_CHECK(cudaSetDevice(gpus[i]));
-	size_t free_mem, used_mem;
-	CUDA_CHECK(cudaMemGetInfo(&free_mem, &used_mem));
-	// find out the smallest GPU size 
-	if (poolsize_ > 0 && poolsize_ > free_mem)
-	  poolsize_ = free_mem;
-#if USE_CNMEM
-	devs[i].device = gpus[i];
-	devs[i].size = size_t(0.95*free_mem);
-	devs[i].numStreams = 0;
-	devs[i].streams = NULL;
-#endif
+    
+    CUDA_CHECK(cudaGetDevice(&initial_device));
+    
+    for (int i = 0; i < gpus.size(); i++) {
+      CUDA_CHECK(cudaSetDevice(gpus[i]));
+      size_t free_mem, used_mem;
+      cudaDeviceProp props;
+      CUDA_CHECK(cudaGetDeviceProperties(&props, gpus[i]));
+      CUDA_CHECK(cudaMemGetInfo(&free_mem, &used_mem));
+
+      if (debug_) { 
+	std::cout << "cudaGetDeviceProperties: totalGlobalMem = " << props.totalGlobalMem <<std:: endl;
+	std::cout << "cudaMemGetInfo:  free_mem= " << free_mem << " used_mem = " << used_mem << std::endl;
       }
+
+
+      free_mem = size_t(0.8*std::min(props.totalGlobalMem, free_mem));
+      // find out the smallest GPU size 
+      if (poolsize_ == 0 || poolsize_ > free_mem)
+	poolsize_ = free_mem;
+#if USE_CNMEM
+      devs[i].device = gpus[i];
+      devs[i].size = poolsize_;
+      devs[i].numStreams = 0;
+      devs[i].streams = NULL;
+#endif
     }
 
+  
     switch(mode_)
       {
       case CnMemPool:
@@ -148,7 +158,7 @@ namespace caffe {
 	  cubAlloc = new cub::CachingDeviceAllocator( 4,   // not entirely sure. default is 8.
 						      3,   //
 						      7,  //
-						      size_t(0.9*poolsize_),  // 90% of smallest GPU can be cached
+						      poolsize_,  // 90% of smallest GPU can be cached
 						      false, // don't skip clean up, we have arena for that
 						      debug_
 						      );
