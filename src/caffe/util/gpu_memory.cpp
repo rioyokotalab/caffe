@@ -15,10 +15,12 @@ namespace caffe {
 
   static cub::CachingDeviceAllocator* cubAlloc = 0;
 
-  gpu_memory::PoolMode gpu_memory::mode_ = gpu_memory::NoPool;
+  gpu_memory::PoolMode gpu_memory::mode_   = gpu_memory::NoPool;
+  size_t               gpu_memory::poolsize_ = 0;
+  bool                 gpu_memory::debug_ = false;
 
 #ifdef CPU_ONLY  // CPU-only Caffe.
-  void gpu_memory::init(const std::vector<int>& gpus, PoolMode m)  {}
+  void gpu_memory::init(const std::vector<int>& gpus, PoolMode m, bool debug)  {}
   void gpu_memory::destroy() {}
 
   const char* gpu_memory::getPoolName()  {
@@ -26,7 +28,8 @@ namespace caffe {
   }
 #else
   void gpu_memory::init(const std::vector<int>& gpus,
-                           PoolMode m)  {
+			PoolMode m, bool debug) {
+    debug_ = debug;
     if (gpus.size() <= 0) {
       // should we report an error here ?
       m = gpu_memory::NoPool;
@@ -40,9 +43,9 @@ namespace caffe {
     default:
       break;
     }
-
-    std::cout << "gpu_memory initialized with "
-              << getPoolName() << std::endl;
+    if (debug) 
+      std::cout << "gpu_memory initialized with "
+		<< getPoolName() << ". Poolsize = " << ((double)poolsize_)/(1024.0*1024.0*1024.0) << " G." << std::endl;
   }
 
   void gpu_memory::destroy() {
@@ -53,6 +56,7 @@ namespace caffe {
     case CubPool:
       delete cubAlloc;
       cubAlloc = NULL;
+      break;
     default:
       break;
     }
@@ -105,62 +109,74 @@ namespace caffe {
 
   void gpu_memory::initMEM(const std::vector<int>& gpus, PoolMode m) {
     mode_ = m;
+    int initial_device;
 #if USE_CNMEM
     cnmemDevice_t* devs = new cnmemDevice_t[gpus.size()];
 #endif
-    int initial_device;
+    
     CUDA_CHECK(cudaGetDevice(&initial_device));
-    size_t minmem = 0;
-
+    
     for (int i = 0; i < gpus.size(); i++) {
       CUDA_CHECK(cudaSetDevice(gpus[i]));
-      size_t free_mem, used_mem;
-      CUDA_CHECK(cudaMemGetInfo(&free_mem, &used_mem));
-      size_t sz = size_t(0.85*free_mem);
+      size_t free_mem, total_mem;
+      cudaDeviceProp props;
+      CUDA_CHECK(cudaGetDeviceProperties(&props, gpus[i]));
+      CUDA_CHECK(cudaMemGetInfo(&free_mem, &total_mem));
+
+      if (debug_) { 
+	std::cout << "cudaGetDeviceProperties: totalGlobalMem = " << props.totalGlobalMem <<std:: endl;
+	std::cout << "cudaMemGetInfo:  free_mem= " << free_mem << " total_mem = " << total_mem << std::endl;
+      }
+      
+      // just in case, make sure total mem reported is not less than free
+      free_mem = std::min(total_mem, free_mem);
+      free_mem = size_t(0.8*std::min(props.totalGlobalMem, free_mem));
       // find out the smallest GPU size 
-      if (minmem > 0 && minmem > sz)
-         minmem = sz;
+      if (poolsize_ == 0 || poolsize_ > free_mem)
+	poolsize_ = free_mem;
 #if USE_CNMEM
       devs[i].device = gpus[i];
-      devs[i].size = sz;
+      devs[i].size = poolsize_;
       devs[i].numStreams = 0;
       devs[i].streams = NULL;
 #endif
     }
-    
+
+  
     switch(mode_)
-    {
+      {
       case CnMemPool:
 #if USE_CNMEM
 	CNMEM_CHECK(cnmemInit(gpus.size(), devs, CNMEM_FLAGS_DEFAULT));
 #endif
 	break;
       case CubPool:
-    try {
-
+	try {
+	  
 	  // if you are paranoid, that doesn't mean they are not after you :)
 	  delete cubAlloc;
-
-          cubAlloc = new cub::CachingDeviceAllocator( 2,   // not entirely sure. default is 8.
-	       					0,   // 1 byte
-							14,  // 16M
-							minmem,  // 85% of smallest GPU
-						      false // don't skip clean up, we have arena for that
+	  
+	  cubAlloc = new cub::CachingDeviceAllocator( 8, // defaults
+						      3,
+						      7,
+						      poolsize_,  // 90% of smallest GPU can be cached
+						      false, // don't skip clean up, we have arena for that
+						      debug_
 						      );
 	}
 	catch (...) {}
 	CHECK(cubAlloc);
 	break;
-  default:
-    break;
-  }
+      default:
+	break;
+      }
     
     CUDA_CHECK(cudaSetDevice(initial_device));
 #if USE_CNMEM
     delete [] devs;
 #endif
   }
-
+  
   const char* gpu_memory::getPoolName()  {
     switch (mode_) {
     case CnMemPool:
@@ -178,7 +194,13 @@ namespace caffe {
       CNMEM_CHECK(cnmemMemGetInfo(free_mem, total_mem, cudaStreamDefault));
       break;
     case CubPool:
-      // TODO
+      int cur_device;
+      CUDA_CHECK(cudaGetDevice(&cur_device));
+      *total_mem = poolsize_; 
+      // We calculate free memory as initial free memory minus outstanding allocations.
+      // Assumption here is that we only allocate via gpu_memory since its constructon.
+      *free_mem = poolsize_ - cubAlloc->cached_bytes[cur_device].busy; 
+      break;
     default:
       CUDA_CHECK(cudaMemGetInfo(free_mem, total_mem));
     }

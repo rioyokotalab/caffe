@@ -322,7 +322,7 @@ int main(int argc, char** argv) {
 
   vector<int> gpus;
   get_gpus(&gpus);
-  caffe::gpu_memory::arena arena(gpus,caffe::gpu_memory::CubPool);
+  caffe::gpu_memory::arena arena(gpus,caffe::gpu_memory::CnMemPool /* , true */);
 
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER
