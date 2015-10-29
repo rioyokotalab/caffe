@@ -49,10 +49,10 @@ template void im2col_cpu<float16,float>(const float16* data_im, const int channe
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, float16* data_col);
-  template<> void im2col_cpu<float16,float16>(const float16* data_im, const int channels,
+template void im2col_cpu<float16,float16>(const float16* data_im, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h,
-					  const int stride_w, float16* data_col) {}
+    const int stride_w, float16* data_col);
 #endif
 
 template <typename Dtype, typename Mtype>

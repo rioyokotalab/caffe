@@ -155,72 +155,73 @@ caffe::SolverAction::Enum GetRequestedAction(
 }
 
 
-// // Test: score a model.
-// int test() {
-//   CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to score.";
-//   CHECK_GT(FLAGS_weights.size(), 0) << "Need model weights to score.";
+// Test: score a model.
+int test() {
+  CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to score.";
+  CHECK_GT(FLAGS_weights.size(), 0) << "Need model weights to score.";
 
-//   // Set device id and mode
-//   vector<int> gpus;
-//   get_gpus(&gpus);
-//   if (gpus.size() != 0) {
-//     LOG(INFO) << "Use GPU with device ID " << gpus[0];
-//     Caffe::SetDevice(gpus[0]);
-//     Caffe::set_mode(Caffe::GPU);
-//   } else {
-//     LOG(INFO) << "Use CPU.";
-//     Caffe::set_mode(Caffe::CPU);
-//   }
-//   // Instantiate the caffe net.
-//   Net<float16,float16> caffe_net(FLAGS_model, caffe::TEST);
-//   caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
-//   LOG(INFO) << "Running for " << FLAGS_iterations << " iterations.";
+  // Set device id and mode
+  vector<int> gpus;
+  get_gpus(&gpus);
+  if (gpus.size() != 0) {
+    LOG(INFO) << "Use GPU with device ID " << gpus[0];
+    Caffe::SetDevice(gpus[0]);
+    Caffe::set_mode(Caffe::GPU);
+  } else {
+    LOG(INFO) << "Use CPU.";
+    Caffe::set_mode(Caffe::CPU);
+  }
+  // Instantiate the caffe net.
+  Net<float16,CAFFE_FP16_MTYPE> caffe_net(FLAGS_model, caffe::TEST);
+  caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
+  LOG(INFO) << "Running for " << FLAGS_iterations << " iterations.";
 
-//   vector<Blob<float16,float16>* > bottom_vec;
-//   vector<int> test_score_output_id;
-//   vector<float16> test_score;
-//   float loss = 0;
-//   for (int i = 0; i < FLAGS_iterations; ++i) {
-//     float iter_loss;
-//     const vector<Blob<float16,float16>*>& result =
-//         caffe_net.Forward(bottom_vec, &iter_loss);
-//     loss += iter_loss;
-//     int idx = 0;
-//     for (int j = 0; j < result.size(); ++j) {
-//       const float16* result_vec = result[j]->cpu_data();
-//       for (int k = 0; k < result[j]->count(); ++k, ++idx) {
-//         const CAFFE_FP16_MTYPE score = Get<CAFFE_FP16_MTYPE>(result_vec[k]);
-//         if (i == 0) {
-//           test_score.push_back(score);
-//           test_score_output_id.push_back(j);
-//         } else {
-//           test_score[idx] += score;
-//         }
-//         const std::string& output_name = caffe_net.blob_names()[
-//             caffe_net.output_blob_indices()[j]];
-//         LOG(INFO) << "Batch " << i << ", " << output_name << " = " << score;
-//       }
-//     }
-//   }
-//   loss /= FLAGS_iterations;
-//   LOG(INFO) << "Loss: " << loss;
-//   for (int i = 0; i < test_score.size(); ++i) {
-//     const std::string& output_name = caffe_net.blob_names()[
-//         caffe_net.output_blob_indices()[test_score_output_id[i]]];
-//     const float loss_weight = caffe_net.blob_loss_weights()[
-//         caffe_net.output_blob_indices()[test_score_output_id[i]]];
-//     std::ostringstream loss_msg_stream;
-//     const float mean_score = test_score[i] / FLAGS_iterations;
-//     if (loss_weight) {
-//       loss_msg_stream << " (* " << loss_weight
-//                       << " = " << loss_weight * mean_score << " loss)";
-//     }
-//     LOG(INFO) << output_name << " = " << mean_score << loss_msg_stream.str();
-//   }
+  vector<Blob<float16,CAFFE_FP16_MTYPE>* > bottom_vec;
+  vector<int> test_score_output_id;
+  vector<float16> test_score;
+  float loss = 0;
+  for (int i = 0; i < FLAGS_iterations; ++i) {
+    CAFFE_FP16_MTYPE iter_loss;
+    const vector<Blob<float16,CAFFE_FP16_MTYPE>*>& result =
+        caffe_net.Forward(bottom_vec, &iter_loss);
+    loss += iter_loss;
+    int idx = 0;
+    for (int j = 0; j < result.size(); ++j) {
+      const float16* result_vec = result[j]->cpu_data();
+      for (int k = 0; k < result[j]->count(); ++k, ++idx) {
+        const CAFFE_FP16_MTYPE score = Get<CAFFE_FP16_MTYPE>(result_vec[k]);
+        if (i == 0) {
+          test_score.push_back(score);
+          test_score_output_id.push_back(j);
+        } else {
+          test_score[idx] += score;
+        }
+        const std::string& output_name = caffe_net.blob_names()[
+            caffe_net.output_blob_indices()[j]];
+        LOG(INFO) << "Batch " << i << ", " << output_name << " = " << score;
+      }
+    }
+  }
+  loss /= FLAGS_iterations;
+  LOG(INFO) << "Loss: " << loss;
+  for (int i = 0; i < test_score.size(); ++i) {
+    const std::string& output_name = caffe_net.blob_names()[
+        caffe_net.output_blob_indices()[test_score_output_id[i]]];
+    const float loss_weight = caffe_net.blob_loss_weights()[
+        caffe_net.output_blob_indices()[test_score_output_id[i]]];
+    std::ostringstream loss_msg_stream;
+    const float mean_score = test_score[i] / FLAGS_iterations;
+    if (loss_weight) {
+      loss_msg_stream << " (* " << loss_weight
+                      << " = " << loss_weight * mean_score << " loss)";
+    }
+    LOG(INFO) << output_name << " = " << mean_score << loss_msg_stream.str();
+  }
 
-//   return 0;
-// }
-// RegisterBrewFunction(test);
+  return 0;
+}
+RegisterBrewFunction(test);
+
 
 // Time: benchmark the execution time of a model.
 int time() {

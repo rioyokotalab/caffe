@@ -196,6 +196,8 @@ class Net {
   }
   bool has_blob(const string& blob_name) const;
   const shared_ptr<Blob<Dtype,Mtype> > blob_by_name(const string& blob_name) const;
+  void set_blob_by_name(const string& blob_name, shared_ptr<Blob<Dtype,Mtype> >);
+  void set_layer_by_name(const string& layer_name, shared_ptr<Layer<Dtype,Mtype> >);
   bool has_layer(const string& layer_name) const;
   const shared_ptr<Layer<Dtype,Mtype> > layer_by_name(const string& layer_name) const;
 
