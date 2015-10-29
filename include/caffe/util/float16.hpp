@@ -20,14 +20,14 @@ namespace caffe
 
   struct float16
   {
-    /* constexpr */ CAFFE_UTIL_IHD float16() {}
+    /* constexpr */ CAFFE_UTIL_IHD float16() { data.x = 0; }
     
     template <class T>
     CAFFE_UTIL_IHD explicit float16(const T& rhs) {
       assign(rhs);
     }
       
-    CAFFE_UTIL_IHD operator float() const { 
+    CAFFE_UTIL_IHD operator float() const {
 #ifdef __CUDA_ARCH__
       return __half2float(data);
 #else

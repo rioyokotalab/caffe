@@ -472,10 +472,17 @@ void Blob<Dtype, Mtype>::FromProto(const BlobProto& proto, bool reshape) {
     for (int i = 0; i < count_; ++i) {
       data_vec[i] = Get<Dtype>(proto.double_data(i));
     }
-  } else {
+  } else if (proto.data_size() > 0) {
     CHECK_EQ(count_, proto.data_size());
     for (int i = 0; i < count_; ++i) {
       data_vec[i] = Get<Dtype>(proto.data(i));
+    }
+  } else if (proto.half_data_size() > 0) {
+    CHECK_EQ(count_, proto.half_data_size());
+    for (int i = 0; i < count_; ++i) {
+      float16 h;
+      h.setx((unsigned short) proto.half_data(i));
+      data_vec[i] = (Dtype) h;
     }
   }
   if (proto.double_diff_size() > 0) {
@@ -489,6 +496,13 @@ void Blob<Dtype, Mtype>::FromProto(const BlobProto& proto, bool reshape) {
     Dtype* diff_vec = mutable_cpu_diff();
     for (int i = 0; i < count_; ++i) {
       diff_vec[i] = Get<Dtype>(proto.diff(i));
+    }
+  } else if (proto.half_diff_size() > 0) {
+    CHECK_EQ(count_, proto.half_diff_size());
+    for (int i = 0; i < count_; ++i) {
+      float16 h;
+      h.setx((unsigned short) proto.half_diff(i));
+      data_vec[i] = (Dtype) h;
     }
   }
 }
