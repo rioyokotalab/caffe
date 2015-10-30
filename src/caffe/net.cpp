@@ -1066,6 +1066,28 @@ const shared_ptr<Blob<Dtype,Mtype> > Net<Dtype,Mtype>::blob_by_name(
 }
 
 template <typename Dtype, typename Mtype>
+void Net<Dtype,Mtype>::set_blob_by_name(const string& blob_name,
+    shared_ptr<Blob<Dtype,Mtype> > blob) {
+  map<string, int>::const_iterator it = blob_names_index_.find(blob_name);
+  if (it != blob_names_index_.end()) {
+    blobs_[it->second] = blob;
+  } else {
+    LOG(WARNING) << "Unknown blob name " << blob_name;
+  }
+}
+
+template <typename Dtype, typename Mtype>
+void Net<Dtype,Mtype>::set_layer_by_name(const string& layer_name,
+    shared_ptr<Layer<Dtype,Mtype> > layer) {
+  map<string, int>::const_iterator it = layer_names_index_.find(layer_name);
+  if (it != layer_names_index_.end()) {
+    layers_[it->second] = layer;
+  } else {
+    LOG(WARNING) << "Unknown layer name " << layer_name;
+  }
+}
+
+template <typename Dtype, typename Mtype>
 bool Net<Dtype,Mtype>::has_layer(const string& layer_name) const {
   return layer_names_index_.find(layer_name) != layer_names_index_.end();
 }
@@ -1084,5 +1106,12 @@ const shared_ptr<Layer<Dtype,Mtype> > Net<Dtype,Mtype>::layer_by_name(
 }
 
 INSTANTIATE_CLASS(Net);
+#ifndef CPU_ONLY
+#if NATIVE_FP16_SUPPORTED
+//template class Net<float16,float16>;
+#else
+template class Net<float16,float>;
+#endif
+#endif // CPU_ONLY
 
 }  // namespace caffe

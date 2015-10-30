@@ -472,10 +472,17 @@ void Blob<Dtype, Mtype>::FromProto(const BlobProto& proto, bool reshape) {
     for (int i = 0; i < count_; ++i) {
       data_vec[i] = Get<Dtype>(proto.double_data(i));
     }
-  } else {
+  } else if (proto.data_size() > 0) {
     CHECK_EQ(count_, proto.data_size());
     for (int i = 0; i < count_; ++i) {
       data_vec[i] = Get<Dtype>(proto.data(i));
+    }
+  } else if (proto.half_data_size() > 0) {
+    CHECK_EQ(count_, proto.half_data_size());
+    for (int i = 0; i < count_; ++i) {
+      float16 h;
+      h.setx((unsigned short) proto.half_data(i));
+      data_vec[i] = (Dtype) h;
     }
   }
   if (proto.double_diff_size() > 0) {
@@ -489,6 +496,13 @@ void Blob<Dtype, Mtype>::FromProto(const BlobProto& proto, bool reshape) {
     Dtype* diff_vec = mutable_cpu_diff();
     for (int i = 0; i < count_; ++i) {
       diff_vec[i] = Get<Dtype>(proto.diff(i));
+    }
+  } else if (proto.half_diff_size() > 0) {
+    CHECK_EQ(count_, proto.half_diff_size());
+    for (int i = 0; i < count_; ++i) {
+      float16 h;
+      h.setx((unsigned short) proto.half_diff(i));
+      data_vec[i] = (Dtype) h;
     }
   }
 }
@@ -545,12 +559,52 @@ void Blob<float16,CAFFE_FP16_MTYPE>::ToProto(BlobProto* proto, bool write_diff) 
   proto->clear_diff();
   const float16* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
-    proto->add_data(Get<CAFFE_FP16_MTYPE>(data_vec[i]));
+    proto->add_half_data(data_vec[i].getx());
   }
   if (write_diff) {
     const float16* diff_vec = cpu_diff();
     for (int i = 0; i < count_; ++i) {
-      proto->add_diff(Get<CAFFE_FP16_MTYPE>(diff_vec[i]));
+      proto->add_half_diff(float16(diff_vec[i]).getx());
+    }
+  }
+}
+
+template <>
+void Blob<float16,CAFFE_FP16_MTYPE>::FromProto(const BlobProto& proto, bool reshape) {
+  if (reshape) {
+    vector<int> shape;
+    if (proto.has_num() || proto.has_channels() ||
+        proto.has_height() || proto.has_width()) {
+      // Using deprecated 4D Blob dimensions --
+      // shape is (num, channels, height, width).
+      shape.resize(4);
+      shape[0] = proto.num();
+      shape[1] = proto.channels();
+      shape[2] = proto.height();
+      shape[3] = proto.width();
+    } else {
+      shape.resize(proto.shape().dim_size());
+      for (int i = 0; i < proto.shape().dim_size(); ++i) {
+        shape[i] = proto.shape().dim(i);
+      }
+    }
+    Reshape(shape);
+  } else {
+    CHECK(ShapeEquals(proto)) << "shape mismatch (reshape not set)";
+  }
+  // copy data
+  if (proto.half_data_size() > 0) {
+    float16* data_vec = mutable_cpu_data();
+    CHECK_EQ(count_, proto.half_data_size());
+    for (int i = 0; i < count_; ++i) {
+      data_vec[i].setx(proto.half_data(i));
+    }
+  }
+  if (proto.half_diff_size() > 0) {
+    CHECK_EQ(count_, proto.half_diff_size());
+    float16* diff_vec = mutable_cpu_diff();
+    for (int i = 0; i < count_; ++i) {
+      diff_vec[i].setx(proto.half_diff(i));
     }
   }
 }
@@ -559,11 +613,13 @@ void Blob<float16,CAFFE_FP16_MTYPE>::ToProto(BlobProto* proto, bool write_diff) 
 
 INSTANTIATE_CLASS(Blob);
 // we need full matrix of instantiations for blob
+#ifndef CPU_ONLY
 #if NATIVE_FP16_SUPPORTED
-template class Blob<float16,float>;
+//template class Blob<float16,float16>;
 #else
-template class Blob<float16,float16>;
+template class Blob<float16,float>;
 #endif
+#endif // CPU_ONLY
 
 template class Blob<int,int>;
 template class Blob<unsigned int, unsigned int>;
