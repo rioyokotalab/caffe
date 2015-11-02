@@ -27,7 +27,7 @@
 // <float16,float> for Intel
 // <float16,float16> for ARM
 
-//#define NATIVE_FP16_SUPPORTED 1
+#define NATIVE_FP16_SUPPORTED 1
 
 #if NATIVE_FP16_SUPPORTED
 # define CAFFE_FP16_MTYPE float16
