@@ -617,7 +617,7 @@ INSTANTIATE_CLASS(Blob);
 #if NATIVE_FP16_SUPPORTED
 //template class Blob<float16,float16>;
 #else
-template class Blob<float16,float>;
+//template class Blob<float16,float>;
 #endif
 #endif // CPU_ONLY
 

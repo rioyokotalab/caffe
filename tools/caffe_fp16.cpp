@@ -178,7 +178,7 @@ int test() {
 
   vector<Blob<float16,CAFFE_FP16_MTYPE>* > bottom_vec;
   vector<int> test_score_output_id;
-  vector<float16> test_score;
+  vector<CAFFE_FP16_MTYPE> test_score;
   float loss = 0;
   for (int i = 0; i < FLAGS_iterations; ++i) {
     CAFFE_FP16_MTYPE iter_loss;

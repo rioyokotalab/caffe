@@ -109,7 +109,7 @@ void caffe_gpu_gemv<float16, float>(const CBLAS_TRANSPOSE TransA, const int M,
     int m = (cuTransA == CUBLAS_OP_N) ? N : M;
     int k = (cuTransA == CUBLAS_OP_N) ? M : N;
     int LDA = (cuTransA == CUBLAS_OP_N) ? m : k;
-    int LDB = (cuTransA == CUBLAS_OP_N) ? k : m;
+//    int LDB = (cuTransA == CUBLAS_OP_N) ? k : m;
     int LDC = m;
     
     CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), cuTransA, CUBLAS_OP_N,
@@ -130,7 +130,7 @@ void caffe_gpu_gemv<float16, float16>(const CBLAS_TRANSPOSE TransA, const int M,
     int m = (cuTransA == CUBLAS_OP_N) ? N : M;
     int k = (cuTransA == CUBLAS_OP_N) ? M : N;
     int LDA = (cuTransA == CUBLAS_OP_N) ? m : k;
-    int LDB = (cuTransA == CUBLAS_OP_N) ? k : m;
+//    int LDB = (cuTransA == CUBLAS_OP_N) ? k : m;
     int LDC = m;
     
     CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), cuTransA, CUBLAS_OP_N,

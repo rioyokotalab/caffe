@@ -1110,7 +1110,7 @@ INSTANTIATE_CLASS(Net);
 #if NATIVE_FP16_SUPPORTED
 //template class Net<float16,float16>;
 #else
-template class Net<float16,float>;
+//template class Net<float16,float>;
 #endif
 #endif // CPU_ONLY
 
