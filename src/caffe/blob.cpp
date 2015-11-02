@@ -593,14 +593,27 @@ void Blob<float16,CAFFE_FP16_MTYPE>::FromProto(const BlobProto& proto, bool resh
     CHECK(ShapeEquals(proto)) << "shape mismatch (reshape not set)";
   }
   // copy data
-  if (proto.half_data_size() > 0) {
+  if (proto.data_size() > 0) {
+    CHECK_EQ(count_, proto.data_size());
+    float16* data_vec = mutable_cpu_data();
+    for (int i = 0; i < count_; ++i) {
+      data_vec[i] = Get<float16>(proto.data(i));
+    } 
+  } else if (proto.half_data_size() > 0) {
     float16* data_vec = mutable_cpu_data();
     CHECK_EQ(count_, proto.half_data_size());
     for (int i = 0; i < count_; ++i) {
       data_vec[i].setx(proto.half_data(i));
     }
   }
-  if (proto.half_diff_size() > 0) {
+  if (proto.diff_size() > 0) {
+    CHECK_EQ(count_, proto.diff_size());
+    float16* diff_vec = mutable_cpu_diff();
+    for (int i = 0; i < count_; ++i) {
+      diff_vec[i] = Get<float16>(proto.half_diff(i));
+    }
+  }
+  else if (proto.half_diff_size() > 0) {
     CHECK_EQ(count_, proto.half_diff_size());
     float16* diff_vec = mutable_cpu_diff();
     for (int i = 0; i < count_; ++i) {
@@ -617,7 +630,7 @@ INSTANTIATE_CLASS(Blob);
 #if NATIVE_FP16_SUPPORTED
 //template class Blob<float16,float16>;
 #else
-//template class Blob<float16,float>;
+template class Blob<float16,float>;
 #endif
 #endif // CPU_ONLY
 
