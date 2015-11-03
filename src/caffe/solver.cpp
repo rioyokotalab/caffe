@@ -1074,7 +1074,7 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         this->update_[param_id]->mutable_cpu_data());
 
     // update history of gradients
-    caffe_cpu_axpby(net_params[param_id]->count(), Mtype(1) - momentum,
+    caffe_cpu_axpby(net_params[param_id]->count(), Mtype(1. - momentum),
         this->update_[param_id]->cpu_data(), momentum,
         this->history_[param_id]->mutable_cpu_data());
 
@@ -1115,7 +1115,7 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         this->update_[param_id]->mutable_cpu_data());
 
     // update history of updates
-    caffe_cpu_axpby(net_params[param_id]->count(), Mtype(1) - momentum,
+    caffe_cpu_axpby(net_params[param_id]->count(), Mtype(1. - momentum),
         this->update_[param_id]->cpu_data(), momentum,
         this->history_[update_history_offset + param_id]->mutable_cpu_data());
 
@@ -1133,7 +1133,7 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         this->update_[param_id]->mutable_gpu_data());
 
     // update history of gradients
-    caffe_gpu_axpby(net_params[param_id]->count(), Mtype(1) - momentum,
+    caffe_gpu_axpby(net_params[param_id]->count(), Mtype(1. - momentum),
         this->update_[param_id]->gpu_data(), momentum,
         this->history_[param_id]->mutable_gpu_data());
 
@@ -1174,7 +1174,7 @@ void AdaDeltaSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         this->update_[param_id]->mutable_gpu_data());
 
     // update history of updates
-    caffe_gpu_axpby(net_params[param_id]->count(), Mtype(1) - momentum,
+    caffe_gpu_axpby(net_params[param_id]->count(), Mtype(1. - momentum),
         this->update_[param_id]->gpu_data(), momentum,
         this->history_[update_history_offset + param_id]->mutable_gpu_data());
 
@@ -1227,7 +1227,7 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   switch (Caffe::mode()) {
     case Caffe::CPU: {
     // update m <- \beta_1 m_{t-1} + (1-\beta_1)g_t
-    caffe_cpu_axpby(N, Mtype(1)-beta1,
+    caffe_cpu_axpby(N, Mtype(1. - beta1),
         net_params[param_id]->cpu_diff(), beta1,
         val_m->mutable_cpu_data());
 
@@ -1236,7 +1236,7 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         net_params[param_id]->cpu_diff(),
         net_params[param_id]->cpu_diff(),
     val_t->mutable_cpu_data());
-    caffe_cpu_axpby(N, Mtype(1)-beta2,
+    caffe_cpu_axpby(N, Mtype(1. - beta2),
         val_t->cpu_data(), beta2,
         val_v->mutable_cpu_data());
 
@@ -1258,7 +1258,7 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   case Caffe::GPU: {
 #ifndef CPU_ONLY
     // update m <- \beta_1 m_{t-1} + (1-\beta_1)g_t
-    caffe_gpu_axpby(N, Mtype(1)-beta1,
+    caffe_gpu_axpby(N, Mtype(1.-beta1),
         net_params[param_id]->gpu_diff(), beta1,
         val_m->mutable_gpu_data());
 
@@ -1267,7 +1267,7 @@ void AdamSolver<Dtype,Mtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         net_params[param_id]->gpu_diff(),
         net_params[param_id]->gpu_diff(),
         val_t->mutable_gpu_data());
-    caffe_gpu_axpby(N, Mtype(1)-beta2,
+    caffe_gpu_axpby(N, Mtype(1. - beta2),
         val_t->gpu_data(), beta2,
         val_v->mutable_gpu_data());
 

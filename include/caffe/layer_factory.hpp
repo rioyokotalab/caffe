@@ -126,19 +126,10 @@ class LayerRegisterer {
   static LayerRegisterer<float,float> g_creator_f_##type(#type, creator<float,float>); \
   static LayerRegisterer<double,double> g_creator_d_##type(#type, creator<double,double>)
 
-
-  // boris: this should actually be selected at runtime.
-#if NATIVE_FP16_SUPPORTED
-# define REGISTER_LAYER_CREATOR_GPU(type, creator) \
+#define REGISTER_LAYER_CREATOR_GPU(type, creator) \
   REGISTER_LAYER_CREATOR_CPU(type, creator); \
-  static LayerRegisterer<float16,float16> g_creator_hh_##type(#type, creator<float16, float16>)
-
-# else
-# define REGISTER_LAYER_CREATOR_GPU(type, creator) \
-     REGISTER_LAYER_CREATOR_CPU(type, creator); \
-     static LayerRegisterer<float16,float> g_creator_hf_##type(#type, creator<float16,float>)
-#endif
-
+  static LayerRegisterer<float16,CAFFE_FP16_MTYPE> \
+  g_creator_hh_##type(#type, creator<float16,CAFFE_FP16_MTYPE>)
 
 #ifdef CPU_ONLY
 #  define REGISTER_LAYER_CREATOR(type, creator) REGISTER_LAYER_CREATOR_CPU(type, creator)

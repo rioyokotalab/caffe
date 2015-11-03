@@ -351,7 +351,7 @@ TYPED_TEST(AccuracyLayerTest, TestForwardCPUPerClassWithIgnoreLabel) {
               num_correct_labels / Get<Mtype>(count), 1e-4);
   for (int i = 0; i < 10; ++i) {
     float accuracy_per_class = num_per_class[i] > 0 ?
-    		Get<Dtype>(correct_per_class[i]) / num_per_class[i] : Get<Dtype>(0);
+    		correct_per_class[i] / num_per_class[i] : 0.;
     EXPECT_NEAR(Get<Mtype>(this->blob_top_per_class_->data_at(i, 0, 0, 0)),
     		Get<Mtype>(accuracy_per_class), 1e-4);
   }

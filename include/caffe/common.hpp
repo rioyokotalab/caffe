@@ -27,9 +27,10 @@
 // <float16,float> for Intel
 // <float16,float16> for ARM
 
-#define NATIVE_FP16_SUPPORTED 1
+// --> Makefile.config
+//#define NATIVE_FP16 1
 
-#if NATIVE_FP16_SUPPORTED
+#if NATIVE_FP16
 # define CAFFE_FP16_MTYPE float16
 #else
 # define CAFFE_FP16_MTYPE float

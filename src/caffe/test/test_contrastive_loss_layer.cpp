@@ -112,25 +112,25 @@ TYPED_TEST(ContrastiveLossLayerTest, TestForwardLegacy) {
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   // manually compute to compare
-  const Mtype margin = layer_param.contrastive_loss_param().margin();
+  const float margin = layer_param.contrastive_loss_param().margin();
   const int num = this->blob_bottom_data_i_->num();
   const int channels = this->blob_bottom_data_i_->channels();
-  Mtype loss(0);
+  Dtype loss(0);
   for (int i = 0; i < num; ++i) {
-    Mtype dist_sq(0);
+    Dtype dist_sq(0);
     for (int j = 0; j < channels; ++j) {
-      Mtype diff = Get<Mtype>(this->blob_bottom_data_i_->cpu_data()[i*channels+j]) -
-          Get<Mtype>(this->blob_bottom_data_j_->cpu_data()[i*channels+j]);
+      Dtype diff = this->blob_bottom_data_i_->cpu_data()[i*channels+j] -
+          this->blob_bottom_data_j_->cpu_data()[i*channels+j];
       dist_sq += diff*diff;
     }
-    if (Get<Mtype>(this->blob_bottom_y_->cpu_data()[i])) {  // similar pairs
+    if (this->blob_bottom_y_->cpu_data()[i]) {  // similar pairs
       loss += dist_sq;
     } else {
-      loss += std::max(margin - dist_sq, Mtype(0.0));
+      loss += std::max((float)(margin - dist_sq), 0.F);
     }
   }
   loss /= Get<Mtype>(num) * Mtype(2);
-  EXPECT_NEAR(Get<Mtype>(this->blob_top_loss_->cpu_data()[0]), loss, tol<Dtype>(1e-6));
+  EXPECT_NEAR(this->blob_top_loss_->cpu_data()[0], loss, tol<Dtype>(1e-6));
 }
 
 TYPED_TEST(ContrastiveLossLayerTest, TestGradientLegacy) {

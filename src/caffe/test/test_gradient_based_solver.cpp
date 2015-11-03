@@ -271,8 +271,8 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
         Mtype element = 0;
         for (int k = 0; k < N; ++k) {
           // (i, k) in X^T (== (k, i) in X) times (k, j) in X.
-          const Mtype element_i = Get<Mtype>((i == D) ? 1. : Get<Mtype>(data.cpu_data()[k * D + i]));
-          const Mtype element_j = Get<Mtype>((j == D) ? 1. : Get<Mtype>(data.cpu_data()[k * D + j]));
+          const Mtype element_i = Get<Mtype>((i == D) ? Mtype(1.) : Get<Mtype>(data.cpu_data()[k * D + i]));
+          const Mtype element_j = Get<Mtype>((j == D) ? Mtype(1.) : Get<Mtype>(data.cpu_data()[k * D + j]));
           element += element_i * element_j;
         }
         if (j == D) {
@@ -282,7 +282,7 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
         }
       }
       for (int k = 0; k < N; ++k) {
-        const Mtype element_i = Get<Mtype>((i == D) ? 1. : Get<Mtype>(data.cpu_data()[k * D + i]));
+        const Mtype element_i = Get<Mtype>((i == D) ? Mtype(1.) : Get<Mtype>(data.cpu_data()[k * D + i]));
         grad -= element_i * Get<Mtype>(targets.cpu_data()[k]);
       }
       // Scale the gradient over the N samples.

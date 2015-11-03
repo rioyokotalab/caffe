@@ -78,12 +78,12 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
     ExpLayer<Dtype,Mtype> layer(layer_param);
     layer.SetUp(blob_bottom_vec_, blob_top_vec_);
     layer.Forward(blob_bottom_vec_, blob_top_vec_);
-    const Mtype kDelta = 2e-4;
+    const float kDelta = 2e-4;
     const Dtype* bottom_data = blob_bottom_->cpu_data();
     const Dtype* top_data = blob_top_->cpu_data();
     for (int i = 0; i < blob_bottom_->count(); ++i) {
-      const Mtype bottom_val = Get<Mtype>(bottom_data[i]);
-      const Mtype top_val = Get<Mtype>(top_data[i]);
+      const float bottom_val = bottom_data[i];
+      const float top_val = top_data[i];
       if (base == -1) {
         EXPECT_NEAR(top_val, exp(shift + scale * bottom_val), tol<Dtype>(kDelta));
       } else {
