@@ -98,7 +98,7 @@ void AccuracyLayer<Dtype,Mtype>::Forward_cpu(const vector<Blob<Dtype,Mtype>*>& b
   if (top.size() > 1) {
     for (int i = 0; i < top[1]->count(); ++i) {
       top[1]->mutable_cpu_data()[i] =
-          nums_buffer_.cpu_data()[i] == Get<Dtype>(0) ? Get<Dtype>(0)
+          nums_buffer_.cpu_data()[i] == 0. ? 0.
           : top[1]->cpu_data()[i] / nums_buffer_.cpu_data()[i];
     }
   }

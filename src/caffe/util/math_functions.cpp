@@ -659,7 +659,7 @@ float16 caffe_cpu_dot<float16,float16>(const int n, const float16* x, const floa
 #endif
 
 template <>
-int caffe_cpu_hamming_distance<float,float>(const int n, const float* x,
+int caffe_cpu_hamming_distance<float>(const int n, const float* x,
                                   const float* y) {
   int dist = 0;
   for (int i = 0; i < n; ++i) {
@@ -670,7 +670,7 @@ int caffe_cpu_hamming_distance<float,float>(const int n, const float* x,
 }
 
 template <>
-int caffe_cpu_hamming_distance<double,double>(const int n, const double* x,
+int caffe_cpu_hamming_distance<double>(const int n, const double* x,
                                    const double* y) {
   int dist = 0;
   for (int i = 0; i < n; ++i) {
@@ -681,10 +681,9 @@ int caffe_cpu_hamming_distance<double,double>(const int n, const double* x,
 }
 
 #ifndef CPU_ONLY
-#if !NATIVE_FP16_SUPPORTED
 template <>
-int caffe_cpu_hamming_distance<float16, float>(const int n, const float16* x,
-                                            const float16* y) {
+int caffe_cpu_hamming_distance<float16>(const int n, const float16* x,
+                                        const float16* y) {
   int dist = 0;
   for (int i = 0; i < n; ++i) {
     dist += __builtin_popcount(static_cast<uint16_t>(Get<float>(x[i])) ^
@@ -692,7 +691,6 @@ int caffe_cpu_hamming_distance<float16, float>(const int n, const float16* x,
   }
   return dist;
 }
-#endif
 #endif
 
 template <>

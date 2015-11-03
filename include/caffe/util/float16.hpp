@@ -4,6 +4,7 @@
 // #include "get.hpp"
 #include <cfloat>
 #include <iosfwd>
+#include <glog/logging.h>
 #include "caffe/util/fp16_emu.h"
 #include "caffe/util/fp16_conversion.hpp"
 
@@ -23,10 +24,18 @@ namespace caffe
     /* constexpr */ CAFFE_UTIL_IHD float16() { data.x = 0; }
     
     template <class T>
-    CAFFE_UTIL_IHD explicit float16(const T& rhs) {
+    CAFFE_UTIL_IHD /*explicit*/ float16(const T& rhs) {
       assign(rhs);
     }
       
+//    CAFFE_UTIL_IHD float16(float rhs) {
+//      assign(rhs);
+//    }
+//
+//    CAFFE_UTIL_IHD float16(double rhs) {
+//      assign(rhs);
+//    }
+
     CAFFE_UTIL_IHD operator float() const {
 #ifdef __CUDA_ARCH__
       return __half2float(data);
@@ -63,6 +72,13 @@ namespace caffe
 #ifdef __CUDA_ARCH__
       data.x = __float2half_rn(rhs);
 #else
+  #if defined(DEBUG) && defined (CPU_ONLY)
+      if (rhs > HLF_MAX || rhs < -HLF_MAX) {
+        LOG(WARNING) << "Overflow: " << rhs;
+      } else if (rhs != 0.F && rhs < HLF_MIN && rhs > -HLF_MIN) {
+        LOG(WARNING) << "Underflow: " << rhs;
+      }
+  #endif
       data = cpu_float2half_rn(rhs);
 #endif
     }
@@ -108,30 +124,31 @@ namespace caffe
     static const float16 minus_one;
   };
 
-  CAFFE_UTIL_IHD bool  operator==(const float16& a, const float16& b) { return ishequ(a.data, b.data); }
-
-  CAFFE_UTIL_IHD bool  operator!=(const float16& a, const float16& b) { return !(a == b); }
-
-  CAFFE_UTIL_IHD bool  operator<(const float16& a, const float16& b) { return (float)a < (float)b; }
-
-  CAFFE_UTIL_IHD bool  operator>(const float16& a, const float16& b) { return (float)a > (float)b; }
-
-  CAFFE_UTIL_IHD bool  operator<=(const float16& a, const float16& b) { return (float)a <= (float)b; }
-
-  CAFFE_UTIL_IHD bool  operator>=(const float16& a, const float16& b) { return (float)a >= (float)b; }
-
-  template <class T>
-  CAFFE_UTIL_IHD float16 operator+(const float16& a, const T& b) { return float16((float)a + (float)b); }
+//  CAFFE_UTIL_IHD bool  operator==(const float16& a, const float16& b) { return ishequ(a.data, b.data); }
+//
+//  CAFFE_UTIL_IHD bool  operator!=(const float16& a, const float16& b) { return !(a == b); }
+//
+//  CAFFE_UTIL_IHD bool  operator<(const float16& a, const float16& b) { return (float)a < (float)b; }
+//
+//  CAFFE_UTIL_IHD bool  operator>(const float16& a, const float16& b) { return (float)a > (float)b; }
+//
+//  CAFFE_UTIL_IHD bool  operator<=(const float16& a, const float16& b) { return (float)a <= (float)b; }
+//
+//  CAFFE_UTIL_IHD bool  operator>=(const float16& a, const float16& b) { return (float)a >= (float)b; }
+//
+//  template <class T>
+//  CAFFE_UTIL_IHD float16 operator+(const float16& a, const T& b) { return float16((float)a + (float)b); }
+//
+//  template <class T>
+//  CAFFE_UTIL_IHD float16 operator-(const float16& a, const T& b) { return float16((float)a - (float)b); }
+//
+//  template <class T>
+//  CAFFE_UTIL_IHD float16 operator*(const float16& a, const T& b) { return float16((float)a * (float)b); }
+//
+//  template <class T>
+//  CAFFE_UTIL_IHD float16 operator/(const float16& a, const T& b) { return float16((float)a / (float)b); }
   
-  template <class T>
-  CAFFE_UTIL_IHD float16 operator-(const float16& a, const T& b) { return float16((float)a - (float)b); }
-  
-  template <class T>
-  CAFFE_UTIL_IHD float16 operator*(const float16& a, const T& b) { return float16((float)a * (float)b); }
-    
-  template <class T>
-  CAFFE_UTIL_IHD float16 operator/(const float16& a, const T& b) { return float16((float)a / (float)b); }
-  
+
   CAFFE_UTIL_IHD float16 /* constexpr */ operator+(const float16& h) { return h; }
   
   CAFFE_UTIL_IHD float16 operator - (const float16& h) { return float16(hneg(h.data)); }

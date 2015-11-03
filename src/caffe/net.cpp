@@ -1106,12 +1106,4 @@ const shared_ptr<Layer<Dtype,Mtype> > Net<Dtype,Mtype>::layer_by_name(
 }
 
 INSTANTIATE_CLASS(Net);
-#ifndef CPU_ONLY
-#if NATIVE_FP16_SUPPORTED
-//template class Net<float16,float16>;
-#else
-//template class Net<float16,float>;
-#endif
-#endif // CPU_ONLY
-
 }  // namespace caffe

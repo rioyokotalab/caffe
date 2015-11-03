@@ -39,6 +39,11 @@ namespace caffe
   CAFFE_UTIL_IHD float maxDtype<half>() {
     return HLF_MAX;
   }
+
+  template <>
+  CAFFE_UTIL_IHD float maxDtype<float16>() {
+    return HLF_MAX;
+  }
 }
 
 

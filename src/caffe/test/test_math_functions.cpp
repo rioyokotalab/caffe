@@ -83,11 +83,10 @@ TYPED_TEST(CPUMathFunctionsTest, TestNothing) {
 
 TYPED_TEST(CPUMathFunctionsTest, TestHammingDistance) {
   typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
   const Dtype* x = this->blob_bottom_->cpu_data();
   const Dtype* y = this->blob_top_->cpu_data();
-  int cpu_distance = caffe_cpu_hamming_distance<Dtype,Mtype>(n, x, y);
+  int cpu_distance = caffe_cpu_hamming_distance(n, x, y);
   EXPECT_EQ(this->ReferenceHammingDistance(n, x, y),
             cpu_distance);
 }
@@ -179,14 +178,13 @@ TYPED_TEST_CASE(GPUMathFunctionsTest, TestDtypes);
 // TODO: Fix caffe_gpu_hamming_distance and re-enable this test.
 TYPED_TEST(GPUMathFunctionsTest, DISABLED_TestHammingDistance) {
   typedef typename TypeParam::Dtype Dtype;
-  typedef typename TypeParam::Mtype Mtype;
   int n = this->blob_bottom_->count();
   const Dtype* x = this->blob_bottom_->cpu_data();
   const Dtype* y = this->blob_top_->cpu_data();
   int reference_distance = this->ReferenceHammingDistance(n, x, y);
   x = this->blob_bottom_->gpu_data();
   y = this->blob_top_->gpu_data();
-  int computed_distance = caffe_gpu_hamming_distance<Dtype,Mtype>(n, x, y);
+  int computed_distance = caffe_gpu_hamming_distance(n, x, y);
   EXPECT_EQ(reference_distance, computed_distance);
 }
 
