@@ -274,13 +274,6 @@ int time() {
     LOG(INFO) << "Iteration: " << j + 1 << " forward time (layer by layer): "
 	      << iter_timer.MilliSeconds() << " ms.";
   }
-  LOG(INFO) << "Average time per layer: ";
-  for (int i = 0; i < layers.size(); ++i) {
-    const caffe::string& layername = layers[i]->layer_param().name();
-    LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
-      "\tforward: " << forward_time_per_layer[i] / 1000 /
-      FLAGS_iterations << " ms.";
-  }
   // Total timing - remove overheads introduced in timing individual layers
   total_timer.Start();
   for (int j = 0; j < FLAGS_iterations; ++j) {
@@ -297,6 +290,14 @@ int time() {
 	      << iter_timer.MilliSeconds() << " ms.";
   }
   total_timer.Stop();
+  
+  LOG(INFO) << "Average time per layer: ";
+  for (int i = 0; i < layers.size(); ++i) {
+    const caffe::string& layername = layers[i]->layer_param().name();
+    LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
+      "\tforward: " << forward_time_per_layer[i] / 1000 /
+      FLAGS_iterations << " ms.";
+  }
 
   LOG(INFO) << "Average Forward pass: " << forward_time / 1000 /
     FLAGS_iterations << " ms.";
