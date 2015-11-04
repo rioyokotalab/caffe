@@ -91,7 +91,7 @@ class AccuracyLayer : public Layer<Dtype,Mtype> {
   /// The label indicating that an instance should be ignored.
   int ignore_label_;
   /// Keeps counts of the number of samples per class.
-  Blob<Dtype,Mtype> nums_buffer_;
+  Blob<int, int> counts_, valid_counts_;
 };
 
 /**

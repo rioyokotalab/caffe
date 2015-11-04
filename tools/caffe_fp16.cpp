@@ -178,18 +178,18 @@ int test() {
 
   vector<Blob<float16,CAFFE_FP16_MTYPE>* > bottom_vec;
   vector<int> test_score_output_id;
-  vector<CAFFE_FP16_MTYPE> test_score;
+  vector<float> test_score;
   float loss = 0;
   for (int i = 0; i < FLAGS_iterations; ++i) {
     CAFFE_FP16_MTYPE iter_loss;
     const vector<Blob<float16,CAFFE_FP16_MTYPE>*>& result =
         caffe_net.Forward(bottom_vec, &iter_loss);
-    loss += iter_loss;
+    loss += (float) iter_loss;
     int idx = 0;
     for (int j = 0; j < result.size(); ++j) {
       const float16* result_vec = result[j]->cpu_data();
       for (int k = 0; k < result[j]->count(); ++k, ++idx) {
-        const CAFFE_FP16_MTYPE score = Get<CAFFE_FP16_MTYPE>(result_vec[k]);
+        const float score = Get<float>(result_vec[k]);
         if (i == 0) {
           test_score.push_back(score);
           test_score_output_id.push_back(j);
@@ -202,7 +202,7 @@ int test() {
       }
     }
   }
-  loss /= FLAGS_iterations;
+  loss /= (float) FLAGS_iterations;
   LOG(INFO) << "Loss: " << loss;
   for (int i = 0; i < test_score.size(); ++i) {
     const std::string& output_name = caffe_net.blob_names()[
@@ -210,7 +210,7 @@ int test() {
     const float loss_weight = caffe_net.blob_loss_weights()[
         caffe_net.output_blob_indices()[test_score_output_id[i]]];
     std::ostringstream loss_msg_stream;
-    const float mean_score = test_score[i] / FLAGS_iterations;
+    const float mean_score = test_score[i] / (float) FLAGS_iterations;
     if (loss_weight) {
       loss_msg_stream << " (* " << loss_weight
                       << " = " << loss_weight * mean_score << " loss)";
