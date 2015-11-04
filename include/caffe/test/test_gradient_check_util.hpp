@@ -22,8 +22,8 @@ class GradientChecker {
   // kink - kink_range <= |feature value| <= kink + kink_range,
   // which accounts for all nonsmoothness in use by caffe
   GradientChecker(const Dtype stepsize, const Dtype threshold,
-      const unsigned int seed = 1701, const Dtype kink = Get<Dtype>(0.),
-      const Dtype kink_range = Get<Dtype>(-1.))
+      const unsigned int seed = 1701, const Dtype kink = 0.,
+      const Dtype kink_range = -1.)
       : stepsize_(stepsize), threshold_(threshold), seed_(seed),
         kink_(kink), kink_range_(kink_range) {}
   // Checks the gradient of a layer, with provided bottom layers and top
@@ -90,7 +90,7 @@ void GradientChecker<Dtype,Mtype>::CheckGradientSingle(Layer<Dtype,Mtype>* layer
   vector<bool> propagate_down(bottom.size(), check_bottom == -1);
   for (int i = 0; i < layer->blobs().size(); ++i) {
     Blob<Dtype,Mtype>* blob = layer->blobs()[i].get();
-    caffe_set(blob->count(), Get<Dtype>(0), blob->mutable_cpu_diff());
+    caffe_set(blob->count(), Dtype(0.), blob->mutable_cpu_diff());
     blobs_to_check.push_back(blob);
   }
   if (check_bottom == -1) {
@@ -139,9 +139,9 @@ void GradientChecker<Dtype,Mtype>::CheckGradientSingle(Layer<Dtype,Mtype>* layer
       // bottom[blob_id][i] only for i == top_data_id.  For any other
       // i != top_data_id, we know the derivative is 0 by definition, and simply
       // check that that's true.
-      Dtype estimated_gradient = Get<Dtype>(0.);
-      Dtype positive_objective = Get<Dtype>(0.);
-      Dtype negative_objective = Get<Dtype>(0.);
+      Dtype estimated_gradient = 0.;
+      Dtype positive_objective = 0.;
+      Dtype negative_objective = 0.;
       if (!element_wise || (feat_id == top_data_id)) {
         // Do finite differencing.
         // Compute loss with stepsize_ added to input.
@@ -158,26 +158,26 @@ void GradientChecker<Dtype,Mtype>::CheckGradientSingle(Layer<Dtype,Mtype>* layer
             GetObjAndGradient(*layer, top, top_id, top_data_id);
         // Recover original input value.
         current_blob->mutable_cpu_data()[feat_id] += stepsize_;
-        estimated_gradient = Get<Dtype>((Get<Mtype>(positive_objective) - Get<Mtype>(negative_objective)) /
-            Get<Mtype>(stepsize_) / 2.);
+        estimated_gradient = (positive_objective - negative_objective) /
+            stepsize_ / 2.;
       }
       Dtype computed_gradient = computed_gradients[feat_id];
       Dtype feature = current_blob->cpu_data()[feat_id];
       // LOG(ERROR) << "debug: " << current_blob->cpu_data()[feat_id] << " "
       //     << current_blob->cpu_diff()[feat_id];
-      if (Get<Mtype>(kink_) - Get<Mtype>(kink_range_) > fabs(Get<Mtype>(feature))
-          || fabs(Get<Mtype>(feature)) > Get<Mtype>(kink_) + Get<Mtype>(kink_range_)) {
+      if (kink_ - kink_range_ > fabs(feature)
+          || fabs(feature) > kink_ + kink_range_) {
         // We check relative accuracy, but for too small values, we threshold
         // the scale factor by 1.
-        Dtype scale = Get<Dtype>(std::max(
-            std::max(fabs(Get<Mtype>(computed_gradient)), fabs(Get<Mtype>(estimated_gradient))), 1.));
-        EXPECT_NEAR(Get<Mtype>(computed_gradient), Get<Mtype>(estimated_gradient),
-                    tol<Dtype>(Get<Mtype>(threshold_)) * Get<Mtype>(scale))
+        Dtype scale = std::max(
+            std::max(fabs(computed_gradient), fabs(estimated_gradient)), 1.);
+        EXPECT_NEAR(computed_gradient, estimated_gradient,
+                    tol<Dtype>(threshold_) * scale)
           << "debug: (top_id, top_data_id, blob_id, feat_id)="
           << top_id << "," << top_data_id << "," << blob_id << "," << feat_id
-          << "; feat = " << Get<Mtype>(feature)
-          << "; objective+ = " << Get<Mtype>(positive_objective)
-          << "; objective- = " << Get<Mtype>(negative_objective);
+          << "; feat = " << feature
+          << "; objective+ = " << positive_objective
+          << "; objective- = " << negative_objective;
       }
       // LOG(ERROR) << "Feature: " << current_blob->cpu_data()[feat_id];
       // LOG(ERROR) << "computed gradient: " << computed_gradient
@@ -232,7 +232,7 @@ void GradientChecker<Dtype,Mtype>::CheckGradientNet(
 template <typename Dtype, typename Mtype>
 Dtype GradientChecker<Dtype,Mtype>::GetObjAndGradient(const Layer<Dtype,Mtype>& layer,
     const vector<Blob<Dtype,Mtype>*>& top, int top_id, int top_data_id) {
-  Dtype loss = Get<Dtype>(0.);
+  Dtype loss = 0.;
   if (top_id < 0) {
     // the loss will be half of the sum of squares of all outputs
     for (int i = 0; i < top.size(); ++i) {
@@ -252,10 +252,10 @@ Dtype GradientChecker<Dtype,Mtype>::GetObjAndGradient(const Layer<Dtype,Mtype>& 
     for (int i = 0; i < top.size(); ++i) {
       Blob<Dtype,Mtype>* top_blob = top[i];
       Dtype* top_blob_diff = top_blob->mutable_cpu_diff();
-      caffe_set(top_blob->count(), Get<Dtype>(0), top_blob_diff);
+      caffe_set(top_blob->count(), Dtype(0.), top_blob_diff);
     }
-    const Dtype loss_weight = Get<Dtype>(2.);
-    loss = Get<Dtype>(Get<Mtype>(top[top_id]->cpu_data()[top_data_id]) * Get<Mtype>(loss_weight));
+    const Dtype loss_weight = 2.;
+    loss = top[top_id]->cpu_data()[top_data_id] * loss_weight;
     top[top_id]->mutable_cpu_diff()[top_data_id] = loss_weight;
   }
   return loss;

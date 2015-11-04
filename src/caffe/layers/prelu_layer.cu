@@ -13,7 +13,7 @@ __global__ void PReLUForward(const int n, const int channels, const int dim,
     const int div_factor) {
   CUDA_KERNEL_LOOP(index, n) {
     int c = (index / dim) % channels / div_factor;
-    out[index] = Get<Dtype>( Get<Mtype>(in[index]) > 0 ? Get<Mtype>(in[index]) : Get<Mtype>(in[index]) * Get<Mtype>(slope_data[c]) );
+    out[index] = in[index] > 0 ? in[index] : Dtype(in[index] * slope_data[c]);
   }
 }
 

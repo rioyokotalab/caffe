@@ -10,6 +10,12 @@
 # CPU-only switch (uncomment to build without GPU support).
 # CPU_ONLY := 1
 
+# We only build 1 flavor of 'caffe_fp16' binary per host architecture:
+# NATIVE_FP16 == 1 for ARM (and later Pascal)
+# Intel otherwise (pseudo mode)
+#
+# NATIVE_FP16 := 1
+
 # uncomment to disable IO dependencies and corresponding data layers
 # USE_LEVELDB := 0
 # USE_LMDB := 0
