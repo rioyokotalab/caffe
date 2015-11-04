@@ -4,30 +4,65 @@
 
 #include "caffe/layer.hpp"
 #include "caffe/util/math_functions.hpp"
+#include "caffe/util/gpu_memory.hpp"
 #include "caffe/vision_layers.hpp"
+#include "cub/cub/cub.cuh"
+
+#define NUM_CUDA_THREADS 128
 
 namespace caffe {
 
 template <typename Dtype, typename Mtype>
 __global__ void SoftmaxLossForwardGPU(const int nthreads,
-          const Dtype* prob_data, const Dtype* label, Dtype* loss,
-          const int num, const int dim, const int spatial_dim,
-          const bool has_ignore_label_, const int ignore_label_,
-          Dtype* counts) {
-  CUDA_KERNEL_LOOP(index, nthreads) {
-    const int n = index / spatial_dim;
-    const int s = index % spatial_dim;
+                                      const Dtype* prob_data, 
+                                      const Dtype* label, 
+                                      Dtype* loss,
+                                      const int num, 
+                                      const int dim, 
+                                      const int spatial_dim,
+                                      const bool has_ignore_label_, 
+                                      const int ignore_label_,
+                                      Dtype* counts,
+                                      Mtype* results) {
+
+  typedef cub::BlockReduce<Mtype, NUM_CUDA_THREADS> BlockReduceF;
+  typedef cub::BlockReduce<int,   NUM_CUDA_THREADS> BlockReduceI;
+
+  __shared__ typename BlockReduceF::TempStorage tempStorageF;
+  __shared__ typename BlockReduceI::TempStorage tempStorageI;
+
+  Mtype lossSum(0);
+  int count(0);
+  for( int idx = blockIdx.x*blockDim.x + threadIdx.x ; idx < nthreads ; idx += blockDim.x*gridDim.x ) {
+    const int n = idx / spatial_dim;
+    const int s = idx % spatial_dim;
     const int label_value = Get<int>(label[n * spatial_dim + s]);
     if (has_ignore_label_ && label_value == ignore_label_) {
-      loss[index] = Get<Dtype>(0);
-      counts[index] = Get<Dtype>(0);
+      loss[idx] = Get<Dtype>(0);
+      counts[idx] = Get<Dtype>(0);
     } else {
-      loss[index] = Get<Dtype>( -log(max(Get<Mtype>(prob_data[n * dim + label_value * spatial_dim + s]),
-                      Mtype(FLT_MIN))) );
-      counts[index] = Get<Dtype>(1);
+      Mtype tmp = -log(max(Get<Mtype>(prob_data[n * dim + label_value * spatial_dim + s]), Mtype(FLT_MIN)));
+      loss[idx] = Get<Dtype>(tmp);
+      counts[idx] = Get<Dtype>(1);
+      lossSum += tmp;
+      count += 1;
     }
   }
+
+  lossSum = BlockReduceF(tempStorageF).Sum(lossSum);
+  count   = BlockReduceI(tempStorageI).Sum(count);
+
+  if( threadIdx.x == 0 ) {
+      results[0] = lossSum;
+      results[1] = Mtype(count);
+  }
 }
+
+template< typename Dtype >
+struct GetFtype { typedef Dtype Type; };
+
+template<>
+struct GetFtype<float16> { typedef float Type; };
 
 template <typename Dtype, typename Mtype>
 void SoftmaxWithLossLayer<Dtype,Mtype>::Forward_gpu(
@@ -44,16 +79,24 @@ void SoftmaxWithLossLayer<Dtype,Mtype>::Forward_gpu(
   // Similarly, this memory is never used elsewhere, and thus we can use it
   // to avoid having to allocate additional GPU memory.
   Dtype* counts = prob_.mutable_gpu_diff();
+
+  // TODO: Use 0-copy instead of a memcpy!
+  typedef typename GetFtype<Dtype>::Type Ftype;
+  Ftype *workspace;
+  gpu_memory::allocate((void**) &workspace, 2*sizeof(Ftype));
+
   // NOLINT_NEXT_LINE(whitespace/operators)
-  SoftmaxLossForwardGPU<Dtype,Mtype><<<CAFFE_GET_BLOCKS(nthreads),
-      CAFFE_CUDA_NUM_THREADS>>>(nthreads, prob_data, label, loss_data,
-      outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
-  Mtype loss;
-  caffe_gpu_asum<Dtype,Mtype>(nthreads, loss_data, &loss);
+  SoftmaxLossForwardGPU<Dtype, Ftype><<<1, NUM_CUDA_THREADS>>>(
+      nthreads, prob_data, label, loss_data,
+      outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts, workspace);
+
+  Ftype results[2];
+  CUDA_CHECK(cudaMemcpy(results, workspace, sizeof(results), cudaMemcpyDeviceToHost));
+  gpu_memory::deallocate(workspace);
+
+  Ftype loss = results[0];
   if (normalize_) {
-    Mtype count;
-    caffe_gpu_asum<Dtype,Mtype>(nthreads, counts, &count);
-    loss /= count;
+    loss /= results[1];
   } else {
     loss /= outer_num_;
   }
