@@ -665,9 +665,9 @@ cnmemStatus_t Manager::printListUnsafe(FILE *file, const char *name, const Block
     for( Block *curr = (Block*) head; curr; curr = curr->getNext() ) {
         size += curr->getSize();
     }
-    fprintf(file, "| list=\"%s\", size=%lu\n", name, size);
+    fprintf(file, "| list=\"%s\", size=%zu\n", name, size);
     for( Block *curr = (Block*) head ; curr ; curr = curr->getNext() ) {
-        fprintf(file, "| | node=0x%016lx, data=0x%016lx, size=%lu, next=0x%016lx, head=%2lu\n", 
+        fprintf(file, "| | node=0x%016zx, data=0x%016zx, size=%zu, next=0x%016zx, head=%2zu\n", 
             (std::size_t) curr, 
             (std::size_t) curr->getData(),
             (std::size_t) curr->getSize(),
@@ -687,7 +687,7 @@ cnmemStatus_t Manager::printMemoryState(FILE *file) const {
     CNMEM_CHECK_OR_UNLOCK(getUsedMemoryUnsafe(usedMemory), mMutex);
     CNMEM_CHECK_OR_UNLOCK(getFreeMemoryUnsafe(freeMemory), mMutex);
 
-    fprintf(file, ">> [%s] device=%d, stream=0x%016lx, used=%luB, free=%luB\n", 
+    fprintf(file, ">> [%s] device=%d, stream=0x%016zx, used=%zuB, free=%zuB\n", 
             mParent ? "child" : "root",
             mDevice, 
             streamCode,
