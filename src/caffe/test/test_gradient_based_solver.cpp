@@ -470,12 +470,12 @@ class GradientBasedSolverTest : public MultiDeviceTest<TypeParam> {
     const int kIterSize = 1;
     const int kNum = num_;
     // Test over all numbers of devices.
-    int available_devices = 1;
-#ifndef CPU_ONLY
-    if (Caffe::mode() == Caffe::GPU) {
-      CUDA_CHECK(cudaGetDeviceCount(&available_devices));
-    }
-#endif
+    //    int available_devices = 1;
+    // #ifndef CPU_ONLY
+    //    if (Caffe::mode() == Caffe::GPU) {
+    //      CUDA_CHECK(cudaGetDeviceCount(&available_devices));
+    //    }
+    // #endif
     // TODO temporarily set to single GPU mode due to issues on some HW.
     for (int devices = 1; devices <= 1 /*available_devices*/; ++devices) {
       // Configure batch size for single / multi device equivalence.
