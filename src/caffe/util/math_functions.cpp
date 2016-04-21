@@ -434,7 +434,7 @@ void caffe_log<double>(const int n, const double* a, double* y) {
 #ifndef CPU_ONLY
 template <>
 void caffe_exp<float16, float16>(const int n, const float16* a, float16* y) {
-  // vhLn(n, a, y);
+  vhExp(n, a, y);
 }
 template <>
 void caffe_log<float16>(const int n, const float16* a, float16* y) {

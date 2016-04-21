@@ -12,6 +12,8 @@ void CuDNNTanHLayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& b
       const vector<Blob<Dtype,Mtype>*>& top) {
   TanHLayer<Dtype,Mtype>::LayerSetUp(bottom, top);
   // initialize cuDNN
+  cudnnCreateActivationDescriptor( &activ_desc_);
+  cudnnSetActivationDescriptor( activ_desc_, CUDNN_ACTIVATION_TANH, CUDNN_PROPAGATE_NAN, 0.0);
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);
   cudnn::createTensor4dDesc<Dtype>(&top_desc_);
   handles_setup_ = true;
@@ -34,6 +36,7 @@ CuDNNTanHLayer<Dtype,Mtype>::~CuDNNTanHLayer() {
   // Check that handles have been setup before destroying.
   if (!handles_setup_) { return; }
 
+  cudnnDestroyActivationDescriptor(this->activ_desc_);
   cudnnDestroyTensorDescriptor(this->bottom_desc_);
   cudnnDestroyTensorDescriptor(this->top_desc_);
 }

@@ -499,6 +499,7 @@ class CuDNNReLULayer : public ReLULayer<Dtype,Mtype> {
   bool handles_setup_;
   cudnnTensorDescriptor_t bottom_desc_;
   cudnnTensorDescriptor_t top_desc_;
+  cudnnActivationDescriptor_t activ_desc_;
 };
 #endif
 
@@ -581,6 +582,7 @@ class CuDNNSigmoidLayer : public SigmoidLayer<Dtype,Mtype> {
   bool handles_setup_;
   cudnnTensorDescriptor_t bottom_desc_;
   cudnnTensorDescriptor_t top_desc_;
+  cudnnActivationDescriptor_t activ_desc_;
 };
 #endif
 
@@ -665,6 +667,7 @@ class CuDNNTanHLayer : public TanHLayer<Dtype,Mtype> {
   bool handles_setup_;
   cudnnTensorDescriptor_t bottom_desc_;
   cudnnTensorDescriptor_t top_desc_;
+  cudnnActivationDescriptor_t activ_desc_;
 };
 #endif
 

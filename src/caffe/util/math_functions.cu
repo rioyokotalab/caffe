@@ -58,8 +58,8 @@ void caffe_gpu_gemm<float16,float>(const CBLAS_TRANSPOSE TransA,
   cublasOperation_t cuTransB =
       (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
   CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), cuTransB, cuTransA,
-      N, M, K, &alpha, B, CUBLAS_DATA_HALF, ldb, A, CUBLAS_DATA_HALF,
-      lda, &beta, C, CUBLAS_DATA_HALF, N));
+      N, M, K, &alpha, B, CAFFE_DATA_HALF, ldb, A, CAFFE_DATA_HALF,
+      lda, &beta, C, CAFFE_DATA_HALF, N));
 }
 
 template <>
@@ -113,8 +113,8 @@ void caffe_gpu_gemv<float16, float>(const CBLAS_TRANSPOSE TransA, const int M,
     int LDC = m;
     
     CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), cuTransA, CUBLAS_OP_N,
-                               m, 1, k, &alpha, A, CUBLAS_DATA_HALF, LDA, x, CUBLAS_DATA_HALF, k, &beta,
-                               y, CUBLAS_DATA_HALF, LDC));
+                               m, 1, k, &alpha, A, CAFFE_DATA_HALF, LDA, x, CAFFE_DATA_HALF, k, &beta,
+                               y, CAFFE_DATA_HALF, LDC));
 }
 #else
 
@@ -134,8 +134,8 @@ void caffe_gpu_gemv<float16, float16>(const CBLAS_TRANSPOSE TransA, const int M,
     int LDC = m;
     
     CUBLAS_CHECK(cublasSgemmEx(Caffe::cublas_handle(), cuTransA, CUBLAS_OP_N,
-                               m, 1, k, &alpha_fp32, A, CUBLAS_DATA_HALF, LDA, x, CUBLAS_DATA_HALF, k, &beta_fp32,
-                               y, CUBLAS_DATA_HALF, LDC));
+                               m, 1, k, &alpha_fp32, A, CAFFE_DATA_HALF, LDA, x, CAFFE_DATA_HALF, k, &beta_fp32,
+                               y, CAFFE_DATA_HALF, LDC));
 }
 #endif
 

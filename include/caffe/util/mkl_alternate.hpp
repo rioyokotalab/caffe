@@ -5,6 +5,26 @@
 
 #include <mkl.h>
 
+// MKL doesn't support fp16 yet
+#ifndef CPU_ONLY
+#define DEFINE_VSL_UNARY_FUNC(name, operation) \
+  template<typename Dtype> \
+  void v##name(const int n, const Dtype* a, Dtype* y) { \
+    CHECK_GT(n, 0); CHECK(a); CHECK(y); \
+    for (int i = 0; i < n; ++i) { operation; } \
+  } \
+  inline void vh##name( \
+           const int n, const caffe::float16* a, caffe::float16* y) { \
+    v##name<caffe::float16>(n, a, y);         \
+  }
+
+DEFINE_VSL_UNARY_FUNC(Sqr, y[i] = a[i] * a[i]);
+DEFINE_VSL_UNARY_FUNC(Exp, y[i] = exp(a[i]));
+DEFINE_VSL_UNARY_FUNC(Ln, y[i] = log(a[i]));
+DEFINE_VSL_UNARY_FUNC(Abs, y[i] = fabs(a[i]));
+#endif // !CPU_ONLY
+
+
 #else  // If use MKL, simply include the MKL header
 
 extern "C" {
