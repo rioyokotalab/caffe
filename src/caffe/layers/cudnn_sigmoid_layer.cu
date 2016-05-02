@@ -58,7 +58,6 @@ void CuDNNSigmoidLayer<Dtype,Mtype>::Backward_gpu(const vector<Blob<Dtype,Mtype>
         cudnn::dataType<Dtype>::zero,
         this->bottom_desc_, bottom_diff));
 #endif
-
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(CuDNNSigmoidLayer);
