@@ -137,8 +137,8 @@ inline void createPoolingDesc(cudnnPoolingDescriptor_t* pool_desc,
   int padA[2] = {pad_h,pad_w};
   int strideA[2] = {stride_h,stride_w};
   CUDNN_CHECK(cudnnSetPoolingNdDescriptor(*pool_desc, *mode,
-                                          CUDNN_PROPAGATE_NAN, h, w,
-                                          pad_h, pad_w, stride_h, stride_w));
+                                          CUDNN_PROPAGATE_NAN, 2, dimA,
+                                          padA, strideA));
 }
 
 }  // namespace cudnn
