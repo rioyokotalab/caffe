@@ -98,8 +98,13 @@ template <typename Dtype>
 inline void createFilterDesc(cudnnFilterDescriptor_t* desc,
     int n, int c, int h, int w) {
   CUDNN_CHECK(cudnnCreateFilterDescriptor(desc));
+#if CUDNN_VERSION_MIN(5, 0, 0)
   CUDNN_CHECK(cudnnSetFilter4dDescriptor(*desc, dataType<Dtype>::type,
                                          CUDNN_TENSOR_NCHW, n, c, h, w));
+#else
+  CUDNN_CHECK(cudnnSetFilter4dDescriptor_v4(*desc, dataType<Dtype>::type,
+                                            CUDNN_TENSOR_NCHW, n, c, h, w));
+#endif
 }
 
 template <typename Dtype>
@@ -136,9 +141,18 @@ inline void createPoolingDesc(cudnnPoolingDescriptor_t* pool_desc,
   int dimA[2] = {h,w};
   int padA[2] = {pad_h,pad_w};
   int strideA[2] = {stride_h,stride_w};
+
+#if CUDNN_VERSION_MIN(5, 0, 0)
   CUDNN_CHECK(cudnnSetPoolingNdDescriptor(*pool_desc, *mode,
                                           CUDNN_PROPAGATE_NAN, 2, dimA,
                                           padA, strideA));
+#else
+  CUDNN_CHECK(cudnnSetPoolingNdDescriptor_v4(*pool_desc, *mode,
+                                          CUDNN_PROPAGATE_NAN, 2, dimA,
+                                          padA, strideA));
+#endif
+
+
 }
 
 }  // namespace cudnn
