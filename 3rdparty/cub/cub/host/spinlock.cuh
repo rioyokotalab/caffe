@@ -88,9 +88,9 @@ namespace cub {
      */
     __forceinline__ void YieldProcessor()
     {
-#ifndef __arm__
+#if !defined(__arm__) && !defined(__aarch64__)
         asm volatile("pause\n": : :"memory");
-#endif  // __arm__
+#endif  // __arm__ && __aarch64__
     }
 
 #endif  // defined(_MSC_VER)
