@@ -323,19 +323,15 @@ int time() {
   const vector<shared_ptr<Layer<float,float> > >& layers = caffe_net.layers();
   const vector<vector<Blob<float,float>*> >& bottom_vecs = caffe_net.bottom_vecs();
   const vector<vector<Blob<float,float>*> >& top_vecs = caffe_net.top_vecs();
-  const vector<vector<bool> >& bottom_need_backward =  caffe_net.bottom_need_backward();
 
   LOG(INFO) << "*** Benchmark begins ***";
   LOG(INFO) << "Testing for " << FLAGS_iterations << " iterations.";
   Timer total_timer;
   total_timer.Start();
   Timer forward_timer;
-  Timer backward_timer;
   Timer timer;
   std::vector<double> forward_time_per_layer(layers.size(), 0.0);
-  std::vector<double> backward_time_per_layer(layers.size(), 0.0);
   double forward_time = 0.0;
-  double backward_time = 0.0;
   // Per layer timing
   for (int j = 0; j < FLAGS_iterations; ++j) {
     Timer iter_timer;
@@ -346,14 +342,7 @@ int time() {
       layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
       forward_time_per_layer[i] += timer.MicroSeconds();
     }
-    // Time backward layers
-    for (int i = layers.size() - 1; i >= 0; --i) {
-      timer.Start();
-      layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
-                          bottom_vecs[i]);
-      backward_time_per_layer[i] += timer.MicroSeconds();
-    }
-    LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time (layer by layer): "
+    LOG(INFO) << "Iteration: " << j + 1 << " forward time (layer by layer): "
 	      << iter_timer.MilliSeconds() << " ms.";
   }
   // Total timing - remove overheads introduced in timing individual layers
@@ -368,16 +357,7 @@ int time() {
     }
     forward_time += forward_timer.MicroSeconds();
     
-    // Time total backward
-    backward_timer.Start();
-    for (int i = layers.size() - 1; i >= 0; --i) {
-      layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
-                          bottom_vecs[i]);
-    }
-    backward_time += backward_timer.MicroSeconds();
-    
-    
-    LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
+    LOG(INFO) << "Iteration: " << j + 1 << " forward time: "
 	      << iter_timer.MilliSeconds() << " ms.";
   }
   total_timer.Stop();
@@ -388,16 +368,9 @@ int time() {
     LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
       "\tforward: " << forward_time_per_layer[i] / 1000 /
       FLAGS_iterations << " ms.";
-    LOG(INFO) << std::setfill(' ') << std::setw(10) << layername  <<
-      "\tbackward: " << backward_time_per_layer[i] / 1000 /
-      FLAGS_iterations << " ms.";
   }
 
   LOG(INFO) << "Average Forward pass: " << forward_time / 1000 /
-    FLAGS_iterations << " ms.";
-  LOG(INFO) << "Average Backward pass: " << backward_time / 1000 /
-    FLAGS_iterations << " ms.";
-  LOG(INFO) << "Average Forward-Backward: " << (forward_time + backward_time) / 1000 /
     FLAGS_iterations << " ms.";
   LOG(INFO) << "Total Time: " << total_timer.MilliSeconds() << " ms.";
   LOG(INFO) << "*** Benchmark ends ***";
