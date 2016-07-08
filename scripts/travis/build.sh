@@ -10,4 +10,4 @@ else
   cd build
   make --jobs $NUM_THREADS all test.testbin
 fi
-make lint
+#make lint
