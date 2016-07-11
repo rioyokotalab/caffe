@@ -8,6 +8,9 @@
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/float16.hpp"
 
+#define CUDNN_VERSION_MIN(major, minor, patch) \
+     (CUDNN_VERSION >= (major * 1000 + minor * 100 + patch))
+
 #define CUDNN_CHECK(condition) \
   do { \
     cudnnStatus_t status = condition; \
@@ -95,8 +98,13 @@ template <typename Dtype>
 inline void createFilterDesc(cudnnFilterDescriptor_t* desc,
     int n, int c, int h, int w) {
   CUDNN_CHECK(cudnnCreateFilterDescriptor(desc));
+#if CUDNN_VERSION_MIN(5, 0, 0)
   CUDNN_CHECK(cudnnSetFilter4dDescriptor(*desc, dataType<Dtype>::type,
-      n, c, h, w));
+                                         CUDNN_TENSOR_NCHW, n, c, h, w));
+#else
+  CUDNN_CHECK(cudnnSetFilter4dDescriptor_v4(*desc, dataType<Dtype>::type,
+                                            CUDNN_TENSOR_NCHW, n, c, h, w));
+#endif
 }
 
 template <typename Dtype>
@@ -111,14 +119,8 @@ inline void setConvolutionDesc(cudnnConvolutionDescriptor_t* conv,
   int padA[2] = {pad_h,pad_w};
   int strideA[2] = {stride_h,stride_w};
   int upscaleA[2] = {1, 1};
-  CUDNN_CHECK(cudnnSetConvolutionNdDescriptor_v3(*conv,
+  CUDNN_CHECK(cudnnSetConvolutionNdDescriptor(*conv,
       2, padA, strideA, upscaleA, CUDNN_CROSS_CORRELATION, dataType<Dtype>::type));
-  int array_length;
-  cudnnConvolutionMode_t mode;
-  cudnnDataType_t dataType;
-  CUDNN_CHECK(cudnnGetConvolutionNdDescriptor(*conv,1,&array_length,
-                                              padA, strideA, upscaleA, &mode, &dataType));
-
 }
 
 template <typename Dtype>
@@ -136,8 +138,21 @@ inline void createPoolingDesc(cudnnPoolingDescriptor_t* pool_desc,
     LOG(FATAL) << "Unknown pooling method.";
   }
   CUDNN_CHECK(cudnnCreatePoolingDescriptor(pool_desc));
-  CUDNN_CHECK(cudnnSetPooling2dDescriptor(*pool_desc, *mode, h, w,
-        pad_h, pad_w, stride_h, stride_w));
+  int dimA[2] = {h,w};
+  int padA[2] = {pad_h,pad_w};
+  int strideA[2] = {stride_h,stride_w};
+
+#if CUDNN_VERSION_MIN(5, 0, 0)
+  CUDNN_CHECK(cudnnSetPoolingNdDescriptor(*pool_desc, *mode,
+                                          CUDNN_PROPAGATE_NAN, 2, dimA,
+                                          padA, strideA));
+#else
+  CUDNN_CHECK(cudnnSetPoolingNdDescriptor_v4(*pool_desc, *mode,
+                                          CUDNN_PROPAGATE_NAN, 2, dimA,
+                                          padA, strideA));
+#endif
+
+
 }
 
 }  // namespace cudnn

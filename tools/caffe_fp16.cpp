@@ -286,7 +286,7 @@ int time() {
     }
     forward_time += forward_timer.MicroSeconds();
     
-    LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
+    LOG(INFO) << "Iteration: " << j + 1 << " forward time: "
 	      << iter_timer.MilliSeconds() << " ms.";
   }
   total_timer.Stop();

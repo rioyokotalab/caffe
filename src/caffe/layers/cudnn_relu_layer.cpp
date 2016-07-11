@@ -14,6 +14,8 @@ void CuDNNReLULayer<Dtype,Mtype>::LayerSetUp(const vector<Blob<Dtype,Mtype>*>& b
   // initialize cuDNN
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);
   cudnn::createTensor4dDesc<Dtype>(&top_desc_);
+  cudnnCreateActivationDescriptor(&activ_desc_);
+  cudnnSetActivationDescriptor(activ_desc_, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0.0);
   handles_setup_ = true;
 }
 
@@ -34,6 +36,7 @@ CuDNNReLULayer<Dtype,Mtype>::~CuDNNReLULayer() {
   // Check that handles have been setup before destroying.
   if (!handles_setup_) { return; }
 
+  cudnnDestroyActivationDescriptor(this->activ_desc_);
   cudnnDestroyTensorDescriptor(this->bottom_desc_);
   cudnnDestroyTensorDescriptor(this->top_desc_);
 }
