@@ -121,7 +121,7 @@ struct Mutex
          */
         __forceinline__ void YieldProcessor()
         {
-        #ifndef __arm__
+        #if !defined(__arm__) && !defined(__powerpc__)
                 asm volatile("pause\n": : :"memory");
         #endif  // __arm__
         }

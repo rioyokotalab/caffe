@@ -155,5 +155,3 @@ endif()
 find_package_handle_standard_args(CUDNN
                                   REQUIRED_VARS CUDNN_LIBRARY 
                                   VERSION_VAR   CUDNN_VERSION)
-
-
