@@ -13,8 +13,12 @@ file (GLOB MLPATH /usr/lib/nvidia-???)
 find_path(NVML_INCLUDE_DIR NAMES nvml.h
     PATHS  ${CUDA_INCLUDE_DIRS} ${NVML_ROOT_DIR}/include
     )
-
+set(MLPATH "/usr/lib64/nvidia")
 find_library(NVML_LIBRARY nvidia-ml PATHS ${MLPATH} ${NVML_ROOT_DIR}/lib ${NVML_ROOT_DIR}/lib64)
+
+message(STATUS "CUDA_INCLUDE_DIRS: ${CUDA_INCLUDE_DIRS}")
+message(STATUS "NVML_INCLUDE_DIR: ${NVML_INCLUDE_DIR}")
+message(STATUS "NVML_LIBRARY: ${NVML_LIBRARY}")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(NVML DEFAULT_MSG NVML_INCLUDE_DIR NVML_LIBRARY)
