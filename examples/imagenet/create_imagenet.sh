@@ -2,12 +2,12 @@
 # Create the imagenet lmdb inputs
 # N.B. set the path to the imagenet train + val data dirs
 
-EXAMPLE=examples/imagenet
-DATA=data/ilsvrc12
-TOOLS=build/tools
+EXAMPLE=/mnt/nas100/share/data/imagenet/caffe_tool_dir
+DATA=/mnt/nas100/share/data/imagenet/caffe_tool_dir/txt_dir
+TOOLS=/home/hiroki11x/dl/NV-Caffe/build/tools
 
-TRAIN_DATA_ROOT=/path/to/imagenet/train/
-VAL_DATA_ROOT=/path/to/imagenet/val/
+TRAIN_DATA_ROOT=/mnt/nas100/share/data/imagenet/train/
+VAL_DATA_ROOT=/mnt/nas100/share/data/imagenet/val/
 
 # Set RESIZE=true to resize the images to 256x256. Leave as false if images have
 # already been resized using another tool.
