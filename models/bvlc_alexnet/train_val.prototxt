@@ -7,10 +7,10 @@ layer {
   transform_param {
     mirror: true
     crop_size: 227
-    mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
+    mean_file: "/home/hiroki11x/ImageNet/imagenet_mean.binaryproto"
   }
   data_param {
-    source: "examples/imagenet/ilsvrc12_train_lmdb"
+    source: "/home/hiroki11x/ImageNet/ilsvrc12_train_lmdb"
     batch_size: 256
 #    batch_size: 1024          # DGX1
     backend: LMDB
@@ -25,11 +25,11 @@ layer {
   transform_param {
     mirror: false
     crop_size: 227
-    mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
+    mean_file: "/home/hiroki11x/ImageNet/imagenet_mean.binaryproto"
   }
   data_param {
-    source: "examples/imagenet/ilsvrc12_val_lmdb"
-    batch_size: 32
+    source: "/home/hiroki11x/ImageNet/ilsvrc12_val_lmdb"
+    batch_size: 64
 #    batch_size: 256          # DGX1
     backend: LMDB
   }

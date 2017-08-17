@@ -2,7 +2,7 @@ name: "AlexNet_fp16"
 
 default_forward_type:  FLOAT16
 default_backward_type: FLOAT16
-default_forward_math:  FLOAT
+default_forward_math:  FLOAT16
 default_backward_math: FLOAT
 
 layer {
@@ -13,10 +13,10 @@ layer {
   transform_param {
     mirror: true
     crop_size: 227
-    mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
+    mean_file: "/home/hiroki11x/ImageNet/imagenet_mean.binaryproto"
   }
   data_param {
-    source: "examples/imagenet/ilsvrc12_train_lmdb"
+    source: "/home/hiroki11x/ImageNet/ilsvrc12_train_lmdb"
     batch_size: 256
 #    batch_size: 1024  # DGX1
     backend: LMDB
@@ -31,11 +31,11 @@ layer {
   transform_param {
     mirror: false
     crop_size: 227
-    mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
+    mean_file: "/home/hiroki11x/ImageNet/imagenet_mean.binaryproto"
   }
   data_param {
-    source: "examples/imagenet/ilsvrc12_val_lmdb"
-    batch_size: 32
+    source: "/home/hiroki11x/ImageNet/ilsvrc12_val_lmdb"
+    batch_size: 10
 #    batch_size: 256  # DGx1
     backend: LMDB
   }
