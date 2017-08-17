@@ -13,10 +13,17 @@ layer {
   transform_param {
     mirror: true
     crop_size: 227
+<<<<<<< HEAD
     mean_file: "/home/hiroki11x/ImageNet/imagenet_mean.binaryproto"
   }
   data_param {
     source: "/home/hiroki11x/ImageNet/ilsvrc12_train_lmdb"
+=======
+    mean_file: "/mnt/nas101/hiroki11x/imagenet_mean.binaryproto"
+  }
+  data_param {
+    source: "/mnt/nas101/hiroki11x/ilsvrc12_train_lmdb"
+>>>>>>> 5c1efbba51c185a619be77a215179bf2b04d9e7a
     batch_size: 256
 #    batch_size: 1024  # DGX1
     backend: LMDB
@@ -31,11 +38,19 @@ layer {
   transform_param {
     mirror: false
     crop_size: 227
+<<<<<<< HEAD
     mean_file: "/home/hiroki11x/ImageNet/imagenet_mean.binaryproto"
   }
   data_param {
     source: "/home/hiroki11x/ImageNet/ilsvrc12_val_lmdb"
     batch_size: 10
+=======
+    mean_file: "/mnt/nas101/hiroki11x/imagenet_mean.binaryproto"
+  }
+  data_param {
+    source: "/mnt/nas101/hiroki11x/ilsvrc12_val_lmdb"
+    batch_size: 32
+>>>>>>> 5c1efbba51c185a619be77a215179bf2b04d9e7a
 #    batch_size: 256  # DGx1
     backend: LMDB
   }

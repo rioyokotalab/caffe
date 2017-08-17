@@ -27,11 +27,17 @@ PREFIX_PATH=$PREFIX_PATH:$LOCAL/$s
 done
 
 
+for file in `git grep -l '"/home/hiroki11x/env/local/cuda/include/cudnn.h"'`; do
+sed -i -e \
+'s@"/home/hiroki11x/env/local/cuda/include/cudnn.h"@<cudnn.h>@g' \
+"$file"
+done
 
 CMAKE_PREFIX_PATH=$PYTHON_INCLUDE:$PYTHON_LIB:$HDF5_HL_LIBRARIES:$PREFIX_PATH cmake \
 -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
--DCMAKE_INSTALL_PREFIX=/home/hiroki11x/dl/nvcaffe \
+-DCMAKE_INSTALL_PREFIX=/home/hiroki11x/dl/nvcaffe/local \
 -DUSE_NCCL=ON \
+-DAtlas_LAPACK_LIBRARY=/home/hiroki11x/env/local/ATLAS \
 -DUSE_LEVELDB=OFF \
 .. | tee configure.log
 
