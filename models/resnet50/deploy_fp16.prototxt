@@ -3,13 +3,13 @@ name: "Resnet50"
 default_forward_type:  FLOAT16
 default_backward_type: FLOAT16
 default_forward_math:  FLOAT16
-default_backward_math: FLOAT
+default_backward_math: FLOAT16
 
 layer {
   name: "data"
   type: "Input"
   top: "data"
-  input_param { shape: { dim: 10 dim: 3 dim: 224 dim: 224 } }
+  input_param { shape: { dim: 8 dim: 3 dim: 224 dim: 224 } }
 }
 
 layer {

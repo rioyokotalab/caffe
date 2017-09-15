@@ -7,10 +7,10 @@ layer {
   transform_param {
     mirror: true
     crop_size: 227
-    mean_file: "/mnt/nas101/hiroki11x/imagenet_mean.binaryproto"
+    mean_file: "/lustre/gi75/i75012/imagenet/imagenet_mean.binaryproto"
   }
   data_param {
-    source: "/mnt/nas101/hiroki11x/ilsvrc12_train_lmdb"
+    source: "/lustre/gi75/i75012/imagenet/ilsvrc12_train_lmdb"
     batch_size: 256
 #    batch_size: 1024          # DGX1
     backend: LMDB
@@ -25,10 +25,10 @@ layer {
   transform_param {
     mirror: false
     crop_size: 227
-    mean_file: "/mnt/nas101/hiroki11x/imagenet_mean.binaryproto"
+    mean_file: "/lustre/gi75/i75012/imagenet/imagenet_mean.binaryproto"
   }
   data_param {
-    source: "/mnt/nas101/hiroki11x/ilsvrc12_val_lmdb"
+    source: "/lustre/gi75/i75012/imagenet/ilsvrc12_val_lmdb"
     batch_size: 32
 #    batch_size: 256          # DGX1
     backend: LMDB
