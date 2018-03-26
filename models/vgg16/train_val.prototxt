@@ -5,7 +5,7 @@ layer {
   top: "data"
   top: "label"
   data_param {
-    source: "examples/imagenet/ilsvrc12_train_lmdb"
+    source: "/lustre/gi75/i75012/imagenet/ilsvrc12_train_lmdb"
     backend: LMDB
     batch_size: 32
 #    batch_size: 256   # DGX1
@@ -13,7 +13,7 @@ layer {
   transform_param {
     crop_size: 224
     mirror: true
-    mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
+    mean_file: "/lustre/gi75/i75012/imagenet/imagenet_mean.binaryproto"
   }
   include: { phase: TRAIN }
 }
@@ -23,14 +23,14 @@ layer {
   top: "data"
   top: "label"
   data_param {
-    source: "examples/imagenet/ilsvrc12_val_lmdb"
+    source: "/lustre/gi75/i75012/imagenet/ilsvrc12_val_lmdb"
     backend: LMDB
-    batch_size: 32
+    batch_size: 50
   }
   transform_param {
     crop_size: 224
     mirror: false
-    mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
+    mean_file: "/lustre/gi75/i75012/imagenet/imagenet_mean.binaryproto"
   }
   include: { phase: TEST }
 }

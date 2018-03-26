@@ -29,7 +29,7 @@ layer {
   }
   data_param {
     source: "/lustre/gi75/i75012/imagenet/ilsvrc12_val_lmdb"
-    batch_size: 32
+    batch_size: 50
 #    batch_size: 256          # DGX1
     backend: LMDB
   }
